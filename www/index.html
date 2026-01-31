@@ -3,37 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- 修正：允許地圖圖塊載入與混合內容 -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: cdvfile: https://ssl.gstatic.com 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.org https://unpkg.com; connect-src *;">
+
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: gap: content:; style-src * 'self' 'unsafe-inline'; script-src * 'self' 'unsafe-inline' 'unsafe-eval'; connect-src * ws: wss:;">
-    <title>V.I.S.O.R. MK-XXV (Softer Audio & Sim Traffic)</title>
+    <title>V.I.S.O.R. MK-XXV</title>
     
-    <!-- 1. 核心樣式庫: Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 本地資源載入 -->
+    <script src="lib/js/tailwindcss.js"></script>
+    <script src="lib/js/react.min.js"></script>
+    <script src="lib/js/react-dom.min.js"></script>
+    <script src="lib/js/prop-types.min.js"></script>
+    <script src="lib/js/react-is.min.js"></script>
+    <script src="lib/js/recharts.min.js"></script>
+    <script src="lib/js/babel.min.js"></script>
+    <script src="lib/js/lucide.min.js"></script>
+    <script src="lib/js/marked.min.js"></script>
     
-    <!-- 2. React 核心 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <link rel="stylesheet" href="lib/css/leaflet.css"/>
+    <script src="lib/js/leaflet.js"></script>
     
-    <!-- 3. 圖表庫依賴 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-is/18.2.0/umd/react-is.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.7/Recharts.min.js"></script>
-    
-    <!-- 4. JSX 編譯器 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
-
-    <!-- 5. 圖示庫 -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- 6. Markdown 解析 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
-
-    <!-- 7. Leaflet Maps -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-
-    <!-- 8. Cordova 核心 (打包後自動生效) -->
+    <!-- Cordova 核心 (打包後自動生效) -->
     <script src="cordova.js"></script>
 
     <!-- 9. 自定義樣式 -->
@@ -66,22 +58,76 @@
 </head>
 <body class="bg-black text-white font-sans selection:bg-cyan-500 selection:text-black overflow-hidden fixed inset-0">
 
-    <div id="root">
-        <div style="display: flex; height: 100vh; width: 100vw; align-items: center; justify-content: center; background: black; color: #22d3ee; font-family: monospace;">
-            <div style="text-align: center;">
-                <h1 style="font-size: 24px; font-weight: bold; letter-spacing: 4px;">V.I.S.O.R.</h1>
-                <p style="font-size: 12px; margin-top: 10px; opacity: 0.8;">BOOTING CORE SYSTEM...</p>
-                <p style="font-size: 10px; margin-top: 5px; color: #64748b;">(If this screen persists, check internet connection)</p>
-            </div>
-        </div>
+    <!-- 偵錯視窗 (點擊左上角 5 次開啟) -->
+    <div id="debug-console" class="fixed top-0 left-0 w-full h-1/2 bg-black/90 text-[10px] font-mono p-2 overflow-y-auto z-[1000] border-b border-red-500 hidden pointer-events-none">
+        <div class="text-red-500 font-bold mb-1 underline">SYSTEM LOG:</div>
     </div>
 
+    <!-- V.I.S.O.R. 啟動載入畫面 -->
+    <div id="visor-boot-screen" class="fixed inset-0 z-[999] bg-black flex flex-col items-center justify-center transition-opacity duration-1000">
+        <div class="relative w-64 h-64 flex items-center justify-center">
+            <!-- 核心圓環動畫 -->
+            <div class="absolute inset-0 border-4 border-cyan-500/20 rounded-full"></div>
+            <div class="absolute inset-0 border-4 border-t-cyan-400 rounded-full animate-spin" style="animation-duration: 2s;"></div>
+            <div class="absolute inset-4 border-2 border-b-cyan-600 rounded-full animate-spin" style="animation-duration: 3s; animation-direction: reverse;"></div>
+            
+            <!-- 中間文字 -->
+            <div class="text-center animate-pulse">
+                <div class="text-cyan-400 font-black text-2xl italic tracking-tighter">V.I.S.O.R.</div>
+                <div class="text-cyan-600 text-[10px] font-mono mt-1 uppercase tracking-[0.2em]">MK-XXV OS</div>
+            </div>
+        </div>
+
+        <!-- 進度條 -->
+        <div class="mt-12 w-48 h-1 bg-slate-900 rounded-full overflow-hidden border border-cyan-900/30">
+            <div id="boot-progress-bar" class="h-full bg-cyan-500 shadow-[0_0_10px_#22d3ee] transition-all duration-300" style="width: 0%"></div>
+        </div>
+        
+        <!-- 狀態文字 -->
+        <div id="boot-status" class="mt-4 text-cyan-500/70 text-[10px] font-mono tracking-widest uppercase h-4">INITIALIZING CORE...</div>
+        
+        <!-- 裝飾背景格線 -->
+        <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: linear-gradient(#22d3ee 1px, transparent 1px), linear-gradient(90deg, #22d3ee 1px, transparent 1px); background-size: 30px 30px;"></div>
+    </div>
+
+    <div id="root"></div>
+
     <script>
-        // Global error logging for debugging on phone
-        window.onerror = function(msg, url, line) {
-            alert("System Error: " + msg + "\nAt: " + url + ":" + line);
+        // --- 偵錯輔助 ---
+        const debugConsole = document.getElementById('debug-console');
+        let clickCount = 0;
+        document.addEventListener('click', (e) => {
+            if (e.clientX < 50 && e.clientY < 50) {
+                clickCount++;
+                if (clickCount >= 5) {
+                    debugConsole.classList.toggle('hidden');
+                    debugConsole.classList.toggle('pointer-events-auto');
+                    clickCount = 0;
+                }
+            }
+        });
+
+        const logToScreen = (msg, isError = false) => {
+            const entry = document.createElement('div');
+            entry.className = isError ? 'text-red-400' : 'text-cyan-400';
+            entry.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            debugConsole.appendChild(entry);
+            console.log(msg);
+        };
+
+        window.onerror = (msg, url, line) => {
+            logToScreen(`ERR: ${msg} (at ${line})`, true);
             return false;
         };
+
+        logToScreen("V.I.S.O.R. Loader Initialized");
+        
+        // 監聽 CDN 載入失敗
+        window.addEventListener('error', (e) => {
+            if (e.target.tagName === 'SCRIPT') {
+                logToScreen(`Failed to load: ${e.target.src}`, true);
+            }
+        }, true);
     </script>
 
     <script type="text/babel">
@@ -99,6 +145,7 @@
         };
 
         const playWarningSound = async (type = 'warning', repeat = 1) => {
+            if (window._visorIsMuted) return; // 檢查全域靜音狀態
             try {
                 const ctx = initAudioContext();
                 if (!ctx) return;
@@ -471,8 +518,59 @@
         };
 
         const App = () => {
+            const [isBooting, setIsBooting] = useState(true);
             const [activeTab, setActiveTab] = useState('home');
+            const [isMuted, setIsMuted] = useState(false);
+            
+            useEffect(() => {
+                window._visorIsMuted = isMuted;
+            }, [isMuted]);
             const [isSentryMode, setIsSentryMode] = useState(false);
+            // ... (其餘 state 保持不變)
+
+            // 處理啟動序列
+            useEffect(() => {
+                const stages = [
+                    { p: 10, s: "CONNECTING TO NEURAL LINK..." },
+                    { p: 30, s: "CALIBRATING GYRO SENSORS..." },
+                    { p: 60, s: "UPLOADING TACTICAL DATABASE..." },
+                    { p: 85, s: "SYNCHRONIZING WITH PI-5 CORE..." },
+                    { p: 100, s: "SYSTEM READY. WELCOME, RIDER." }
+                ];
+
+                const progressBar = document.getElementById('boot-progress-bar');
+                const statusText = document.getElementById('boot-status');
+                const bootScreen = document.getElementById('visor-boot-screen');
+
+                let currentStage = 0;
+                const runBoot = () => {
+                    if (currentStage < stages.length) {
+                        const stage = stages[currentStage];
+                        if (progressBar) progressBar.style.width = `${stage.p}%`;
+                        if (statusText) statusText.innerText = stage.s;
+                        
+                        const delay = 600 + Math.random() * 800;
+                        setTimeout(() => {
+                            currentStage++;
+                            runBoot();
+                        }, delay);
+                    } else {
+                        // 啟動完成
+                        setTimeout(() => {
+                            if (bootScreen) {
+                                bootScreen.style.opacity = '0';
+                                setTimeout(() => {
+                                    bootScreen.style.display = 'none';
+                                    setIsBooting(false);
+                                    playWarningSound('warning'); // 啟動完成音效
+                                }, 1000);
+                            }
+                        }, 500);
+                    }
+                };
+
+                runBoot();
+            }, []);
             const [enableSpeedCam, setEnableSpeedCam] = useState(true);
             const [simulatedSpeed, setSimulatedSpeed] = useState(0);
             const [tiltAngle, setTiltAngle] = useState(0);
@@ -935,11 +1033,41 @@
                 );
             };
 
-            const renderSettings = () => (
-                <div className="space-y-6 animate-fadeIn pb-24">
-                    <h2 className="text-xl font-bold text-white">設定</h2>
-                    <div className="space-y-4">
-                        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700"><h3 className="text-cyan-400 text-sm font-bold mb-4 flex items-center gap-2"><Icon name="key" size={16} /> API 設定</h3><div className="mb-4"><div className="text-xs text-slate-400 mb-1">Gemini API Key (貼上您的 Key)</div><input type="text" value={userApiKey} onChange={handleApiKeyChange} placeholder="貼上您的 API Key..." className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500 font-mono" /><div className="text-[10px] text-slate-500 mt-1">此 Key 僅儲存於您的手機端</div></div></div>
+                        const renderSettings = () => (
+
+                            <div className="space-y-6 animate-fadeIn pb-24">
+
+                                <h2 className="text-xl font-bold text-white">設定</h2>
+
+                                <div className="space-y-4">
+
+                                    <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+
+                                        <h3 className="text-cyan-400 text-sm font-bold mb-4 flex items-center gap-2"><Icon name="volume-2" size={16} /> 系統音效</h3>
+
+                                        <div className="flex justify-between items-center">
+
+                                            <span className="text-white text-sm">靜音模式 (關閉所有預警音)</span>
+
+                                            <div 
+
+                                                onClick={() => setIsMuted(!isMuted)} 
+
+                                                className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors duration-300 ${isMuted ? 'bg-red-600' : 'bg-slate-600'}`}
+
+                                            >
+
+                                                <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ${isMuted ? 'translate-x-6' : ''}`}></div>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                    <div className="bg-slate-800 rounded-xl p-4 border border-slate-700"><h3 className="text-cyan-400 text-sm font-bold mb-4 flex items-center gap-2"><Icon name="key" size={16} /> API 設定</h3>
+
+            <div className="mb-4"><div className="text-xs text-slate-400 mb-1">Gemini API Key (貼上您的 Key)</div><input type="text" value={userApiKey} onChange={handleApiKeyChange} placeholder="貼上您的 API Key..." className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500 font-mono" /><div className="text-[10px] text-slate-500 mt-1">此 Key 僅儲存於您的手機端</div></div></div>
                         <div className="bg-slate-800 rounded-xl p-4 border border-slate-700"><h3 className="text-cyan-400 text-sm font-bold mb-4 flex items-center gap-2"><Icon name="database" size={16} /> 測速資料庫管理</h3><div className="flex justify-between items-center mb-4 p-3 bg-slate-900/50 rounded-lg"><div><div className="text-xs text-slate-400">目前資料來源</div><div className="text-sm font-bold text-white">{dbInfo.source}</div></div><div className="text-right"><div className="text-xs text-slate-400">總筆數</div><div className="text-lg font-mono text-cyan-400">{dbInfo.count}</div></div></div><div className="grid grid-cols-2 gap-3"><label className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-600 rounded-xl hover:border-cyan-500 hover:bg-slate-700/30 transition-all cursor-pointer group"><Icon name="folder-up" size={24} className="text-slate-400 group-hover:text-cyan-400" /><span className="text-[10px] text-slate-400 group-hover:text-cyan-300">本機匯入 CSV</span><input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" /></label><button onClick={() => handleApiUpdate(false)} className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-slate-600 rounded-xl hover:border-green-500 hover:bg-slate-700/30 transition-all group"><Icon name="cloud-download" size={24} className="text-slate-400 group-hover:text-green-400" /><span className="text-[10px] text-slate-400 group-hover:text-green-300">雲端更新 (API)</span></button></div><p className="text-[10px] text-slate-500 mt-2 text-center">資料來源: 內政部警政署 (NPA)</p></div>
                         {!hasGyroPermission && (<button onClick={requestGyroPermission} className="w-full bg-slate-800 p-4 rounded-xl border border-slate-700 flex items-center justify-between group hover:border-purple-500/50 transition-all"><div className="flex items-center gap-4"><Icon name="rotate-3d" className="text-purple-400" /><div className="text-left"><div className="text-white font-bold text-sm">啟用陀螺儀</div><div className="text-slate-400 text-xs mt-0.5">點擊以授權傾角偵測 (iOS 必選)</div></div></div><Icon name="chevron-right" className="text-slate-500" /></button>)}
                         <div className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700"><div className="p-4 border-b border-slate-700"><h3 className="text-cyan-400 text-sm font-bold mb-4 uppercase tracking-wider flex items-center gap-2"><Icon name="cpu" size={16} /> AI 防護參數</h3><div className="mb-6"><div className="flex justify-between text-white text-sm mb-2"><span>後方逼車警示距離</span><span className="text-cyan-400 font-mono">8.0m</span></div><input type="range" className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-cyan-500" defaultValue="40" /></div></div></div>
@@ -994,8 +1122,14 @@
             );
         };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        const rootElement = document.getElementById('root');
+        if (rootElement) {
+            const root = ReactDOM.createRoot(rootElement);
+            root.render(<App />);
+            console.log("React App Mounted");
+        } else {
+            console.error("Root element not found");
+        }
     </script>
 </body>
 </html>
