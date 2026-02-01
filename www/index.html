@@ -330,11 +330,11 @@
         };
 
         const NavButton = ({ iconName, label, isActive, onClick, isCenter = false }) => (
-            <button onClick={onClick} className="flex flex-col items-center justify-center gap-1.5 transition-all duration-300 p-2 w-16">
-                <div className={`transition-all duration-300 ${isActive ? (isCenter ? 'scale-110' : '-translate-y-1') : ''} ${isCenter ? 'bg-cyan-900/80 p-2 rounded-full border border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.3)]' : ''}`}>
-                    <Icon name={iconName} size={24} className={isCenter ? 'text-cyan-400' : (isActive ? 'text-cyan-400' : 'text-slate-500')} strokeWidth={isActive || isCenter ? 2.5 : 2} />
+            <button onClick={onClick} className={`flex flex-col items-center justify-center gap-1 transition-all duration-300 ${isCenter ? 'mb-4' : 'p-2 w-16 group'}`}>
+                <div className={`transition-all duration-300 ${isActive ? (isCenter ? 'scale-110' : '-translate-y-1') : ''} ${isCenter ? 'bg-cyan-600 dark:bg-cyan-900/80 w-14 h-14 flex items-center justify-center rounded-full border-2 border-cyan-400 shadow-lg dark:shadow-[0_0_15px_rgba(34,211,238,0.3)]' : ''}`}>
+                    <Icon name={iconName} size={isCenter ? 28 : 24} className={isCenter ? 'text-white dark:text-cyan-400' : (isActive ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300')} strokeWidth={isActive || isCenter ? 2.5 : 2} />
                 </div>
-                <span className={`text-[10px] font-medium transition-all duration-300 ${isActive || isCenter ? 'text-cyan-400 opacity-100' : 'text-slate-500 opacity-70'} ${isCenter ? 'font-bold' : ''}`}>{label}</span>
+                {!isCenter && <span className={`text-[10px] font-medium transition-all duration-300 ${isActive ? 'text-cyan-600 dark:text-cyan-400 opacity-100' : 'text-slate-400 dark:text-slate-500 opacity-70'}`}>{label}</span>}
             </button>
         );
 
@@ -931,19 +931,45 @@
             // Render Functions
             const renderHome = () => (
                 <div className="space-y-6 animate-fadeIn pb-32 relative">
+
+
                     <SpeedCameraAlert alert={cameraAlert} currentSpeed={simulatedSpeed} />
-                    <div className={`bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-700 relative overflow-hidden`}>
+                    <div className={`bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-700 relative overflow-hidden min-h-[225px]`}>
                         <div className="absolute top-0 right-0 p-4 opacity-10"><Icon name="shield" size={120} className="text-cyan-400" /></div>
                         <div className="flex justify-between items-start mb-4 relative z-10">
                             <div><h2 className="text-slate-400 text-sm font-medium">系統狀態</h2><div className="flex items-center gap-2 mt-1"><span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]' : 'bg-red-500'}`}></span><span className="text-white font-bold text-lg">{isConnected ? '系統連線中' : '未連線'}</span></div></div>
                             <div className="text-[10px] text-slate-400 bg-slate-900/50 px-2 py-1 rounded border border-slate-600 flex flex-col items-end"><span>DB: {dbInfo.source}</span><span className="text-cyan-400">{dbInfo.count} 點</span></div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 mt-6 relative z-10">
-                            <div className="text-center p-3 bg-slate-900/50 rounded-xl border border-slate-700/50"><div className="text-slate-400 text-[10px] uppercase tracking-wider mb-1">Speed</div><div className={`text-4xl font-black font-mono tracking-tighter drop-shadow-md transition-colors ${simulatedSpeed > (cameraAlert?.limit || 999) ? 'text-red-500 animate-pulse' : 'text-cyan-400'}`}>{simulatedSpeed}</div><div className="text-slate-500 text-xs">km/h</div></div>
-                            <div className="text-center p-3 bg-slate-900/50 rounded-xl border border-slate-700/50"><div className="text-slate-400 text-[10px] uppercase tracking-wider mb-1">Angle</div><div className={`text-4xl font-black font-mono tracking-tighter drop-shadow-md ${Math.abs(tiltAngle) > 35 ? 'text-red-500 animate-pulse' : 'text-purple-400'}`}>{tiltAngle}°</div><div className="text-slate-500 text-xs">Left / Right</div></div>
+                        {/* 中央時速顯示 */}
+                        <div className="flex flex-col items-center z-10 -mt-4">
+                            <div className={`text-8xl font-black font-mono tracking-tighter leading-none transition-colors duration-200 
+                                ${simulatedSpeed > (cameraAlert?.limit || 999) ? 'text-red-500 animate-pulse' : 'text-cyan-400'}`}>
+                                {simulatedSpeed}
+                            </div>
+                            <div className="text-xl font-bold tracking-[0.3em] text-slate-500 -mt-4">KM/H</div>
+                        </div>
+
+                        <div className="absolute bottom-5 w-full flex items-center justify-center gap-3 z-10 px-4">
+                        {/* 傾角條容器 */}
+                        <div className="relative w-40 h-2 bg-slate-700/50 rounded-full overflow-hidden backdrop-blur-sm">
+                            {/* 中心線 */}
+                            <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-slate-500/50 -translate-x-1/2 z-20"></div>
+                            {/* 動態指示條 */}
+                            <div className={`absolute top-0 bottom-0 transition-all duration-100 ease-linear ${Math.abs(tiltAngle) > 35 ? 'bg-red-500' : 'bg-cyan-400'}`} 
+                                style={{
+                                    left: '50%', 
+                                    width: `${Math.min(Math.abs(tiltAngle) * 2, 50)}%`, // 限制寬度不超過單邊 50%
+                                    transform: `translateX(${tiltAngle < 0 ? '-100%' : '0'})`
+                                }}>
+                            </div>
+                        </div>
+                            {/* 角度數字 (顯示在右側) */}
+                            <div className="text-xs font-mono font-bold text-slate-400 w-8">
+                                {Math.abs(tiltAngle)}°
+                            </div>
                         </div>
                     </div>
-                    
+                
                     <div className="space-y-4">
                         <SOSButton currentLocation={location} onTrigger={triggerSOS} />
 
@@ -965,6 +991,11 @@
                     </div>
                 </div>
             );
+
+            
+
+
+
             
             const renderEvents = () => (
                 <div className="space-y-4 animate-fadeIn pb-24">
