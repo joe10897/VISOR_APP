@@ -21,6 +21,8 @@
     <script src="lib/js/babel.min.js"></script>
     <script src="lib/js/lucide.min.js"></script>
     <script src="lib/js/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="lib/js/CryptoUtils.js"></script>
     <script src="lib/js/GeoUtils.js"></script>
     <script src="lib/js/AuthService.js"></script>
     
@@ -187,23 +189,67 @@
             } catch (e) { console.warn("Audio warning failed:", e); }
         };
 
-        // --- Gemini API ---
-        const callGemini = async (prompt, systemInstruction = "") => {
-            const storedKey = localStorage.getItem("visor_gemini_api_key");
-            if (!storedKey) return "⚠️ 未設定 API Key：請至「設定」頁面輸入您的 Gemini API Key 以啟用 V.I.S.O.R. 智慧核心。";
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${storedKey}`;
-            const payload = { contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: systemInstruction }] } };
-            try {
-                const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                if (!response.ok) {
-                    const errData = await response.json();
-                    throw new Error(`API Error: ${errData.error?.message || response.status}`);
+        // --- AI API System (Gemini & DeepSeek) ---
+        const callAI = async (prompt, systemInstruction = "") => {
+            const settingsStr = localStorage.getItem("visor_ai_settings");
+            const settings = settingsStr ? JSON.parse(settingsStr) : { provider: 'gemini' };
+            const provider = settings.provider || 'gemini';
+            
+            if (provider === 'deepseek') {
+                // 取得內建 DeepSeek Key
+                const apiKey = window.CryptoUtils.getBuiltinKey('deepseek');
+                if (!apiKey) return "⚠️ 系統錯誤：無法讀取內建 DeepSeek 金鑰。";
+                
+                try {
+                    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Bearer ${apiKey}`,
+                            "Content-Type": "application/json",
+                            "HTTP-Referer": "https://visor.project", 
+                            "X-Title": "V.I.S.O.R. MK-XXV"
+                        },
+                        body: JSON.stringify({
+                            "model": "deepseek/deepseek-r1-0528:free",
+                            "messages": [
+                                {"role": "system", "content": systemInstruction},
+                                {"role": "user", "content": prompt}
+                            ]
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        const err = await response.json();
+                        throw new Error(err.error?.message || response.status);
+                    }
+                    const data = await response.json();
+                    return data.choices?.[0]?.message?.content || "V.I.S.O.R. (DeepSeek) 無回應";
+                } catch (e) {
+                    console.error("DeepSeek API Error:", e);
+                    return `⚠️ DeepSeek 連線異常：${e.message}`;
                 }
-                const data = await response.json();
-                return data.candidates?.[0]?.content?.parts?.[0]?.text || "V.I.S.O.R. Core 無法連線 (No Data)";
-            } catch (error) {
-                console.error("Gemini API Error:", error);
-                return `⚠️ 連線異常：${error.message}`;
+
+            } else {
+                // Default: Gemini
+                // 取得內建 Gemini Key
+                const apiKey = window.CryptoUtils.getBuiltinKey('gemini');
+                if (!apiKey) return "⚠️ 系統錯誤：無法讀取內建 Gemini 金鑰。";
+                
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+                const payload = { contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: systemInstruction }] } };
+                
+                try {
+                    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!response.ok) {
+                        const errData = await response.json();
+                        throw new Error(`API Error: ${errData.error?.message || response.status}`);
+                    }
+                    const data = await response.json();
+                    return data.candidates?.[0]?.content?.parts?.[0]?.text || "V.I.S.O.R. Core 無法連線 (No Data)";
+                } catch (error) {
+                    console.error("Gemini API Error:", error);
+                    return `⚠️ Gemini 連線異常：${error.message}`;
+                }
             }
         };
 
@@ -429,7 +475,7 @@
                 const recentData = rideData.slice(-30).map(d => ({s: d.speed, t: d.time, g: d.gForce}));
                 const systemPrompt = `你現在是 V.I.S.O.R. 戰術分析核心。請針對騎士的遙測數據進行專業、冷靜且帶有未來科技感的評估。回應格式：繁體中文，Markdown。`;
                 const userPrompt = `【V.I.S.O.R. 遙測數據上傳完成】\n總評分: ${scores.total}\n樣本: ${JSON.stringify(recentData)}`;
-                const result = await callGemini(userPrompt, systemPrompt);
+                const result = await callAI(userPrompt, systemPrompt);
                 setReport(result);
                 setLoading(false);
                 setHasGenerated(true);
@@ -460,7 +506,7 @@
                 setInput("");
                 setLoading(true);
                 const systemPrompt = "你是 V.I.S.O.R.，智慧頭盔AI助理。回答騎士關於維修、法規、天氣或導航的問題。回答簡潔。";
-                const response = await callGemini(userMsg, systemPrompt);
+                const response = await callAI(userMsg, systemPrompt);
                 setMessages(prev => [...prev, { role: 'assistant', text: response }]);
                 setLoading(false);
             };
@@ -628,7 +674,25 @@
             const [cameraAlert, setCameraAlert] = useState(null);
             const [simulationMode, setSimulationMode] = useState(false);
             const [edgeWarning, setEdgeWarning] = useState(null);
-            const [userApiKey, setUserApiKey] = useState("");
+            
+            // AI Settings State
+            const [aiSettings, setAiSettings] = useState({ provider: 'gemini', geminiKey: '', deepseekKey: '' });
+
+            const updateAiSettings = (key, value) => {
+                let newValue = value;
+                // 如果是 Key 欄位，則進行加密
+                if (key === 'geminiKey' || key === 'deepseekKey') {
+                    newValue = window.CryptoUtils.encrypt(value);
+                }
+                
+                const newSettings = { ...aiSettings, [key]: newValue };
+                setAiSettings(newSettings);
+                localStorage.setItem("visor_ai_settings", JSON.stringify(newSettings));
+                
+                // 向下相容
+                if (key === 'geminiKey') localStorage.setItem("visor_gemini_api_key", newValue);
+            };
+
             const [systemStatus, setSystemStatus] = useState({ pi5: false, piZero: false, cpu: 0, mem: 0 });
             const [notifications, setNotifications] = useState([]);
             const [hudConfig, setHudConfig] = useState({ speed: true, camera: true, nav: true, time: true, brightness: 80 });
@@ -738,11 +802,20 @@
                 }
             };
 
-            const handleApiKeyChange = (e) => {
-                const val = e.target.value;
-                setUserApiKey(val);
-                localStorage.setItem("visor_gemini_api_key", val);
-            };
+            useEffect(() => {
+                const storedSettings = localStorage.getItem("visor_ai_settings");
+                if (storedSettings) {
+                    setAiSettings(JSON.parse(storedSettings));
+                } else {
+                    // Migration from legacy key
+                    const legacyKey = localStorage.getItem("visor_gemini_api_key");
+                    if (legacyKey) {
+                        const newSettings = { provider: 'gemini', geminiKey: legacyKey, deepseekKey: '' };
+                        setAiSettings(newSettings);
+                        localStorage.setItem("visor_ai_settings", JSON.stringify(newSettings));
+                    }
+                }
+            }, []);
 
             const [rideData, setRideData] = useState([{ time: '10:00', speed: 20, gForce: 0.1 }]);
             const [eventData, setEventData] = useState([{ id: 1, type: 'danger', title: '後方逼車警示', time: '10:14 AM', loc: '市民大道四段', duration: '0:15' }]);
@@ -904,8 +977,6 @@
 
             // Effects
             useEffect(() => {
-                const stored = localStorage.getItem("visor_gemini_api_key");
-                if (stored) setUserApiKey(stored);
                 const unlockAudio = () => { initAudioContext().resume().then(() => { playWarningSound('silent'); document.removeEventListener('touchstart', unlockAudio); document.removeEventListener('click', unlockAudio); }); };
                 document.addEventListener('touchstart', unlockAudio); document.addEventListener('click', unlockAudio);
                 handleApiUpdate(true); 
@@ -1230,9 +1301,30 @@
 
                                     </div>
 
-                                    <div className="bg-slate-800 rounded-xl p-4 border border-slate-700"><h3 className="text-cyan-400 text-sm font-bold mb-4 flex items-center gap-2"><Icon name="key" size={16} /> API 設定</h3>
-
-            <div className="mb-4"><div className="text-xs text-slate-400 mb-1">Gemini API Key (貼上您的 Key)</div><input type="text" value={userApiKey} onChange={handleApiKeyChange} placeholder="貼上您的 API Key..." className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500 font-mono" /><div className="text-[10px] text-slate-500 mt-1">此 Key 僅儲存於您的手機端</div></div></div>
+                                    <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                                        <h3 className="text-cyan-400 text-sm font-bold mb-4 flex items-center gap-2"><Icon name="cpu" size={16} /> AI 核心設定</h3>
+                                        
+                                        <div className="mb-4">
+                                            <div className="text-xs text-slate-400 mb-2">選擇運算模型 (內建金鑰已啟用)</div>
+                                            <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-600">
+                                                <button 
+                                                    onClick={() => updateAiSettings('provider', 'gemini')}
+                                                    className={`flex-1 py-2 rounded-md text-xs font-bold transition-all ${aiSettings.provider === 'gemini' ? 'bg-cyan-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                                                >
+                                                    Gemini 2.5 Flash
+                                                </button>
+                                                <button 
+                                                    onClick={() => updateAiSettings('provider', 'deepseek')}
+                                                    className={`flex-1 py-2 rounded-md text-xs font-bold transition-all ${aiSettings.provider === 'deepseek' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                                                >
+                                                    DeepSeek R1
+                                                </button>
+                                            </div>
+                                            <div className="mt-2 text-[10px] text-slate-500 text-center font-mono">
+                                                {aiSettings.provider === 'gemini' ? 'Google AI Studio Protocol Active' : 'DeepSeek/OpenRouter Protocol Active'}
+                                            </div>
+                                        </div>
+                                    </div>
                         <div className="bg-slate-800 rounded-xl p-4 border border-slate-700"><h3 className="text-cyan-400 text-sm font-bold mb-4 flex items-center gap-2"><Icon name="database" size={16} /> 測速資料庫管理</h3><div className="flex justify-between items-center mb-4 p-3 bg-slate-900/50 rounded-lg"><div><div className="text-xs text-slate-400">目前資料來源</div><div className="text-sm font-bold text-white">{dbInfo.source}</div></div><div className="text-right"><div className="text-xs text-slate-400">總筆數</div><div className="text-lg font-mono text-cyan-400">{dbInfo.count}</div></div></div><div className="grid grid-cols-2 gap-3"><label className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-600 rounded-xl hover:border-cyan-500 hover:bg-slate-700/30 transition-all cursor-pointer group"><Icon name="folder-up" size={24} className="text-slate-400 group-hover:text-cyan-400" /><span className="text-[10px] text-slate-400 group-hover:text-cyan-300">本機匯入 CSV</span><input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" /></label><button onClick={() => handleApiUpdate(false)} className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-slate-600 rounded-xl hover:border-green-500 hover:bg-slate-700/30 transition-all group"><Icon name="cloud-download" size={24} className="text-slate-400 group-hover:text-green-400" /><span className="text-[10px] text-slate-400 group-hover:text-green-300">雲端更新 (API)</span></button></div><p className="text-[10px] text-slate-500 mt-2 text-center">資料來源: 內政部警政署 (NPA)</p></div>
                         {!hasGyroPermission && (<button onClick={requestGyroPermission} className="w-full bg-slate-800 p-4 rounded-xl border border-slate-700 flex items-center justify-between group hover:border-purple-500/50 transition-all"><div className="flex items-center gap-4"><Icon name="rotate-3d" className="text-purple-400" /><div className="text-left"><div className="text-white font-bold text-sm">啟用陀螺儀</div><div className="text-slate-400 text-xs mt-0.5">點擊以授權傾角偵測 (iOS 必選)</div></div></div><Icon name="chevron-right" className="text-slate-500" /></button>)}
                         <div className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700"><div className="p-4 border-b border-slate-700"><h3 className="text-cyan-400 text-sm font-bold mb-4 uppercase tracking-wider flex items-center gap-2"><Icon name="cpu" size={16} /> AI 防護參數</h3><div className="mb-6"><div className="flex justify-between text-white text-sm mb-2"><span>後方逼車警示距離</span><span className="text-cyan-400 font-mono">8.0m</span></div><input type="range" className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-cyan-500" defaultValue="40" /></div></div></div>
