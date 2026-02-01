@@ -678,6 +678,9 @@
             // AI Settings State
             const [aiSettings, setAiSettings] = useState({ provider: 'gemini', geminiKey: '', deepseekKey: '' });
 
+            const [updateStatus, setUpdateStatus] = useState('idle'); // idle, updating, success, error
+            const [lastUpdateTime, setLastUpdateTime] = useState(null);
+
             const updateAiSettings = (key, value) => {
                 let newValue = value;
                 // 如果是 Key 欄位，則進行加密
@@ -843,9 +846,16 @@
                     if (newCameras.length > 0) {
                         setCameras(newCameras);
                         setDbInfo({ count: newCameras.length, source: sourceName });
-                        if(sourceName !== '政府開放資料 (Live)') { alert(`✅ 成功載入 ${newCameras.length} 筆測速照相資料！\n來源: ${sourceName}`); setActiveTab('home'); }
-                    } else if(sourceName !== '政府開放資料 (Live)') alert("⚠️ 解析完成但未發現有效資料"); 
-                } catch (err) { console.error(err); if(sourceName !== '政府開放資料 (Live)') alert("❌ 資料解析失敗"); }
+                        if(sourceName !== '政府開放資料 (Live)') { 
+                            addNotification('success', '資料更新成功', `已載入 ${newCameras.length} 筆測速資料`);
+                        }
+                    } else if(sourceName !== '政府開放資料 (Live)') {
+                         addNotification('warning', '資料解析警告', '未發現有效資料');
+                    }
+                } catch (err) { 
+                    console.error(err); 
+                    if(sourceName !== '政府開放資料 (Live)') addNotification('danger', '匯入失敗', '資料格式錯誤');
+                }
             };
 
             const handleFileUpload = (event) => {
@@ -857,9 +867,10 @@
             };
 
             const handleApiUpdate = async (isAuto = false) => {
-                const targetUrl = "https://opdadm.moi.gov.tw/api/v1/no-auth/resource/api/dataset/EA5E6FCD-B82D-43B7-A5CF-E9893253187E/resource/50A1A550-E565-4EBC-88B6-D0866530DC84/download";
+                const targetUrl = "https://opdadm.moi.gov.tw/api/v1/no-auth/resource/api/dataset/EA5E6FCD-B82D-43B7-A5CF-E9893253187E/resource/051DAA60-ED0E-4F5B-86EA-D88D311CF792/download";
                 const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
                 
+                setUpdateStatus('updating');
                 if(!isAuto) setDbInfo(prev => ({ ...prev, source: '更新中...' }));
                 
                 try {
@@ -872,14 +883,20 @@
                     if (!response.ok) throw new Error('Network response was not ok');
                     const text = await response.text();
                     parseCSV(text, '政府開放資料 (Live)');
+                    
+                    setUpdateStatus('success');
+                    setLastUpdateTime(new Date().toLocaleString());
+                    if (!isAuto) addNotification('success', '雲端更新完成', '測速資料庫已同步至最新版本');
+                    
                 } catch (error) {
+                    setUpdateStatus('error');
                     if (isAuto) {
                         console.warn("Auto-update failed (CORS/Network). Skipping alert.");
                         return;
                     }
                     console.warn("API Fetch Issue:", error.message);
                     setDbInfo(prev => ({ ...prev, source: '更新失敗' }));
-                    alert("⚠️ 雲端更新失敗\n\n無法讀取資料。請檢查網路或改用本機匯入。");
+                    addNotification('danger', '雲端更新失敗', '無法連接伺服器，請檢查網路狀態');
                 }
             };
 
@@ -1325,7 +1342,38 @@
                                             </div>
                                         </div>
                                     </div>
-                        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700"><h3 className="text-cyan-400 text-sm font-bold mb-4 flex items-center gap-2"><Icon name="database" size={16} /> 測速資料庫管理</h3><div className="flex justify-between items-center mb-4 p-3 bg-slate-900/50 rounded-lg"><div><div className="text-xs text-slate-400">目前資料來源</div><div className="text-sm font-bold text-white">{dbInfo.source}</div></div><div className="text-right"><div className="text-xs text-slate-400">總筆數</div><div className="text-lg font-mono text-cyan-400">{dbInfo.count}</div></div></div><div className="grid grid-cols-2 gap-3"><label className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-600 rounded-xl hover:border-cyan-500 hover:bg-slate-700/30 transition-all cursor-pointer group"><Icon name="folder-up" size={24} className="text-slate-400 group-hover:text-cyan-400" /><span className="text-[10px] text-slate-400 group-hover:text-cyan-300">本機匯入 CSV</span><input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" /></label><button onClick={() => handleApiUpdate(false)} className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-slate-600 rounded-xl hover:border-green-500 hover:bg-slate-700/30 transition-all group"><Icon name="cloud-download" size={24} className="text-slate-400 group-hover:text-green-400" /><span className="text-[10px] text-slate-400 group-hover:text-green-300">雲端更新 (API)</span></button></div><p className="text-[10px] text-slate-500 mt-2 text-center">資料來源: 內政部警政署 (NPA)</p></div>
+                        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                            <h3 className="text-cyan-400 text-sm font-bold mb-4 flex items-center gap-2"><Icon name="database" size={16} /> 測速資料庫管理</h3>
+                            <div className="flex justify-between items-center mb-4 p-3 bg-slate-900/50 rounded-lg border border-slate-700">
+                                <div>
+                                    <div className="text-xs text-slate-400">目前資料來源</div>
+                                    <div className="text-sm font-bold text-white">{dbInfo.source}</div>
+                                    {lastUpdateTime && <div className="text-[9px] text-slate-500 mt-1">更新於: {lastUpdateTime}</div>}
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-xs text-slate-400">總筆數</div>
+                                    <div className="text-lg font-mono text-cyan-400">{dbInfo.count}</div>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <label className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-600 rounded-xl hover:border-cyan-500 hover:bg-slate-700/30 transition-all cursor-pointer group">
+                                    <Icon name="folder-up" size={24} className="text-slate-400 group-hover:text-cyan-400" />
+                                    <span className="text-[10px] text-slate-400 group-hover:text-cyan-300">本機匯入 CSV</span>
+                                    <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
+                                </label>
+                                <button onClick={() => handleApiUpdate(false)} disabled={updateStatus === 'updating'} className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-slate-600 rounded-xl hover:border-green-500 hover:bg-slate-700/30 transition-all group disabled:opacity-50 disabled:cursor-not-allowed">
+                                    {updateStatus === 'updating' ? (
+                                        <Icon name="loader-2" size={24} className="text-cyan-400 animate-spin" />
+                                    ) : (
+                                        <Icon name="cloud-download" size={24} className={`text-slate-400 group-hover:text-green-400 ${updateStatus === 'success' ? 'text-green-500' : (updateStatus === 'error' ? 'text-red-500' : '')}`} />
+                                    )}
+                                    <span className={`text-[10px] group-hover:text-green-300 ${updateStatus === 'updating' ? 'text-cyan-400' : 'text-slate-400'}`}>
+                                        {updateStatus === 'updating' ? '下載中...' : (updateStatus === 'success' ? '已更新' : (updateStatus === 'error' ? '重試更新' : '雲端更新 (API)'))}
+                                    </span>
+                                </button>
+                            </div>
+                            <p className="text-[10px] text-slate-500 mt-2 text-center">資料來源: 內政部警政署 (NPA)</p>
+                        </div>
                         {!hasGyroPermission && (<button onClick={requestGyroPermission} className="w-full bg-slate-800 p-4 rounded-xl border border-slate-700 flex items-center justify-between group hover:border-purple-500/50 transition-all"><div className="flex items-center gap-4"><Icon name="rotate-3d" className="text-purple-400" /><div className="text-left"><div className="text-white font-bold text-sm">啟用陀螺儀</div><div className="text-slate-400 text-xs mt-0.5">點擊以授權傾角偵測 (iOS 必選)</div></div></div><Icon name="chevron-right" className="text-slate-500" /></button>)}
                         <div className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700"><div className="p-4 border-b border-slate-700"><h3 className="text-cyan-400 text-sm font-bold mb-4 uppercase tracking-wider flex items-center gap-2"><Icon name="cpu" size={16} /> AI 防護參數</h3><div className="mb-6"><div className="flex justify-between text-white text-sm mb-2"><span>後方逼車警示距離</span><span className="text-cyan-400 font-mono">8.0m</span></div><input type="range" className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-cyan-500" defaultValue="40" /></div></div></div>
                         <button className="w-full bg-slate-800 p-4 rounded-xl border border-slate-700 flex items-center justify-between"><div className="flex items-center gap-4"><Icon name="bluetooth" className="text-blue-400" /><span className="text-sm font-bold">藍牙裝置</span></div><span className="text-xs text-slate-400">{isConnected ? '已連線' : '未連線'}</span></button>
