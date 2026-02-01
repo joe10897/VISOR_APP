@@ -21,6 +21,8 @@
     <script src="lib/js/babel.min.js"></script>
     <script src="lib/js/lucide.min.js"></script>
     <script src="lib/js/marked.min.js"></script>
+    <script src="lib/js/GeoUtils.js"></script>
+    <script src="lib/js/AuthService.js"></script>
     
     <link rel="stylesheet" href="lib/css/leaflet.css"/>
     <script src="lib/js/leaflet.js"></script>
@@ -206,18 +208,6 @@
         };
 
         // --- Utils ---
-        const toRad = (value) => value * Math.PI / 180;
-        const calculateDistance = (lat1, lon1, lat2, lon2) => {
-            const R = 6371e3;
-            const φ1 = toRad(lat1);
-            const φ2 = toRad(lat2);
-            const Δφ = toRad(lat2 - lat1);
-            const Δλ = toRad(lon2 - lon1);
-            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c;
-        };
-
         const BUILT_IN_CAMERAS = [
             { address: "國道五號南向22.5公里(雪山隧道)", lat: 24.88923, lng: 121.761765, limit: 90, type: "fixed", direct: "往南" },
             { address: "國道五號北向22.5公里(雪山隧道)", lat: 24.889566, lng: 121.762215, limit: 90, type: "fixed", direct: "往北" },
@@ -519,9 +509,64 @@
 
         const App = () => {
             const [isBooting, setIsBooting] = useState(true);
-            const [activeTab, setActiveTab] = useState('home');
+            const [currentUser, setCurrentUser] = useState(null);
+            const [activeTab, setActiveTab] = useState('login'); // Default to login
             const [isMuted, setIsMuted] = useState(false);
             
+            // Login/Register Form State
+            const [authForm, setAuthForm] = useState({ username: '', password: '', confirmPassword: '' });
+            const [authError, setAuthError] = useState('');
+
+            useEffect(() => {
+                // Initialize Auth
+                window.AuthService.init();
+                const user = window.AuthService.getCurrentUser();
+                if (user) {
+                    setCurrentUser(user);
+                    setActiveTab('home');
+                } else {
+                    setActiveTab('login');
+                }
+            }, []);
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                setAuthError('');
+                const result = window.AuthService.login(authForm.username, authForm.password);
+                if (result) {
+                    setCurrentUser(result.user);
+                    setActiveTab('home');
+                    // Reset form
+                    setAuthForm({ username: '', password: '', confirmPassword: '' });
+                } else {
+                    setAuthError('帳號或密碼錯誤');
+                    playWarningSound('warning');
+                }
+            };
+
+            const handleRegister = (e) => {
+                e.preventDefault();
+                setAuthError('');
+                if (authForm.password !== authForm.confirmPassword) {
+                    setAuthError('兩次密碼輸入不一致');
+                    return;
+                }
+                const result = window.AuthService.register(authForm.username, authForm.password);
+                if (result) {
+                    alert('註冊成功！請登入。');
+                    setActiveTab('login');
+                    setAuthForm({ username: '', password: '', confirmPassword: '' });
+                } else {
+                    setAuthError('帳號已存在');
+                }
+            };
+
+            const handleLogout = () => {
+                window.AuthService.logout();
+                setCurrentUser(null);
+                setActiveTab('login');
+            };
+
             useEffect(() => {
                 window._visorIsMuted = isMuted;
             }, [isMuted]);
@@ -693,12 +738,6 @@
                 }
             };
 
-            const handleExit = () => {
-                if (navigator.app && navigator.app.exitApp) { navigator.app.exitApp(); } 
-                else if (navigator.device && navigator.device.exitApp) { navigator.device.exitApp(); } 
-                else { alert("應用程式已關閉 (模擬)"); }
-            };
-
             const handleApiKeyChange = (e) => {
                 const val = e.target.value;
                 setUserApiKey(val);
@@ -793,7 +832,7 @@
                     const jitterLat = currentLat + (Math.random() - 0.5) * 0.000002;
                     const jitterLng = currentLng + (Math.random() - 0.5) * 0.000002;
                     setLocation({ lat: jitterLat, lng: jitterLng });
-                    const dist = calculateDistance(jitterLat, jitterLng, targetCam.lat, targetCam.lng);
+                    const dist = GeoUtils.calculateDistance(jitterLat, jitterLng, targetCam.lat, targetCam.lng);
                     if (dist < 1000 && enableSpeedCam) setCameraAlert({ ...targetCam, distance: dist });
                     if (dist < 30 || currentLat < targetCam.lat) {
                         setCameraAlert(null);
@@ -895,7 +934,7 @@
                     let minDistance = Infinity;
                     const warningRange = (simulatedSpeed > 60) ? 800 : (simulatedSpeed > 30 ? 500 : 200);
                     cameras.forEach(cam => {
-                        const dist = calculateDistance(location.lat, location.lng, cam.lat, cam.lng);
+                        const dist = GeoUtils.calculateDistance(location.lat, location.lng, cam.lat, cam.lng);
                         if (dist < warningRange && dist < minDistance) {
                             minDistance = dist;
                             nearest = { ...cam, distance: dist };
@@ -927,6 +966,101 @@
                 if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch((e) => {});
                 else if (document.exitFullscreen) document.exitFullscreen();
             };
+
+            const renderLogin = () => (
+                <div className="flex flex-col items-center justify-center h-full px-6 animate-fadeIn pb-32">
+                    <div className="mb-8 text-center">
+                        <div className="w-20 h-20 bg-cyan-900/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-cyan-500/50 shadow-[0_0_20px_rgba(34,211,238,0.3)] animate-pulse">
+                            <Icon name="shield-check" size={40} className="text-cyan-400" />
+                        </div>
+                        <h2 className="text-2xl font-black italic tracking-widest text-white">V.I.S.O.R.</h2>
+                        <p className="text-xs text-cyan-500/70 font-mono tracking-[0.3em] mt-1">SYSTEM LOGIN</p>
+                    </div>
+
+                    <form onSubmit={handleLogin} className="w-full max-w-sm space-y-4">
+                        {authError && <div className="bg-red-900/50 border border-red-500 text-red-200 text-xs p-3 rounded-lg text-center flex items-center justify-center gap-2"><Icon name="alert-triangle" size={14} />{authError}</div>}
+                        
+                        <div className="space-y-1">
+                            <label className="text-xs text-slate-400 font-bold ml-1">CALLSIGN / 帳號</label>
+                            <div className="relative">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"><Icon name="user" size={16} /></div>
+                                <input 
+                                    type="text" 
+                                    value={authForm.username}
+                                    onChange={(e) => setAuthForm({...authForm, username: e.target.value})}
+                                    className="w-full bg-slate-900/80 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-white focus:border-cyan-500 focus:shadow-[0_0_10px_rgba(34,211,238,0.2)] focus:outline-none transition-all" 
+                                    placeholder="Enter ID..."
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-xs text-slate-400 font-bold ml-1">PASSCODE / 密碼</label>
+                            <div className="relative">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"><Icon name="lock" size={16} /></div>
+                                <input 
+                                    type="password" 
+                                    value={authForm.password}
+                                    onChange={(e) => setAuthForm({...authForm, password: e.target.value})}
+                                    className="w-full bg-slate-900/80 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-white focus:border-cyan-500 focus:shadow-[0_0_10px_rgba(34,211,238,0.2)] focus:outline-none transition-all" 
+                                    placeholder="Enter Code..."
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <button type="submit" className="w-full bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-cyan-900/50 border border-cyan-400/30 transition-all active:scale-95 flex items-center justify-center gap-2 mt-4 group">
+                            <span>INITIALIZE LINK</span>
+                            <Icon name="arrow-right" size={16} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    </form>
+
+                    <div className="mt-6 text-center">
+                        <button onClick={() => { setActiveTab('register'); setAuthError(''); setAuthForm({ username: '', password: '', confirmPassword: '' }); }} className="text-slate-500 text-xs hover:text-cyan-400 transition-colors">
+                            建立新戰術檔案 (Register)
+                        </button>
+                    </div>
+                </div>
+            );
+
+            const renderRegister = () => (
+                <div className="flex flex-col items-center justify-center h-full px-6 animate-fadeIn pb-32">
+                    <div className="mb-6 text-center">
+                        <h2 className="text-xl font-bold text-white">建立檔案</h2>
+                        <p className="text-xs text-slate-500 font-mono">NEW OPERATOR REGISTRATION</p>
+                    </div>
+
+                    <form onSubmit={handleRegister} className="w-full max-w-sm space-y-4">
+                        {authError && <div className="bg-red-900/50 border border-red-500 text-red-200 text-xs p-3 rounded-lg text-center">{authError}</div>}
+                        
+                        <div className="space-y-1">
+                            <label className="text-xs text-slate-400 font-bold ml-1">帳號</label>
+                            <input type="text" value={authForm.username} onChange={(e) => setAuthForm({...authForm, username: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 text-white focus:border-cyan-500 focus:outline-none" required />
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-xs text-slate-400 font-bold ml-1">密碼</label>
+                            <input type="password" value={authForm.password} onChange={(e) => setAuthForm({...authForm, password: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 text-white focus:border-cyan-500 focus:outline-none" required />
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-xs text-slate-400 font-bold ml-1">確認密碼</label>
+                            <input type="password" value={authForm.confirmPassword} onChange={(e) => setAuthForm({...authForm, confirmPassword: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 text-white focus:border-cyan-500 focus:outline-none" required />
+                        </div>
+
+                        <button type="submit" className="w-full bg-slate-700 hover:bg-cyan-600 text-white font-bold py-3.5 rounded-xl border border-slate-600 transition-all active:scale-95 mt-4">
+                            確認註冊
+                        </button>
+                    </form>
+
+                    <div className="mt-6 text-center">
+                        <button onClick={() => { setActiveTab('login'); setAuthError(''); }} className="text-slate-500 text-xs hover:text-white transition-colors">
+                            返回登入 (Back to Login)
+                        </button>
+                    </div>
+                </div>
+            );
 
             // Render Functions
             const renderHome = () => (
@@ -1104,7 +1238,7 @@
                         <div className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700"><div className="p-4 border-b border-slate-700"><h3 className="text-cyan-400 text-sm font-bold mb-4 uppercase tracking-wider flex items-center gap-2"><Icon name="cpu" size={16} /> AI 防護參數</h3><div className="mb-6"><div className="flex justify-between text-white text-sm mb-2"><span>後方逼車警示距離</span><span className="text-cyan-400 font-mono">8.0m</span></div><input type="range" className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-cyan-500" defaultValue="40" /></div></div></div>
                         <button className="w-full bg-slate-800 p-4 rounded-xl border border-slate-700 flex items-center justify-between"><div className="flex items-center gap-4"><Icon name="bluetooth" className="text-blue-400" /><span className="text-sm font-bold">藍牙裝置</span></div><span className="text-xs text-slate-400">{isConnected ? '已連線' : '未連線'}</span></button>
                         <button onClick={toggleFullScreen} className="w-full bg-slate-800 text-slate-300 py-4 rounded-xl font-bold border border-slate-700 hover:bg-slate-700/80 transition-all flex items-center justify-center gap-2"><Icon name="maximize" size={18} /> 切換全螢幕模式</button>
-                        <button onClick={handleExit} className="w-full bg-slate-800 text-red-400 py-4 rounded-xl font-bold border border-slate-700 hover:bg-slate-700/80 transition-all flex items-center justify-center gap-2"><Icon name="log-out" size={18} /> 登出 V.I.S.O.R.</button>
+                        <button onClick={handleLogout} className="w-full bg-slate-800 text-red-400 py-4 rounded-xl font-bold border border-slate-700 hover:bg-slate-700/80 transition-all flex items-center justify-center gap-2"><Icon name="log-out" size={18} /> 登出 V.I.S.O.R.</button>
                     </div>
                 </div>
             );
@@ -1130,13 +1264,16 @@
                             </div>
                         </div>
                         <div className="flex-1 overflow-y-auto p-5 scrollbar-hide relative z-10 pb-32">
+                            {activeTab === 'login' && renderLogin()}
+                            {activeTab === 'register' && renderRegister()}
                             {activeTab === 'home' && renderHome()}
                             {activeTab === 'settings' && renderSettings()}
                             {activeTab === 'events' && renderEvents()}
                             {activeTab === 'stats' && renderStats()}
                             {activeTab === 'hud' && renderHudPage()}
                         </div>
-                        <div className="absolute bottom-24 right-6 z-30"><button onClick={() => setShowAIChat(true)} className="w-14 h-14 rounded-full bg-cyan-600 hover:bg-cyan-500 shadow-lg shadow-cyan-500/30 flex items-center justify-center text-white transition-all hover:scale-110 active:scale-95 animate-ai-pulse"><Icon name="bot" size={28} /></button></div>
+                        {currentUser && <div className="absolute bottom-24 right-6 z-30"><button onClick={() => setShowAIChat(true)} className="w-14 h-14 rounded-full bg-cyan-600 hover:bg-cyan-500 shadow-lg shadow-cyan-500/30 flex items-center justify-center text-white transition-all hover:scale-110 active:scale-95 animate-ai-pulse"><Icon name="bot" size={28} /></button></div>}
+                        {currentUser && (
                         <div className="bg-slate-900/90 backdrop-blur-xl p-2 pb-6 safe-bottom border-t border-white/5 absolute bottom-0 w-full z-20 md:rounded-t-3xl">
                             <div className="flex justify-around items-end px-2">
                                 <NavButton iconName="activity" label="分析" isActive={activeTab === 'stats'} onClick={() => setActiveTab('stats')} />
@@ -1146,7 +1283,8 @@
                                 <NavButton iconName="settings-2" label="設定" isActive={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
                             </div>
                         </div>
-                        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-1.5 bg-slate-600/50 rounded-full z-30 pointer-events-none safe-bottom mb-1"></div>
+                        )}
+                        {currentUser && <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-1.5 bg-slate-600/50 rounded-full z-30 pointer-events-none safe-bottom mb-1"></div>}
                         <AIChatModal isOpen={showAIChat} onClose={() => setShowAIChat(false)} />
                     </div>
                 </div>
