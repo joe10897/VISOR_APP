@@ -517,9 +517,10 @@
                             <div className="text-[10px] text-white bg-black/40 px-1.5 py-0.5 rounded border border-white/10">{alert.direct || '雙向'}</div>
                         </div>
                         <div className="flex items-baseline gap-1 mt-0.5">
+                            <span className="text-xs text-slate-400">距離</span>
                             <span className={`text-4xl font-black font-mono leading-none ${isOverSpeed ? 'text-yellow-300' : 'text-white'}`}>{Math.round(alert.distance)}</span>
                             <span className="text-xs text-slate-400">m</span>
-                            {isOverSpeed && <span className="text-yellow-300 text-xs font-bold ml-2 animate-pulse">請減速!</span>}
+                            {isOverSpeed && <span className="text-yellow-300 text-xl font-bold ml-2 animate-pulse">請減速!</span>}
                         </div>
                     </div>
                 </div>
