@@ -1625,10 +1625,10 @@
                         {currentUser && (
                             <div className="bg-slate-900/90 backdrop-blur-xl p-2 pb-6 safe-bottom border-t border-white/5 absolute bottom-0 w-full z-20 md:rounded-t-3xl">
                                 <div className="flex justify-around items-end px-2">
-                                    <NavButton iconName="activity" label="分析" isActive={activeTab === 'stats'} onClick={() => setActiveTab('stats')} />
                                     <NavButton iconName="monitor" label="HUD" isActive={activeTab === 'hud'} onClick={() => setActiveTab('hud')} />
-                                    <NavButton iconName="shield" label="監控" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} isCenter={true} />
                                     <NavButton iconName="video" label="事件" isActive={activeTab === 'events'} onClick={() => setActiveTab('events')} />
+                                    <NavButton iconName="shield" label="監控" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} isCenter={true} />
+                                    <NavButton iconName="activity" label="分析" isActive={activeTab === 'stats'} onClick={() => setActiveTab('stats')} />
                                     <NavButton iconName="settings-2" label="設定" isActive={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
                                 </div>
                             </div>
