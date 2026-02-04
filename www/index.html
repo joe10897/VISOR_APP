@@ -635,6 +635,40 @@
             );
         };
 
+        //判斷一段路徑中有幾次超速事件
+        const analyzeOverspeed = (ridePoints) => {
+            // 1. 檢查有沒有資料，沒資料就回傳 0
+            if (!ridePoints || ridePoints.length === 0) return 0;
+
+            let count = 0;           // 紀錄次數
+            let isSpeeding = false;  // 紀錄「現在這一秒」是否正在超速
+
+            // 2. 開始逐一檢查每一個點
+            ridePoints.forEach((point) => {
+                if (point.limit){
+                    const limit = point.limit; // 取得限速
+                    if (point.speed > limit) {
+                        // 如果這秒超過限速
+                        if (isSpeeding === false) {
+                            // 而且「前一秒」沒超速 -> 這是一個新的超速開始！
+                            count = count + 1; 
+                            isSpeeding = true; // 標記為：開始超速中
+                        }
+                    } else {
+                        // 如果這秒速度低於或等於限速
+                        isSpeeding = false; // 標記為：正常行駛
+                    }
+                }else{
+                    isSpeeding = false;
+                }
+            });
+
+            return count; // 回傳最後算出來的總次數
+        };
+        /* 請檢查資料長什麼樣子：
+            speed: 使用者的時速。
+            limit: 該路段的限速。 */
+
         const App = () => {
             const [isBooting, setIsBooting] = useState(true);
             const [heading, setHeading] = useState(0); // Added Heading State
@@ -642,7 +676,22 @@
             const [activeTab, setActiveTab] = useState('login'); // Default to login
             const [isMuted, setIsMuted] = useState(false);
             const [isEdgeMuted, setIsEdgeMuted] = useState(false); // 盲點警示靜音狀態
-            
+            const [forceSpeeding, setForceSpeeding] = React.useState(true); // 控制騎乘模擬是否超速
+            const currentRideDataRef = React.useRef([]); //分析專用的 Ref
+            const [weeklyHistory, setWeeklyHistory] = React.useState([]); //放置分析歷史紀錄
+
+            //檢查初始載入 讀取分析歷史紀錄
+            React.useEffect(() => {
+                const savedHistory = localStorage.getItem('ride_history');
+                if (savedHistory) {
+                    try {
+                        setWeeklyHistory(JSON.parse(savedHistory));
+                    } catch (e) {
+                        console.error("載入紀錄失敗:", e);
+                    }
+                }
+            }, []); // 僅在頁面初次載入時執行
+
             // Parse Direction Helper
             const parseDirection = (dirText) => {
                 if (!dirText) return 'ALL';
@@ -910,7 +959,7 @@
                 if (absAngle > 35 && absAngle <= 45) {
                     const now = Date.now();
                     if (now - lastTiltWarningRef.current > 2000) { 
-                        playWarningSound('danger', 3);
+                        //playWarningSound('danger', 3);
                         lastTiltWarningRef.current = now;
                     }
                 }
@@ -1021,6 +1070,11 @@
                 }
             };
 
+            // 計算「歷史紀錄」中所有的超速總次數
+            const totalHistoryOverspeed = weeklyHistory.reduce((sum, item) => sum + (item.overspeedCount || 0), 0);
+            // 計算「當前這趟」的超速次數 
+            const currentSessionOverspeed = analyzeOverspeed(rideData);
+
             const startSimulation = () => {
                 if(simulationMode) {
                     setSimulationMode(false);
@@ -1029,46 +1083,120 @@
                     setCameraAlert(null);
                     return;
                 }
+                //每次開始新模擬前，清空當前紀錄
+                setRideData([]);
+
                 let targetCam = cameras.find(c => c.address.includes("雪山隧道") && c.address.includes("南向"));
                 if (!targetCam) targetCam = cameras[0];
+
+                // 如果 forceSpeeding 為 true，速度 = 限速 + 15
+                // 如果 forceSpeeding 為 false，速度 = 限速 - 5
+                const speedValue = forceSpeeding 
+                    ? targetCam.limit + 15 
+                    : targetCam.limit - 5;
+                
                 let currentLat = targetCam.lat + 0.011; 
                 let currentLng = targetCam.lng;
                 let passedTarget = false; // 鎖定通過狀態
+                let tick = 0;
 
                 setLocation({ lat: currentLat, lng: currentLng });
                 setSimulationMode(true);
                 isSimulatingRef.current = true;
-                setSimulatedSpeed(targetCam.limit + 15);
+
+                setSimulatedSpeed(speedValue); // 將計算出的速度套用到模擬器
                 setIsConnected(true);
+
                 simRef.current = setInterval(() => {
+                    tick++;
+
                     currentLat -= 0.00008; 
                     const jitterLat = currentLat + (Math.random() - 0.5) * 0.000002;
                     const jitterLng = currentLng + (Math.random() - 0.5) * 0.000002;
                     setLocation({ lat: jitterLat, lng: jitterLng });
                     if (trackRef.current) trackRef.current.push([jitterLat, jitterLng]);
                     
+                    //數據收集 每秒存一次資料供分析頁面顯示
+                    if (tick % 10 === 0) {
+                        const newPoint = {
+                            time: new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                            speed: speedValue, // 啟動時根據按鈕決定的速度
+                            limit: targetCam.limit
+                        }
+                        // 1. 給 UI 用的 State (必須換新籃子)
+                        setRideData(prev => [...prev, newPoint]);
+
+                        // 2. 給結算用的 Ref (用 push 即可，簡單明瞭)
+                        currentRideDataRef.current.push(newPoint);
+                    }
+                    
                     const dist = GeoUtils.calculateDistance(jitterLat, jitterLng, targetCam.lat, targetCam.lng);
                     const physicallyPassed = currentLat < targetCam.lat;
 
-                    // 1. 通過判定：只要物理通過或距離極近，且尚未標記為通過
+                    // 通過判定：只要物理通過或距離極近，且尚未標記為通過
                     if (!passedTarget && (physicallyPassed || dist < 20)) {
                         passedTarget = true;
-                        setCameraAlert(null); 
+                        setCameraAlert(null); // 一通過立刻清除警示
                         playWarningSound('pass', 1); // 強制播放通過音效
                         console.log("[Sim] Camera Passed -> Alert Cleared & Sound Played");
+                        console.log("成功標記為已通過！"); // 檢查 F12 有沒有這一行
                     } 
                     
-                    // 2. 維持警示：只有在「未通過」狀態下才更新距離
-                    if (!passedTarget && dist < 1000 && enableSpeedCam) {
-                        setCameraAlert({ ...targetCam, distance: dist });
+                    // 只有在「尚未通過」的情況下，才更新距離警示
+                    if (!passedTarget) {
+                        if (dist < 1000 && enableSpeedCam) {
+                            setCameraAlert({ ...targetCam, distance: dist });
+                        }
+                    } else {
+                        // 如果已經通過了，確保警示視窗維持為 null
+                        if (cameraAlert !== null) setCameraAlert(null);
                     }
 
-                    // 3. 結束條件：通過後行駛超過 100 公尺
+                    // 結束條件：通過後行駛超過 100 公尺
                     if (passedTarget && dist > 100) {
+                        console.log("滿足結束條件，準備彈窗！"); // 檢查 F12 有沒有這一行
+                        // 先停止計時器，防止重複觸發
+                        if (simRef.current) {
+                            clearInterval(simRef.current);
+                            simRef.current = null;
+                        }
                         setSimulationMode(false);
                         isSimulatingRef.current = false;
-                        clearInterval(simRef.current);
-                        alert(`✅ 模擬結束：已通過 ${targetCam.address} 並續行 100m`);
+
+                        // 從 Ref 抓取最真實的數據進行分析
+                        const dataToAnalyze = currentRideDataRef.current;
+                        console.log("=== 開始分析結算 ===");
+                        console.log("總共收集點數:", dataToAnalyze.length);
+                        
+                        // C. 呼叫你的分析函數 (不加保底，直接測對錯)
+                        const finalCount = analyzeOverspeed(dataToAnalyze); 
+                        const finalScore = Math.max(0, 100 - (finalCount * 10));
+                        
+                        // D. 建立歷史紀錄物件
+                        const summary = {
+                            date: new Date().toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' }), 
+                            score: finalScore,
+                            overspeedCount: finalCount
+                        };
+                        
+                        // E. 更新歷史狀態並存入 LocalStorage
+                        setWeeklyHistory(prev => {
+                            // 確保 prev 是一個陣列，防止出錯
+                            const currentHistory = Array.isArray(prev) ? prev : [];
+                            const updated = [...currentHistory, summary];
+                            
+                            // 儲存到 LocalStorage
+                            localStorage.setItem('ride_history', JSON.stringify(updated));
+                            
+                            console.log("歷史紀錄已更新，目前總筆數:", updated.length);
+                            return updated;
+                        });
+
+                        // F. 必定跳出 Alert (測試有沒有寫對的最終點)
+                        alert(`✅ 模擬結束：已通過 ${targetCam.address} 並續行 100m，本次超速：${finalCount} 次`);
+                        
+                        // G. 清除資料準備下一次測試
+                        currentRideDataRef.current = [];
                         setSimulatedSpeed(0);
                     }
                     
@@ -1375,6 +1503,35 @@
                             <button onClick={() => setEnableSpeedCam(!enableSpeedCam)} className={`p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all duration-300 border active:scale-95 ${enableSpeedCam ? 'bg-green-900/30 border-green-500/50' : 'bg-slate-800 border-slate-700'}`}><Icon name={enableSpeedCam ? "camera" : "camera-off"} size={24} className={enableSpeedCam ? 'text-green-400' : 'text-slate-400'} /><span className={`font-medium text-sm ${enableSpeedCam ? 'text-green-100' : 'text-slate-400'}`}>{enableSpeedCam ? '測速預警' : '測速關閉'}</span></button>
                         </div>
                         
+                        <div className="flex flex-col gap-2 mb-4 p-3 bg-gray-800 rounded-xl border border-gray-700">
+                            <p className="text-gray-400 text-xs font-bold uppercase tracking-wider">測試模式設定</p>
+                            <div className="flex gap-2">
+                                {/* 安全模式按鈕 */}
+                                <button 
+                                    onClick={() => setForceSpeeding(false)}
+                                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all ${
+                                        !forceSpeeding 
+                                        ? 'bg-green-600 text-white shadow-lg ring-2 ring-green-400' 
+                                        : 'bg-gray-700 text-gray-400 opacity-50'
+                                    }`}
+                                >
+                                    🟢 安全行駛
+                                </button>
+
+                                {/* 超速模式按鈕 */}
+                                <button 
+                                    onClick={() => setForceSpeeding(true)}
+                                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all ${
+                                        forceSpeeding 
+                                        ? 'bg-red-600 text-white shadow-lg ring-2 ring-red-400' 
+                                        : 'bg-gray-700 text-gray-400 opacity-50'
+                                    }`}
+                                >
+                                    🔴 故意超速
+                                </button>
+                            </div>
+                        </div>
+
                         <button onClick={startSimulation} className={`w-full py-3 border rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${simulationMode ? 'bg-red-900/50 border-red-500 text-white animate-pulse' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'}`}><Icon name={simulationMode ? "stop-circle" : "play-circle"} size={14} />{simulationMode ? "停止路測模擬" : "啟動路測模擬 (測試用)"}</button>
                     </div>
 
@@ -1408,11 +1565,84 @@
             const renderStats = () => (
                 <div className="space-y-6 animate-fadeIn pb-24">
                     <h2 className="text-xl font-bold text-white">騎乘分析</h2>
-                    <div className="bg-gradient-to-br from-cyan-950 to-blue-950 p-6 rounded-2xl text-white flex justify-between items-center shadow-lg border border-cyan-500/20"><div><div className="text-cyan-200 text-xs uppercase tracking-wider font-semibold">今日安全評分</div><div className="text-6xl font-black mt-2 bg-gradient-to-r from-white to-cyan-300 bg-clip-text text-transparent">92<span className="text-lg text-cyan-200/50">/100</span></div></div><div className="text-right space-y-2 border-l border-white/10 pl-6"><div className="text-xs text-blue-200 flex items-center justify-end gap-2">急煞次數 <span className="font-bold text-white text-base">1</span></div><div className="text-xs text-blue-200 flex items-center justify-end gap-2">危險超車 <span className="font-bold text-white text-base">0</span></div><div className="text-xs text-blue-200 flex items-center justify-end gap-2">今日里程 <span className="font-bold text-white text-base">12.5</span> km</div></div></div>
+                    <div className="bg-gradient-to-br from-cyan-950 to-blue-950 p-6 rounded-2xl text-white flex justify-between items-center shadow-lg border border-cyan-500/20">
+                        <div>
+                            <div className="text-cyan-200 text-xs uppercase tracking-wider font-semibold">過去7天安全評分</div>
+                            <div className="text-6xl font-black mt-2 bg-gradient-to-r from-white to-cyan-300 bg-clip-text text-transparent">92<span className="text-lg text-cyan-200/50">/100</span></div>
+                        </div>
+                        <div className="text-right space-y-2 border-l border-white/10 pl-6">
+                            <div className="text-xs text-blue-200 flex items-center justify-end gap-2">超速次數 <span className="font-bold text-white text-base">{totalHistoryOverspeed}</span>次</div>
+                            <div className="text-xs text-blue-200 flex items-center justify-end gap-2">急煞次數 <span className="font-bold text-white text-base">1</span>次</div>
+                            <div className="text-xs text-blue-200 flex items-center justify-end gap-2">危險傾角 <span className="font-bold text-white text-base">1</span>次</div>
+                            <div className="text-xs text-blue-200 flex items-center justify-end gap-2">今日里程 <span className="font-bold text-white text-base">12.5</span> km</div>
+                        </div>
+                    </div>
+                    <div className="flex gap-2">
+                        <button 
+                            className="flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all bg-red-500 hover:bg-red-600 text-white"
+                            onClick={() => {
+                                localStorage.removeItem('ride_history');
+                                setWeeklyHistory([]);
+                                alert("歷史紀錄已清空");
+                            }}
+                        >
+                            🗑️ 清除所有歷史
+                        </button>
+                    </div>
+                    
                     <AIReportCard rideData={rideData} scores={{total: 92, braking: 1, dist: 12.5}} />
-                    <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 mt-4"><h3 className="text-slate-300 font-bold mb-4 text-sm flex items-center gap-2"><Icon name="activity" size={16} className="text-cyan-400"/> 速度與G值分析</h3><div className="h-64 w-full">{Recharts ? (<ResponsiveContainer width="100%" height="100%"><AreaChart data={rideData} margin={{top: 10, right: 0, left: -20, bottom: 0}}><defs><linearGradient id="colorSpeed" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#22d3ee" stopOpacity={0.4}/><stop offset="95%" stopColor="#22d3ee" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} /><XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} /><YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} /><Tooltip contentStyle={{backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#fff', fontSize: '12px'}} itemStyle={{color: '#22d3ee'}} /><Area type="monotone" dataKey="speed" stroke="#22d3ee" strokeWidth={2} fillOpacity={1} fill="url(#colorSpeed)" activeDot={{r: 6, fill: "#22d3ee"}} /><Line type="monotone" dataKey="gForce" stroke="#f87171" strokeWidth={2} dot={false} strokeDasharray="5 5" /></AreaChart></ResponsiveContainer>) : (<div className="flex items-center justify-center h-full text-slate-500">Loading Charts...</div>)}</div></div>
+
+                    <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 mt-4">
+                        <h3 className="text-slate-300 font-bold mb-4 text-sm flex items-center gap-2">
+                        <Icon name="activity" size={16} className="text-cyan-400"/> 超速次數</h3>
+                        <div className="h-64 w-full">
+                            {Recharts ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={rideData} margin={{top: 10, right: 0, left: -20, bottom: 0}}>
+                                        <defs>
+                                            <linearGradient id="colorSpeed" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#22d3ee" stopOpacity={0.4}/>
+                                                <stop offset="95%" stopColor="#22d3ee" stopOpacity={0}/>
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                                        <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                                        <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                                        <Tooltip contentStyle={{backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#fff', fontSize: '12px'}} itemStyle={{color: '#22d3ee'}} />
+                                        <Area type="monotone" dataKey="speed" stroke="#22d3ee" strokeWidth={2} fillOpacity={1} fill="url(#colorSpeed)" activeDot={{r: 6, fill: "#22d3ee"}} />
+                                        <Line type="monotone" dataKey="gForce" stroke="#f87171" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                                    </AreaChart>
+                                </ResponsiveContainer>) : (<div className="flex items-center justify-center h-full text-slate-500">Loading Charts...</div>)}
+                        </div>
+                    </div>
+                    
+                    <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 mt-4">
+                        <h3 className="text-slate-300 font-bold mb-4 text-sm flex items-center gap-2">
+                        <Icon name="activity" size={16} className="text-cyan-400"/> 速度與G值分析</h3>
+                        <div className="h-64 w-full">
+                            {Recharts ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={rideData} margin={{top: 10, right: 0, left: -20, bottom: 0}}>
+                                        <defs>
+                                            <linearGradient id="colorSpeed" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#22d3ee" stopOpacity={0.4}/>
+                                                <stop offset="95%" stopColor="#22d3ee" stopOpacity={0}/>
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                                        <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                                        <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                                        <Tooltip contentStyle={{backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#fff', fontSize: '12px'}} itemStyle={{color: '#22d3ee'}} />
+                                        <Area type="monotone" dataKey="speed" stroke="#22d3ee" strokeWidth={2} fillOpacity={1} fill="url(#colorSpeed)" activeDot={{r: 6, fill: "#22d3ee"}} />
+                                        <Line type="monotone" dataKey="gForce" stroke="#f87171" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                                    </AreaChart>
+                                </ResponsiveContainer>) : (<div className="flex items-center justify-center h-full text-slate-500">Loading Charts...</div>)}
+                        </div>
+                    </div>
                 </div>
             );
+
+            const overspeedCount = React.useMemo(() => {
+                return analyzeOverspeed(rideData);
+            }, [rideData]);
 
             const renderHudPage = () => {
                 const options = [
