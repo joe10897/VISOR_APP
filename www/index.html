@@ -1072,8 +1072,12 @@
 
             // 計算「歷史紀錄」中所有的超速總次數
             const totalHistoryOverspeed = weeklyHistory.reduce((sum, item) => sum + (item.overspeedCount || 0), 0);
+            const totalHistoryBraking = weeklyHistory.reduce((sum, item) => sum + (item.brakingCount || 0), 0);
+            const totalHistoryTilt = weeklyHistory.reduce((sum, item) => sum + (item.tiltCount || 0), 0);
             // 計算「當前這趟」的超速次數 
             const currentSessionOverspeed = analyzeOverspeed(rideData);
+            // B. 計算平均分數 (如果沒紀錄就顯示 100)
+            const averageScore = hasHistory ? Math.round(weeklyHistory.reduce((sum, item) => sum + item.score, 0) / weeklyHistory.length) : '---';
 
             const startSimulation = () => {
                 if(simulationMode) {
@@ -1083,17 +1087,18 @@
                     setCameraAlert(null);
                     return;
                 }
-                //每次開始新模擬前，清空當前紀錄
-                setRideData([]);
 
+                // 重置單次行車數據與臨時紀錄
+                setRideData([]);
+                currentRideDataRef.current = [];
+                
+                // 設定目標相機與初始參數
                 let targetCam = cameras.find(c => c.address.includes("雪山隧道") && c.address.includes("南向"));
                 if (!targetCam) targetCam = cameras[0];
 
                 // 如果 forceSpeeding 為 true，速度 = 限速 + 15
                 // 如果 forceSpeeding 為 false，速度 = 限速 - 5
-                const speedValue = forceSpeeding 
-                    ? targetCam.limit + 15 
-                    : targetCam.limit - 5;
+                const speedValue = forceSpeeding ? targetCam.limit + 15 : targetCam.limit - 5;
                 
                 let currentLat = targetCam.lat + 0.011; 
                 let currentLng = targetCam.lng;
@@ -1103,13 +1108,13 @@
                 setLocation({ lat: currentLat, lng: currentLng });
                 setSimulationMode(true);
                 isSimulatingRef.current = true;
-
                 setSimulatedSpeed(speedValue); // 將計算出的速度套用到模擬器
                 setIsConnected(true);
 
                 simRef.current = setInterval(() => {
                     tick++;
 
+                    // 物理移動模擬
                     currentLat -= 0.00008; 
                     const jitterLat = currentLat + (Math.random() - 0.5) * 0.000002;
                     const jitterLng = currentLng + (Math.random() - 0.5) * 0.000002;
@@ -1118,16 +1123,37 @@
                     
                     //數據收集 每秒存一次資料供分析頁面顯示
                     if (tick % 10 === 0) {
+                        // 1. 先判定這一秒是否發生了特殊事件
+                        let brakingThisSecond = false;
+                        let tiltThisSecond = 0;
+
+                        if (forceSpeeding) {
+                            // 模擬急煞：機率性產生低於 -3.0 的加速度
+                            if (Math.random() > 0.95) brakingThisSecond = true;
+                            
+                            // 模擬傾角：機率性產生 40~45 度的數據 (寬鬆判定區間)
+                            if (Math.random() > 0.93) {
+                                tiltThisSecond = 40 + Math.floor(Math.random() * 6); // 產出 40~45
+                            }
+                        }
+
                         const newPoint = {
                             time: new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
                             speed: speedValue, // 啟動時根據按鈕決定的速度
-                            limit: targetCam.limit
+                            limit: targetCam.limit,
+                            isBraking: brakingThisSecond,
+                            tilt: tiltThisSecond
                         }
-                        // 1. 給 UI 用的 State (必須換新籃子)
-                        setRideData(prev => [...prev, newPoint]);
 
-                        // 2. 給結算用的 Ref (用 push 即可，簡單明瞭)
+                        // 1. 給 UI 用的 State 
+                        setRideData(prev => [...prev, newPoint]);
+                        // 2. 給結算用的 Ref 
                         currentRideDataRef.current.push(newPoint);
+                        // 同步更新儀表板顯示
+                        if (tiltThisSecond > 0) {
+                            setTiltAngle(tiltThisSecond);
+                            setTimeout(() => setTiltAngle(0), 500); // 半秒後歸零
+                        }
                     }
                     
                     const dist = GeoUtils.calculateDistance(jitterLat, jitterLng, targetCam.lat, targetCam.lng);
@@ -1154,7 +1180,7 @@
 
                     // 結束條件：通過後行駛超過 100 公尺
                     if (passedTarget && dist > 100) {
-                        console.log("滿足結束條件，準備彈窗！"); // 檢查 F12 有沒有這一行
+                        console.log("滿足結束條件，準備彈窗！"); 
                         // 先停止計時器，防止重複觸發
                         if (simRef.current) {
                             clearInterval(simRef.current);
@@ -1168,15 +1194,23 @@
                         console.log("=== 開始分析結算 ===");
                         console.log("總共收集點數:", dataToAnalyze.length);
                         
-                        // C. 呼叫你的分析函數 (不加保底，直接測對錯)
-                        const finalCount = analyzeOverspeed(dataToAnalyze); 
-                        const finalScore = Math.max(0, 100 - (finalCount * 10));
+                        // C. 呼叫你的分析函數
+                        const finalOverspeed = analyzeOverspeed(dataToAnalyze);
+                        const finalBraking = dataToAnalyze.filter(p => p.isBraking).length; // 只要標記為 true 的點就計為一次急煞
+                        const finalTilt = dataToAnalyze.filter(p => p.tilt >= 40 && p.tilt <= 45).length; //// 統計傾角落在 40~45 度的點
+
+                        //計算總罰分及最終分數
+                        const totalPenalty = (finalOverspeed * 2) + (finalBraking * 3) + (finalTilt * 5);
+                        const finalScore = Math.max(0, 100 - totalPenalty);
+                        
                         
                         // D. 建立歷史紀錄物件
                         const summary = {
                             date: new Date().toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' }), 
                             score: finalScore,
-                            overspeedCount: finalCount
+                            overspeedCount: finalOverspeed,
+                            brakingCount: finalBraking,
+                            tiltCount: finalTilt     
                         };
                         
                         // E. 更新歷史狀態並存入 LocalStorage
@@ -1184,16 +1218,14 @@
                             // 確保 prev 是一個陣列，防止出錯
                             const currentHistory = Array.isArray(prev) ? prev : [];
                             const updated = [...currentHistory, summary];
-                            
-                            // 儲存到 LocalStorage
-                            localStorage.setItem('ride_history', JSON.stringify(updated));
-                            
+
+                            localStorage.setItem('ride_history', JSON.stringify(updated)); // 儲存到 LocalStorage
                             console.log("歷史紀錄已更新，目前總筆數:", updated.length);
                             return updated;
                         });
 
                         // F. 必定跳出 Alert (測試有沒有寫對的最終點)
-                        alert(`✅ 模擬結束：已通過 ${targetCam.address} 並續行 100m，本次超速：${finalCount} 次`);
+                        alert(`✅ 模擬結束：已通過 ${targetCam.address} 並續行 100m，本次超速：${finalOverspeed} 次，急煞：${finalBraking} 次，危險傾角：${finalTilt} 次，最終得分：${finalScore} 分`);
                         
                         // G. 清除資料準備下一次測試
                         currentRideDataRef.current = [];
@@ -1562,19 +1594,37 @@
                 </div>
             );
 
+            // 1. 確保數據存在且為陣列
+            const safeHistory = Array.isArray(weeklyHistory) ? weeklyHistory : [];
+            const hasHistory = safeHistory.length > 0;
+
+            // 2. 彙整 7 天總量 (利用 reduce 遍歷歷史紀錄)
+            const weeklyStats = safeHistory.reduce((acc, trip) => {
+                return {
+                    totalScore: acc.totalScore + (trip.score || 0),
+                    overspeed: acc.overspeed + (trip.overspeedCount || 0),
+                    braking: acc.braking + (trip.brakingCount || 0),
+                    tilt: acc.tilt + (trip.tiltCount || 0)
+                };
+            }, { totalScore: 0, overspeed: 0, braking: 0, tilt: 0 });
+
+            // 3. 計算平均分數
+            const avgWeeklyScore = hasHistory 
+                ? Math.round(weeklyStats.totalScore / safeHistory.length) 
+                : 100;
+
             const renderStats = () => (
                 <div className="space-y-6 animate-fadeIn pb-24">
                     <h2 className="text-xl font-bold text-white">騎乘分析</h2>
                     <div className="bg-gradient-to-br from-cyan-950 to-blue-950 p-6 rounded-2xl text-white flex justify-between items-center shadow-lg border border-cyan-500/20">
                         <div>
-                            <div className="text-cyan-200 text-xs uppercase tracking-wider font-semibold">過去7天安全評分</div>
-                            <div className="text-6xl font-black mt-2 bg-gradient-to-r from-white to-cyan-300 bg-clip-text text-transparent">92<span className="text-lg text-cyan-200/50">/100</span></div>
+                            <div className="text-cyan-200 text-xs uppercase tracking-wider font-semibold">{hasHistory ? "過去 7 天安全評分" : "尚無騎乘紀錄"}</div>
+                            <div className="text-6xl font-black mt-2 bg-gradient-to-r from-white to-cyan-300 bg-clip-text text-transparent">{avgWeeklyScore}<span className="text-lg text-cyan-200/50">/100</span></div>
                         </div>
                         <div className="text-right space-y-2 border-l border-white/10 pl-6">
-                            <div className="text-xs text-blue-200 flex items-center justify-end gap-2">超速次數 <span className="font-bold text-white text-base">{totalHistoryOverspeed}</span>次</div>
-                            <div className="text-xs text-blue-200 flex items-center justify-end gap-2">急煞次數 <span className="font-bold text-white text-base">1</span>次</div>
-                            <div className="text-xs text-blue-200 flex items-center justify-end gap-2">危險傾角 <span className="font-bold text-white text-base">1</span>次</div>
-                            <div className="text-xs text-blue-200 flex items-center justify-end gap-2">今日里程 <span className="font-bold text-white text-base">12.5</span> km</div>
+                            <div className="text-xs text-blue-200 flex items-center justify-end gap-2">超速次數 <span className="font-bold text-white text-base">{weeklyStats.overspeed}</span>次</div>
+                            <div className="text-xs text-blue-200 flex items-center justify-end gap-2">急煞次數 <span className="font-bold text-white text-base">{weeklyStats.braking}</span>次</div>
+                            <div className="text-xs text-blue-200 flex items-center justify-end gap-2">危險傾角 <span className="font-bold text-white text-base">{weeklyStats.tilt}</span>次</div>
                         </div>
                     </div>
                     <div className="flex gap-2">
@@ -1590,7 +1640,7 @@
                         </button>
                     </div>
                     
-                    <AIReportCard rideData={rideData} scores={{total: 92, braking: 1, dist: 12.5}} />
+                    <AIReportCard historyData={safeHistory} summary={weeklyStats} avgScore={avgWeeklyScore} />
 
                     <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 mt-4">
                         <h3 className="text-slate-300 font-bold mb-4 text-sm flex items-center gap-2">
