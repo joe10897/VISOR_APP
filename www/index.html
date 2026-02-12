@@ -926,7 +926,7 @@
 
             const handleOrientation = (event) => {
                 // 如果正在模擬中，直接結束，不更新 tiltAngle
-                if (isSimulatingRef) return;
+                if (isSimulatingRef.current) return;
 
                 let angle = event.gamma || 0;
                 let displayAngle = angle;
