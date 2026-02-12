@@ -548,25 +548,52 @@
                    prevProps.isTracking === nextProps.isTracking;
         });
 
-        const AIReportCard = ({ rideData, scores }) => {
+        const AIReportCard = ({ historyData, summary, avgScore }) => {
             const [report, setReport] = useState("");
             const [loading, setLoading] = useState(false);
             const [hasGenerated, setHasGenerated] = useState(false);
+
             const generateReport = async () => {
+                if (!historyData || historyData.length === 0) {
+                    setReport("### ⚠️ 數據掃描失敗\n 請先進行至少騎乘一次，V.I.S.O.R. 才能進行行為分析。");
+                    return;
+                }
                 setLoading(true);
-                const recentData = rideData.slice(-30).map(d => ({s: d.speed, t: d.time, g: d.gForce}));
-                const systemPrompt = `你現在是 V.I.S.O.R. 戰術分析核心。請針對騎士的遙測數據進行專業、冷靜且帶有未來科技感的評估。回應格式：繁體中文，Markdown。`;
-                const userPrompt = `【V.I.S.O.R. 遙測數據上傳完成】\n總評分: ${scores.total}\n樣本: ${JSON.stringify(recentData)}`;
-                const result = await callAI(userPrompt, systemPrompt);
-                setReport(result);
-                setLoading(false);
-                setHasGenerated(true);
+                try {
+                    const data = historyData || [];
+                    const recentData = data.slice(-10).map(d => ({
+                        s: d.score || 0,
+                        o: d.overspeedCount || 0,
+                        b: d.brakingCount || 0
+                    }));
+
+                    const systemPrompt = `你現在是 V.I.S.O.R.，騎士的專屬 AI 夥伴。
+                    請根據遙測數據提供一份「專業」的騎乘分析，語氣要既幽默、人性化，又能準確指出危險。
+                    回應準則：
+                    1. 語氣：白話、親切，偶爾可以帶點小吐槽。
+                    2. 結構：分為「近期行為分析」、「行為建議」。
+                    3. 格式：繁體中文，Markdown 格式。
+                    4. 避開過於艱澀的術語（如：高維度分析、系統冗餘），改用一般人聽得懂的說法。
+                    5. 避免過於攏長的分析，重點突出，讓騎士能快速抓到重點。`;
+
+                    const userPrompt = `【V.I.S.O.R. 遙測數據上傳完成】\n平均安全評分: ${avgScore}\n樣本數據: ${JSON.stringify(recentData)}`;
+
+                    const result = await callAI(userPrompt, systemPrompt);
+                    setReport(result);
+                    setHasGenerated(true);
+                } catch (error) {
+                    setReport("### 🔴 系統故障\n分析核心無法回應，請檢查連線狀態。");
+                } finally {
+                    setLoading(false);
+                }
             };
+
             return (
                 <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 mt-4 relative overflow-hidden">
                     <div className="flex justify-between items-center mb-3">
                         <h3 className="text-cyan-400 font-bold text-sm flex items-center gap-2"><Icon name="brain-circuit" size={16} /> V.I.S.O.R. 戰術分析</h3>
-                        {!hasGenerated && !loading && (<button onClick={generateReport} className="bg-cyan-900/50 hover:bg-cyan-800 text-cyan-300 text-xs px-3 py-1.5 rounded-full border border-cyan-500/30 transition-all flex items-center gap-1"><Icon name="sparkles" size={12} /> 啟動分析</button>)}
+                        {!hasGenerated && !loading && (
+                            <button onClick={generateReport} className="bg-cyan-900/50 hover:bg-cyan-800 text-cyan-300 text-xs px-3 py-1.5 rounded-full border border-cyan-500/30 transition-all flex items-center gap-1"><Icon name="sparkles" size={12} /> 啟動分析</button>)}
                     </div>
                     {loading && <div className="flex items-center justify-center py-4 space-x-2 text-cyan-400/70 animate-pulse"><Icon name="loader-2" size={20} className="animate-spin" /><span className="text-xs font-mono">UPLOADING...</span></div>}
                     {!loading && report && <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50"><div className="text-xs text-slate-300 leading-relaxed font-mono typing-cursor" dangerouslySetInnerHTML={{ __html: window.marked.parse(report) }}></div></div>}
