@@ -1711,7 +1711,7 @@
             const safeHistory = Array.isArray(weeklyHistory) ? weeklyHistory : [];
             const hasHistory = safeHistory.length > 0;
 
-            // 2. 彙整 7 天總量 (利用 reduce 遍歷歷史紀錄)
+            // 2. 彙整 7 天總量
             const weeklyStats = safeHistory.reduce((acc, trip) => {
                 return {
                     totalScore: acc.totalScore + (trip.score || 0),
@@ -1751,7 +1751,7 @@
                     };
                 });
 
-                // 3. 數據歸類 (為了滾動查看，我們改存「原始資料陣列」)
+                // 3. 數據歸類 
                 const grid = Array(6).fill(0).map(() => Array(7).fill(0).map(() => []));
                 data.forEach(item => {
                     const itemDate = new Date(item.timestamp);
@@ -1765,7 +1765,7 @@
                 });
 
                 return (
-                    <div className="bg-slate-900/40 p-4 rounded-xl border border-white/bg-slate-800 rounded-xl p-4 border border-slate-700 mt-4 relative overflow-hidden mt-4 relative">
+                    <div className="bg-gray-800 rounded-xl border border-gray-700/bg-slate-800 rounded-xl p-4 border border-slate-700 mt-4 relative overflow-hidden mt-4 relative ">
                         <div className="flex items-center justify-between mb-4">
                             <span className="text-xs font-bold text-slate-400 tracking-widest uppercase">{label}(過去7天)</span>
                             <span className="text-[8px] font-bold text-slate-400 tracking-widest uppercase">(點擊查看詳細資料)</span>
@@ -1777,7 +1777,7 @@
 
                         {/* 主要圖表區域 */}
                         <div className="flex flex-col">
-                            {/* 日期列：放在最上面，並給左側留出寬度 (w-10) 確保跟格子對齊 */}
+                            {/* 日期列 */}
                             <div className="flex gap-2 mb-2">
                                 <div className="w-10"></div> {/* 這裡是用來對齊左側文字的空位 */}
                                 <div className="flex-1 grid grid-cols-7 gap-2">
@@ -1788,7 +1788,7 @@
                             </div>
 
                             <div className="flex gap-2">
-                                {/* Y 軸文字：與右側格子的 gap 和高度完全同步 */}
+                                {/* Y 軸文字 */}
                                 <div className="w-10 grid grid-rows-6 gap-2 text-[10px] text-slate-500 font-medium">
                                     {timeSlots.map(slot => (
                                         <div key={slot.idx} className="flex items-center justify-end h-8 pr-1">{slot.label}</div>
@@ -1829,7 +1829,7 @@
                             <div className="absolute top-12 left-4 right-4 z-50 bg-slate-950 border border-white/20 rounded-lg shadow-2xl p-3 flex flex-col max-h-[180px]">
                                 <div className="flex justify-between items-center mb-2 pb-1 border-b border-white/10">
                                     <span className="text-[11px] font-bold text-white">
-                                        📆{days[selectedSlot.dIdx].dateStr} {timeSlots.find(s=>s.idx===selectedSlot.sIdx).label} ({selectedSlot.count}次)
+                                        🗓️{days[selectedSlot.dIdx].dateStr} {timeSlots.find(s=>s.idx===selectedSlot.sIdx).label} ({selectedSlot.count}次)
                                     </span>
                                 </div>
                                 
