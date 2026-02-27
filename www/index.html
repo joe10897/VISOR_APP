@@ -48,7 +48,7 @@
         /* Edge Lighting Animations - 增強亮度與範圍 */
         @keyframes edgePulse { 0% { opacity: 0.5; } 100% { opacity: 1; } }
         .edge-light-front { box-shadow: inset 0 150px 120px -30px rgba(234, 179, 8, 1); animation: edgePulse 0.15s infinite alternate; }
-        .edge-light-rear { box-shadow: inset 0 -150px 120px -30px rgba(234, 179, 8, 1); animation: edgePulse 0.15s infinite alternate; }
+        .edge-light-rear { box-shadow: inset 0 -150px 120px -30px rgba(239, 68, 68, 1); animation: edgePulse 0.15s infinite alternate; }
         .edge-light-left { box-shadow: inset 150px 0 120px -30px rgba(234, 179, 8, 1); animation: edgePulse 0.15s infinite alternate; }
         .edge-light-right { box-shadow: inset -150px 0 120px -30px rgba(234, 179, 8, 1); animation: edgePulse 0.15s infinite alternate; }
         
@@ -1364,70 +1364,122 @@
 
             // 在你的手機 App index.html 中加入以下邏輯
             useEffect(() => {
-                // 當手機連上 Pi 5 的 Wi-Fi 時，Pi 5 的 IP 固定為 192.168.4.1
-                const socket = new WebSocket('ws://192.168.4.1:8765');
-                socketRef.current = socket;
+                // --- 1. WebSocket 邏輯 ---
+                let host = "192.168.4.1";
+                if (window.location.hostname && !['localhost', '127.0.0.1', '', '192.168.4.1'].includes(window.location.hostname)) {
+                    host = window.location.hostname;
+                }
+                const socketUrl = `ws://${host}:8765`;
+                
+                let socket;
+                let btConnected = false;
 
-                socket.onopen = () => {
-                    const data = JSON.parse(event.data);
-                    // 更新你的 React State
-                    setSimulatedSpeed(data.speed);
-                    setTiltAngle(data.tilt);
-                    setIsConnected(true);
-                    
+                try {
+                    socket = new WebSocket(socketUrl);
+                    socketRef.current = socket;
+                    socket.onopen = () => {
+                        setIsConnected(true);
+                        setSystemStatus(prev => ({ ...prev, pi5: true }));
+                        logToScreen("Neural Link: Wi-Fi Connected");
+                    };
+                    socket.onmessage = (event) => handleIncomingPayload(JSON.parse(event.data));
+                    socket.onclose = () => { if (!btConnected) setIsConnected(false); };
+                } catch (e) {
+                    console.error("WS Security Block:", e);
+                    logToScreen("Wi-Fi Blocked by Security (HTTPS)", true);
+                }
+
+                // --- 2. 藍牙 (Bluetooth Serial) 邏輯 ---
+                
+                const initBluetooth = () => {
+                    logToScreen("Starting Bluetooth Link...");
+                    if (!window.bluetoothSerial) {
+                        logToScreen("Error: BT Plugin Missing", true);
+                        return;
+                    }
+                    startBluetoothLink();
+                };
+
+                const startBluetoothLink = () => {
+                    const attemptConnect = () => {
+                        if (btConnected) return;
+                        
+                        window.bluetoothSerial.list((devices) => {
+                            if (devices.length === 0) {
+                                logToScreen("No paired devices found.");
+                            } else {
+                                const names = devices.map(d => d.name).join(", ");
+                                logToScreen("Paired: " + names);
+                            }
+
+                            const target = devices.find(d => 
+                                d.name.toLowerCase().includes('pi5') || 
+                                d.name.toLowerCase().includes('visor')
+                            );
+
+                            if (target) {
+                                logToScreen("Linking to: " + target.name);
+                                window.bluetoothSerial.connect(target.id, () => {
+                                    logToScreen("BT Link SUCCESS!");
+                                    btConnected = true;
+                                    setIsConnected(true);
+                                    setSystemStatus(prev => ({ ...prev, pi5: true }));
+                                    window.bluetoothSerial.subscribe('\n', (data) => {
+                                        try { handleIncomingPayload(JSON.parse(data)); } catch(e) {}
+                                    });
+                                }, (err) => {
+                                    logToScreen("Link Failed: " + err);
+                                    setTimeout(attemptConnect, 5000);
+                                });
+                            } else {
+                                setTimeout(attemptConnect, 10000);
+                            }
+                        }, (err) => {
+                            logToScreen("List Err: " + err, true);
+                            setTimeout(attemptConnect, 5000);
+                        });
+                    };
+                    attemptConnect();
+                };
+
+                document.addEventListener("deviceready", initBluetooth, false);
+                setTimeout(() => {
+                    if (!window.cordova) logToScreen("Diag: window.cordova undefined");
+                }, 5000);
+
+                function handleIncomingPayload(data) {
                     if (data.system) {
                         setSystemStatus({
-                            pi5: true, // If we get message, Pi 5 is up
+                            pi5: true,
                             piZero: data.system.hud_status === 'online',
-                            cpu: data.system.cpu,
-                            mem: data.system.mem
+                            cpu: data.system.cpu || 0,
+                            mem: data.system.mem || 0,
+                            temp: data.system.temp || 0
                         });
                     }
-
+                    if (!isSimulatingRef.current) {
+                        setSimulatedSpeed(Math.round(data.speed || 0));
+                        setTiltAngle(Math.round(data.tilt || 0));
+                    }
                     if (data.type === 'notification') {
                         addNotification(data.level || 'info', data.title || '系統通知', data.message);
                     }
-
-                    // 如果 alert 為 1，觸發手機端的視覺警告
-                    if (data.alert === 1) {
-                        triggerEdgeWarning('rear'); // 假設是後方預警
+                    if (data.warning && data.warning.level === 'danger') {
+                        triggerEdgeWarning(data.warning.direction);
+                    } else if (data.alert === 1) {
+                        triggerEdgeWarning('rear');
                     }
-                    
-                    if (data.warning) {
-                        // Handle advanced warning
-                        if (data.warning.level === 'danger') {
-                            triggerEdgeWarning(data.warning.direction);
-                        }
+                    if (isSimulatingRef.current || isSentryMode) {
+                        handleIncomingData(data);
                     }
+                }
+                
+                return () => {
+                    if (socket) socket.close();
+                    document.removeEventListener("deviceready", initBluetooth);
+                    if (window.bluetoothSerial) window.bluetoothSerial.disconnect();
                 };
-
-                // 實際數據更新的處理邏輯
-                socket.onmessage = (event) => {
-                    try {
-                        const data = JSON.parse(event.data);
-                    
-                        // 只要是在監控模式，就餵給處理中心
-                        if (isSimulatingRef.current) {
-                            handleIncomingData({
-                                speed: data.speed,
-                                limit: data.limit, 
-                                braking: data.braking,
-                                tilt: data.tilt
-                            });
-                        }
-                    } catch (err) {
-                        console.error("解析樹莓派數據時出錯:", err);
-                    }
-                    
-                };
-
-                socket.onclose = () => {
-                    setIsConnected(false);
-                    setSystemStatus(prev => ({ ...prev, pi5: false, piZero: false }));
-                    addNotification('danger', '連線中斷', '與 V.I.S.O.R. Core 失去連線');
-                };
-                return () => socket.close();
-            }, [addNotification]);
+            }, [addNotification, isSentryMode]);
 
 
 
@@ -1482,7 +1534,10 @@
                         if (dist < warningRange) {
                             // 2. 方向過濾 (如果我們有航向資訊)
                             // 容許誤差 ±60度，若相機方向是'ALL'則通過
-                            const isDirectionValid = GeoUtils.isDirectionMatch(heading, cam.heading, 60);
+                            let isDirectionValid = true;
+                            if (typeof GeoUtils.isDirectionMatch === 'function') {
+                                isDirectionValid = GeoUtils.isDirectionMatch(heading, cam.heading, 60);
+                            }
                             
                             if (isDirectionValid && dist < minDistance) {
                                 minDistance = dist;
@@ -1634,7 +1689,7 @@
                     <div className={`bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-700 relative overflow-hidden min-h-[225px]`}>
                         <div className="absolute top-0 right-0 p-4 opacity-10"><Icon name="shield" size={120} className="text-cyan-400" /></div>
                         <div className="flex justify-between items-start mb-4 relative z-10">
-                            <div><h2 className="text-slate-400 text-sm font-medium">系統狀態</h2><div className="flex items-center gap-2 mt-1"><span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]' : 'bg-red-500'}`}></span><span className="text-white font-bold text-lg">{isConnected ? '系統連線中' : '未連線'}</span></div></div>
+                            <div><h2 className="text-slate-400 text-sm font-medium">系統狀態</h2><div className="flex items-center gap-2 mt-1"><span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]' : 'bg-red-500'}`}></span><span className="text-white font-bold text-lg">{isConnected ? '系統連線中' : '未連線'}</span><span className="text-slate-500 text-xs ml-2 font-mono">{systemStatus.temp}°C</span></div></div>
                             <div className="text-[10px] text-slate-400 bg-slate-900/50 px-2 py-1 rounded border border-slate-600 flex flex-col items-end"><span>DB: {dbInfo.source}</span><span className="text-cyan-400">{dbInfo.count} 點</span></div>
                         </div>
                         {/* 中央時速顯示 */}
