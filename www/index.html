@@ -404,10 +404,11 @@
                              <div className="text-[10px] text-white bg-black/40 px-1.5 py-0.5 rounded border border-white/10">{alert.direct || '雙向'}</div>
                         </div>
                         <div className="flex items-baseline gap-1 mt-0.5">
+                            <span className="text-xs text-slate-400">距離</span>
                             <span className={`text-4xl font-black font-mono leading-none ${isOverSpeed ? 'text-yellow-300' : 'text-white'}`}>{Math.round(alert.distance)}</span>
                             <span className="text-xs text-slate-400">m</span>
                             {isStationary && <span className="text-slate-500 text-[10px] ml-2 font-bold">[靜止中]</span>}
-                            {!isStationary && isOverSpeed && <span className="text-yellow-300 text-xs font-bold ml-2 animate-pulse">請減速!</span>}
+                            {!isStationary && isOverSpeed && <span className="text-yellow-300 text-xl font-bold ml-2 animate-pulse">請減速!</span>}
                         </div>
                     </div>
                 </div>
@@ -567,15 +568,17 @@
                         b: d.brakingCount || 0
                     }));
 
-                    const systemPrompt = `你現在是 V.I.S.O.R.，騎士的專屬 AI 夥伴。
-                    請根據遙測數據提供一份「專業」的騎乘分析，語氣要既幽默、人性化，又能準確指出危險。
+                    const systemPrompt = 
+                    `
+                    系統提示:你現在是 V.I.S.O.R.，騎士的專屬 AI 夥伴。請根據遙測數據提供一份「專業」的騎乘分析。
                     回應準則：
-                    1. 語氣：白話、親切，偶爾可以帶點小吐槽。
-                    2. 結構：分為「===近期行為分析===」、「===行為建議===」。
+                    1. 語氣：白話、親切、精簡。
+                    2. 結構(html邏輯)：我是 V.I.S.O.R.，你的專屬騎乘 AI 夥伴，以下是分析結果：<br><b>===近期行為分析===</b><br>內容：根據最近的騎乘數據，分析騎士在安全評分、超速次數、急煞次數等方面的表現。<br><b>===行為建議===</b><br>內容：根據分析出來的結果，給予適當的建議。<br>==============================================<br>內容：以鼓勵的語氣結尾，激勵騎士持續保持安全的騎乘習慣。
                     3. 格式：繁體中文，Markdown 格式。
-                    4. 避開過於艱澀的術語（如：高維度分析、系統冗餘），改用一般人聽得懂的說法。
-                    5. 分析要精簡扼要，讓騎士能快速抓到重點。
-                    6. 避免直接標示出數據的具體數值。`;
+                    4. 避開過於艱澀的術語，改用一般人聽得懂的說法。
+                    5. 避免直接標示出數據的具體數值。
+                    6. Temperature = 0.0。
+                    `;
 
                     const userPrompt = `【V.I.S.O.R. 遙測數據上傳完成】\n平均安全評分: ${avgScore}\n樣本數據: ${JSON.stringify(recentData)}`;
 
