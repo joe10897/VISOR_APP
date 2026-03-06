@@ -192,16 +192,6 @@
                             oscillator.stop(ctx.currentTime + timeOffset + 0.1);
                             break;
 
-                        case 'danger2': // 強力警示
-                            oscillator.type = 'sine';
-                            oscillator.frequency.setValueAtTime(2500, ctx.currentTime + timeOffset);
-                            oscillator.frequency.exponentialRampToValueAtTime(4500, ctx.currentTime + timeOffset + 0.1);
-                            gainNode.gain.setValueAtTime(0.3, ctx.currentTime + timeOffset);
-                            gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + timeOffset + 0.1);
-                            oscillator.start(ctx.currentTime + timeOffset);
-                            oscillator.stop(ctx.currentTime + timeOffset + 0.1);
-                            break;
-
                         case 'sos': // SOS 緊急求救 (雙頻模擬)
                             oscillator.type = 'triangle';
                             const step = 0.5;
@@ -231,7 +221,6 @@
                     let gap = 0.4;
                     if (type === 'danger') gap = 0.2;
                     if (type === 'overspeed' || type === 'radar') gap = 0.15;
-                    if (type === 'danger2') gap = 0.1;
                     playOnce(i * gap);
                 }
             } catch (e) { console.warn("Audio warning failed:", e); }
