@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V.I.S.O.R. | Visual Intelligent Safety On Road</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --text-light: #f5f5f5;
+            --accent: #00c7b3;
+        }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+        .luxury-border {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background-color: var(--accent);
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        .expand-card {
+            cursor: pointer;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .expand-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease;
+        }
+        .expand-card.active .expand-content {
+            max-height: 500px;
+        }
+        .hero-gradient {
+            background: linear-gradient(to bottom, rgba(10,10,10,0.4), rgba(10,10,10,1));
+        }
+        .tag {
+            font-size: 10px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #666;
+        }
+    </style>
+</head>
+<body class="selection:bg-[#00c7b3] selection:text-black">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 luxury-border bg-[#0a0a0a]/80 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl font-serif font-bold tracking-tighter">V.I.S.O.R.®</span>
+            </div>
+            <div class="hidden md:flex gap-10 items-center">
+                <a href="#mission" class="nav-link text-xs uppercase tracking-widest text-zinc-400 hover:text-white">Mission</a>
+                <a href="#services" class="nav-link text-xs uppercase tracking-widest text-zinc-400 hover:text-white">Technology</a>
+                <a href="#profile" class="nav-link text-xs uppercase tracking-widest text-zinc-400 hover:text-white">Team</a>
+                <a href="#contact" class="px-6 py-2 border border-zinc-700 hover:border-[#00c7b3] transition-colors text-xs uppercase tracking-widest">Inquire</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative min-h-screen flex items-center pt-20 overflow-hidden">
+        <div class="absolute inset-0 z-0">
+            <video autoplay muted loop playsinline class="w-full h-full object-cover opacity-40">
+                <source src="https://player.vimeo.com/external/494252666.sd.mp4?s=72adadc0d5995536417740394339e7c1&profile_id=164&oauth2_token_id=57447761" type="video/mp4">
+            </video>
+            <div class="absolute inset-0 hero-gradient"></div>
+        </div>
+        
+        <div class="relative z-10 max-w-7xl mx-auto px-8 w-full">
+            <div class="max-w-4xl">
+                <span class="tag mb-6 block" data-lucide="shield-check" class="inline-block mr-2">By Mission Only</span>
+                <h1 class="text-7xl md:text-9xl mb-8 leading-none tracking-tighter">
+                    Visual <br>
+                    <span class="italic font-normal">Intelligent</span> <br>
+                    Safety.
+                </h1>
+                <p class="text-lg md:text-2xl text-zinc-400 font-light max-w-2xl leading-relaxed">
+                    From the street to the circuit, we protect your mission. V.I.S.O.R. is an advanced AI-powered safety ecosystem for motorcycle professionals.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mission Section -->
+    <section id="mission" class="py-32 bg-white text-black">
+        <div class="max-w-7xl mx-auto px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-20 items-end">
+                <div>
+                    <span class="tag mb-4 block text-zinc-400">( 01 ) Mission</span>
+                    <h2 class="text-5xl md:text-7xl mb-12 leading-tight">We communicate safety through deep learning.</h2>
+                </div>
+                <div class="pb-4">
+                    <p class="text-xl text-zinc-600 font-light leading-relaxed mb-8">
+                        機車騎士需面對多重動態威脅。V.I.S.O.R. 結合 Raspberry Pi 5 與 YOLOv8，將複雜的路況環境轉化為直觀的戰術視覺預警。我們相信有效的安全防護需要現代、敏捷且經過驗證的技術實踐。
+                    </p>
+                    <div class="flex gap-4">
+                        <div class="w-12 h-px bg-black mt-3"></div>
+                        <span class="font-serif italic text-lg text-zinc-500">Founded at Chihlee University</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services / Technology Section -->
+    <section id="services" class="py-32 bg-[#0a0a0a]">
+        <div class="max-w-7xl mx-auto px-8">
+            <span class="tag mb-12 block">( 02 ) Technology</span>
+            
+            <div class="space-y-px">
+                <!-- Service 1: Vision -->
+                <div class="expand-card luxury-border py-12 group" onclick="this.classList.toggle('active')">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-10">
+                            <span class="text-zinc-500 font-serif italic text-2xl">01</span>
+                            <h3 class="text-4xl md:text-6xl group-hover:translate-x-4 transition-transform">Vision Pipeline</h3>
+                        </div>
+                        <i data-lucide="plus" class="text-zinc-500 transition-transform group-[.active]:rotate-45"></i>
+                    </div>
+                    <div class="expand-content">
+                        <div class="pt-10 grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div class="p-8 bg-zinc-900/50 rounded-lg">
+                                <h4 class="font-bold mb-4 text-[#00c7b3]">Detector</h4>
+                                <p class="text-sm text-zinc-400">YOLOv8-nano 優化 320px，提供 25+ FPS 的即時物件辨識。</p>
+                            </div>
+                            <div class="p-8 bg-zinc-900/50 rounded-lg">
+                                <h4 class="font-bold mb-4 text-[#00c7b3]">Tracker</h4>
+                                <p class="text-sm text-zinc-400">Centroid 持續追蹤與 ID 持久化，確保警示不跳動。</p>
+                            </div>
+                            <div class="p-8 bg-zinc-900/50 rounded-lg">
+                                <h4 class="font-bold mb-4 text-[#00c7b3]">Fusion</h4>
+                                <p class="text-sm text-zinc-400">結合 TTC (碰撞時間) 與距離模型進行威脅分級渲染。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service 2: Distributed -->
+                <div class="expand-card luxury-border py-12 group" onclick="this.classList.toggle('active')">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-10">
+                            <span class="text-zinc-500 font-serif italic text-2xl">02</span>
+                            <h3 class="text-4xl md:text-6xl group-hover:translate-x-4 transition-transform">Distributed Computing</h3>
+                        </div>
+                        <i data-lucide="plus" class="text-zinc-500 transition-transform group-[.active]:rotate-45"></i>
+                    </div>
+                    <div class="expand-content">
+                        <div class="pt-10 space-y-6">
+                            <p class="text-xl text-zinc-400 font-light">
+                                Raspberry Pi 5 核心與 Pi Zero 2W HUD 驅動的分離架構，實現了計算與顯示的極致解耦。
+                            </p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 text-sm text-zinc-500">
+                                <div>
+                                    <strong class="text-white block mb-2">Pi 5 Mainframe</strong>
+                                    負責 YOLOv8n 推理、WebSocket 伺服器與哨兵模式錄影。
+                                </div>
+                                <div>
+                                    <strong class="text-white block mb-2">Pi Zero HUD</strong>
+                                    專職接收傳輸數據並渲染至 AR 眼鏡或抬頭顯示器。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service 3: App -->
+                <div class="expand-card luxury-border py-12 group" onclick="this.classList.toggle('active')">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-10">
+                            <span class="text-zinc-500 font-serif italic text-2xl">03</span>
+                            <h3 class="text-4xl md:text-6xl group-hover:translate-x-4 transition-transform">Tactical Console</h3>
+                        </div>
+                        <i data-lucide="plus" class="text-zinc-500 transition-transform group-[.active]:rotate-45"></i>
+                    </div>
+                    <div class="expand-content">
+                        <div class="pt-10 flex flex-col md:flex-row gap-20 items-center">
+                            <div class="flex-1 space-y-6">
+                                <p class="text-lg text-zinc-400 leading-relaxed">
+                                    整合政府測速 API、傾角熱力圖與 Gemini AI 行為分析報告。提供騎士全方位的數位護航。
+                                </p>
+                                <ul class="grid grid-cols-2 gap-4 text-xs tracking-widest uppercase">
+                                    <li class="flex items-center gap-2 text-[#00c7b3]"><i data-lucide="check" class="w-3 h-3"></i> E-SOS System</li>
+                                    <li class="flex items-center gap-2 text-[#00c7b3]"><i data-lucide="check" class="w-3 h-3"></i> Speed Warning</li>
+                                    <li class="flex items-center gap-2 text-[#00c7b3]"><i data-lucide="check" class="w-3 h-3"></i> Tilt Telemetry</li>
+                                    <li class="flex items-center gap-2 text-[#00c7b3]"><i data-lucide="check" class="w-3 h-3"></i> AI Analysis</li>
+                                </ul>
+                            </div>
+                            <div class="w-full md:w-1/3 aspect-[9/16] bg-zinc-900 rounded-3xl border border-zinc-800 flex items-center justify-center">
+                                <span class="tag">Interface Preview</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Team Section -->
+    <section id="profile" class="py-32 bg-zinc-100 text-black">
+        <div class="max-w-7xl mx-auto px-8">
+            <span class="tag mb-12 block text-zinc-400">( 03 ) Profile</span>
+            <div class="max-w-4xl">
+                <h2 class="text-5xl md:text-7xl mb-12 leading-tight">Driven by a vision of zero collisions.</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-12">
+                    <div>
+                        <span class="text-3xl font-serif">7</span>
+                        <p class="tag mt-2">Specialists</p>
+                    </div>
+                    <div>
+                        <span class="text-3xl font-serif">2</span>
+                        <p class="tag mt-2">Core Models</p>
+                    </div>
+                    <div>
+                        <span class="text-3xl font-serif">100K</span>
+                        <p class="tag mt-2">BDD Dataset</p>
+                    </div>
+                    <div>
+                        <span class="text-3xl font-serif">0</span>
+                        <p class="tag mt-2">Latency Goal</p>
+                    </div>
+                </div>
+                <div class="mt-20 border-t border-zinc-200 pt-10">
+                    <p class="text-zinc-500 font-light leading-relaxed">
+                        組員：楊詠媜、王靖雯、陳于庭、林韋丞、林佳嫻、翁怡蓉、黃澤然。
+                        <br>致理科技大學 - AI 機車前後防護行車助理系統專案團隊。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-32 bg-black">
+        <div class="max-w-7xl mx-auto px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-20">
+                <div>
+                    <span class="tag mb-8 block">Inquiry</span>
+                    <h2 class="text-5xl font-serif mb-8 text-white">Join the Mission.</h2>
+                    <p class="text-zinc-500 font-light max-w-sm">
+                        Interested in integrating V.I.S.O.R. technology or collaborating on national security logistics?
+                    </p>
+                </div>
+                <div class="space-y-12">
+                    <div class="grid grid-cols-2 gap-8">
+                        <div class="space-y-2 border-b border-zinc-800 pb-2 focus-within:border-[#00c7b3] transition-colors">
+                            <label class="tag">First Name</label>
+                            <input type="text" class="bg-transparent w-full outline-none text-white font-light">
+                        </div>
+                        <div class="space-y-2 border-b border-zinc-800 pb-2 focus-within:border-[#00c7b3] transition-colors">
+                            <label class="tag">Last Name</label>
+                            <input type="text" class="bg-transparent w-full outline-none text-white font-light">
+                        </div>
+                    </div>
+                    <div class="space-y-2 border-b border-zinc-800 pb-2 focus-within:border-[#00c7b3] transition-colors">
+                        <label class="tag">Email Address</label>
+                        <input type="email" class="bg-transparent w-full outline-none text-white font-light">
+                    </div>
+                    <div class="space-y-2 border-b border-zinc-800 pb-2 focus-within:border-[#00c7b3] transition-colors">
+                        <label class="tag">Message</label>
+                        <textarea rows="1" class="bg-transparent w-full outline-none text-white font-light resize-none"></textarea>
+                    </div>
+                    <button class="px-12 py-4 bg-white text-black text-xs uppercase tracking-widest font-bold hover:bg-[#00c7b3] transition-colors">Submit</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-20 bg-black luxury-border">
+        <div class="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-10">
+            <span class="text-zinc-500 text-xs tracking-[0.4em] uppercase">V.I.S.O.R.® — Visual Intelligent Safety On Road</span>
+            <div class="flex gap-10">
+                <a href="#" class="tag hover:text-white transition-colors">LinkedIn</a>
+                <a href="#" class="tag hover:text-white transition-colors">GitHub</a>
+                <a href="#" class="tag hover:text-white transition-colors">Privacy</a>
+            </div>
+            <span class="text-zinc-700 text-[10px] tracking-widest uppercase">©2026 Bluewing Styled V.I.S.O.R. Project</span>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+        
+        // Simple scroll behavior
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>
