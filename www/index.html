@@ -60,7 +60,11 @@
         .typing-cursor::after { content: '|'; animation: blink 1s infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
         
+<<<<<<< Updated upstream
         /* [新增：Heatmap Tooltip 專用捲動軸樣式] */
+=======
+        /* Custom Scrollbar for Heatmap Tooltip */
+>>>>>>> Stashed changes
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.5); border-radius: 4px; }
@@ -306,7 +310,10 @@
         };
 
         // --- Utils Data ---
+<<<<<<< Updated upstream
         // [新增：在原本的相機資料中加入 heading (方向) 屬性，供精準測速判斷]
+=======
+>>>>>>> Stashed changes
         const BUILT_IN_CAMERAS = [
             { address: "國道五號南向22.5公里(雪山隧道)", lat: 24.88923, lng: 121.761765, limit: 90, type: "fixed", direct: "往南", heading: 180 },
             { address: "國道五號北向22.5公里(雪山隧道)", lat: 24.889566, lng: 121.762215, limit: 90, type: "fixed", direct: "往北", heading: 0 },
@@ -659,7 +666,10 @@
 
         const App = () => {
             // --- 1. 狀態宣告 (State Declarations) ---
+<<<<<<< Updated upstream
             // [新增：多個用於管理登入、雲端同步、進階歷史分析的狀態]
+=======
+>>>>>>> Stashed changes
             const [isBooting, setIsBooting] = useState(true);
             const [heading, setHeading] = useState(0); 
             const [currentUser, setCurrentUser] = useState(null);
@@ -669,9 +679,19 @@
             const [forceSpeeding, setForceSpeeding] = React.useState(true); 
             const [weeklyHistory, setWeeklyHistory] = React.useState([]); 
             
+<<<<<<< Updated upstream
             const [authForm, setAuthForm] = useState({ username: '', password: '', confirmPassword: '' });
             const [authError, setAuthError] = useState('');
             const [isLoginLoading, setIsLoginLoading] = useState(false);
+=======
+            /* [舊版程式碼保留：原始表單狀態]
+            const [authForm, setAuthForm] = useState({ username: '', password: '', confirmPassword: '' });
+            const [authError, setAuthError] = useState('');
+            */
+            const [authForm, setAuthForm] = useState({ username: '', password: '', confirmPassword: '' });
+            const [authError, setAuthError] = useState('');
+            const [isLoginLoading, setIsLoginLoading] = useState(false); // [新增：載入狀態]
+>>>>>>> Stashed changes
 
             const [isSentryMode, setIsSentryMode] = useState(false);
             const [enableSpeedCam, setEnableSpeedCam] = useState(true);
@@ -701,8 +721,11 @@
             const [rideData, setRideData] = useState([]);
 
             // --- 2. 參考 (Refs) ---
+<<<<<<< Updated upstream
             // [新增：Google Apps Script URL 配置位置]
             const GAS_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL"; 
+=======
+>>>>>>> Stashed changes
             const currentRideDataRef = React.useRef([]);
             const prevAlertRef = useRef(null);
             const trackRef = useRef([]);
@@ -713,6 +736,12 @@
             const crashStartRef = useRef(null);
             const hasCrashedRef = useRef(false);
 
+<<<<<<< Updated upstream
+=======
+            // [新增：Google Apps Script API 網址]
+            const GAS_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL"; 
+
+>>>>>>> Stashed changes
             // --- 輔助函數 ---
             const addNotification = useCallback((type, title, message) => {
                 const id = Date.now();
@@ -722,7 +751,11 @@
 
             const removeNotification = (id) => setNotifications(prev => prev.filter(n => n.id !== id));
 
+<<<<<<< Updated upstream
             // --- [新增：從雲端獲取紀錄的函式 fetchUserHistory] ---
+=======
+            // [新增：從雲端獲取紀錄的函式 fetchUserHistory]
+>>>>>>> Stashed changes
             const fetchUserHistory = async (username) => {
                 if (!GAS_URL || GAS_URL === "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL") return;
                 try {
@@ -758,13 +791,32 @@
                 prevAlertRef.current = cameraAlert;
             }, [cameraAlert]);
 
+<<<<<<< Updated upstream
+=======
+            /* [舊版程式碼保留：原始初始登入檢查]
             useEffect(() => {
                 window.AuthService.init();
                 const user = window.AuthService.getCurrentUser();
                 if (user) {
                     setCurrentUser(user);
                     setActiveTab('home');
+                } else {
+                    setActiveTab('login');
+                }
+            }, []);
+            */
+            // [新增：加入雲端紀錄同步的初始登入檢查]
+>>>>>>> Stashed changes
+            useEffect(() => {
+                window.AuthService.init();
+                const user = window.AuthService.getCurrentUser();
+                if (user) {
+                    setCurrentUser(user);
+                    setActiveTab('home');
+<<<<<<< Updated upstream
                     // 如果已登入，背景同步資料
+=======
+>>>>>>> Stashed changes
                     fetchUserHistory(user.username);
                 } else {
                     setActiveTab('login');
@@ -1054,7 +1106,26 @@
                 } else { alert("ℹ️ 您的裝置預設已授權，或硬體不支援此功能。"); }
             };
 
+<<<<<<< Updated upstream
             // [新增：handleLogin 現在會呼叫 fetchUserHistory 進行雲端資料還原]
+=======
+            /* [舊版程式碼保留：原始 handleLogin]
+            const handleLogin = (e) => {
+                e.preventDefault();
+                setAuthError('');
+                const result = window.AuthService.login(authForm.username, authForm.password);
+                if (result) {
+                    setCurrentUser(result.user);
+                    setActiveTab('home');
+                    setAuthForm({ username: '', password: '', confirmPassword: '' });
+                } else {
+                    setAuthError('帳號或密碼錯誤');
+                    playWarningSound('warning');
+                }
+            };
+            */
+            // [新增：加入 GAS 登入紀錄與歷史資料讀取的 handleLogin]
+>>>>>>> Stashed changes
             const handleLogin = async (e) => {
                 e.preventDefault();
                 setAuthError('');
@@ -1062,13 +1133,20 @@
                 const result = window.AuthService.login(authForm.username, authForm.password);
                 if (result) {
                     try {
+<<<<<<< Updated upstream
                         if (GAS_URL !== "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL") {
+=======
+                        if (GAS_URL !== "https://script.google.com/macros/s/AKfycbzufViEnrLQJyEobChm4c-kctIvvU9zH1P1OQ-K6RZgnWsUL1FcVZwpSxRIEMhVooZIrw/exec") {
+>>>>>>> Stashed changes
                             await fetch(GAS_URL, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                                 body: JSON.stringify({ username: authForm.username, action: 'login', timestamp: new Date().toISOString() })
                             });
+<<<<<<< Updated upstream
                             // 登入成功後，立刻獲取該使用者的歷史紀錄
+=======
+>>>>>>> Stashed changes
                             await fetchUserHistory(authForm.username);
                         }
                     } catch (error) { console.error("Failed to log to GAS:", error); }
@@ -1097,7 +1175,11 @@
             const handleLogout = () => {
                 window.AuthService.logout();
                 setCurrentUser(null);
+<<<<<<< Updated upstream
                 setWeeklyHistory([]); // 登出時清空當前紀錄
+=======
+                setWeeklyHistory([]); 
+>>>>>>> Stashed changes
                 setActiveTab('login');
             };
 
@@ -1213,6 +1295,7 @@
                 return count;
             };
             
+<<<<<<< Updated upstream
             // [新增：在結算函式中，整合對 GAS API 的呼叫，以便儲存分析紀錄]
             const finalizeRide = (camera = null) => {
                 const dataToAnalyze = currentRideDataRef.current;
@@ -1223,16 +1306,43 @@
                 const totalPenalty = (finalOverspeed * 2) + (finalBraking * 3) + (finalTilt * 5);
                 const finalScore = Math.max(0, 100 - totalPenalty);
                 const locationName = camera ? camera.address : "未知路段";
+=======
+            /* [舊版程式碼保留：原始 finalizeRide]
+            const finalizeRide = (camera = null) => {
+                const dataToAnalyze = currentRideDataRef.current;
+                console.log("=== 開始分析結算 ===");
+                console.log("總共收集點數:", dataToAnalyze.length);
+
+                if (dataToAnalyze.length === 0) {
+                    console.log("沒有收集到數據，取消結算");
+                    return;
+                }
+                
+                const finalOverspeed = analyzeOverspeed(dataToAnalyze);
+                const finalBraking = analyzeBraking(dataToAnalyze); 
+                const finalTilt = analyzeTilt(dataToAnalyze); 
+
+                const totalPenalty = (finalOverspeed * 2) + (finalBraking * 3) + (finalTilt * 5);
+                const finalScore = Math.max(0, 100 - totalPenalty);
+
+                const locationName = camera ? camera.address : "未知路段";
+
+>>>>>>> Stashed changes
                 const summary = {
                     id: Date.now(), timestamp: new Date().getTime(), date: new Date().toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' }),
                     location: locationName, score: finalScore, overspeedCount: finalOverspeed, brakingCount: finalBraking, tiltCount: finalTilt
                 };
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                 setWeeklyHistory(prev => {
                     let updated = [...(Array.isArray(prev) ? prev : []), summary];
                     updated = updated.filter(item => !item.timestamp || (new Date().getTime() - item.timestamp) < (7 * 24 * 60 * 60 * 1000));
                     localStorage.setItem('ride_history', JSON.stringify(updated));
                     return updated;
                 });
+<<<<<<< Updated upstream
 
                 try {
                     fetch(GAS_URL, {
@@ -1249,6 +1359,66 @@
                             location: locationName
                         })
                     });
+=======
+                
+                if (isSimulatingRef.current) {
+                    alert(`✅ 模擬結束：已通過 ${summary.location} 並續行 100m，本次超速：${finalOverspeed} 次，急煞：${finalBraking} 次，危險傾角：${finalTilt} 次，最終得分：${finalScore} 分`);
+                }
+
+                currentRideDataRef.current = [];
+            };
+            */
+            
+            // [新增：加入傳送至 Google Apps Script 紀錄的 finalizeRide]
+            const finalizeRide = (camera = null) => {
+                const dataToAnalyze = currentRideDataRef.current;
+                console.log("=== 開始分析結算 ===");
+                console.log("總共收集點數:", dataToAnalyze.length);
+
+                if (dataToAnalyze.length === 0) {
+                    console.log("沒有收集到數據，取消結算");
+                    return;
+                }
+                
+                const finalOverspeed = analyzeOverspeed(dataToAnalyze);
+                const finalBraking = analyzeBraking(dataToAnalyze); 
+                const finalTilt = analyzeTilt(dataToAnalyze); 
+
+                const totalPenalty = (finalOverspeed * 2) + (finalBraking * 3) + (finalTilt * 5);
+                const finalScore = Math.max(0, 100 - totalPenalty);
+                const locationName = camera ? camera.address : "未知路段";
+                
+                const summary = {
+                    id: Date.now(), timestamp: new Date().getTime(), date: new Date().toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' }),
+                    location: locationName, score: finalScore, overspeedCount: finalOverspeed, brakingCount: finalBraking, tiltCount: finalTilt
+                };
+                
+                setWeeklyHistory(prev => {
+                    let updated = [...(Array.isArray(prev) ? prev : []), summary];
+                    updated = updated.filter(item => !item.timestamp || (new Date().getTime() - item.timestamp) < (7 * 24 * 60 * 60 * 1000));
+                    localStorage.setItem('ride_history', JSON.stringify(updated));
+                    return updated;
+                });
+
+                // --- 傳送分析資料到 Google Apps Script (Excel) ---
+                try {
+                    if (GAS_URL !== "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL") {
+                        fetch(GAS_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                            body: JSON.stringify({ 
+                                action: 'analysis', 
+                                username: currentUser ? currentUser.username : 'GUEST',
+                                timestamp: new Date().toISOString(),
+                                score: finalScore,
+                                overspeed: finalOverspeed,
+                                braking: finalBraking,
+                                tilt: finalTilt,
+                                location: locationName
+                            })
+                        });
+                    }
+>>>>>>> Stashed changes
                 } catch (error) { console.error("Failed to log analysis to GAS:", error); }
 
                 if (isSimulatingRef.current) alert(`✅ 模擬結束：已通過 ${locationName} 並續行 100m，最終得分：${finalScore} 分`);
@@ -1331,7 +1501,10 @@
 
             // --- 5. 子渲染元件 (Render Functions) ---
 
+<<<<<<< Updated upstream
             // [新增：登入畫面元件與註冊畫面元件]
+=======
+>>>>>>> Stashed changes
             const renderLogin = () => (
                 <div className="flex flex-col items-center justify-center h-full px-6 animate-fadeIn pb-32">
                     <div className="mb-8 text-center">
@@ -1360,11 +1533,27 @@
                                 <input type="password" value={authForm.password} onChange={(e) => setAuthForm({...authForm, password: e.target.value})} className="w-full bg-slate-900/80 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-white focus:border-cyan-500 focus:shadow-[0_0_10px_rgba(34,211,238,0.2)] focus:outline-none transition-all" placeholder="Enter Code..." required />
                             </div>
                         </div>
+<<<<<<< Updated upstream
 
                         <button type="submit" disabled={isLoginLoading} className="w-full bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-cyan-900/50 border border-cyan-400/30 transition-all active:scale-95 flex items-center justify-center gap-2 mt-4 group disabled:opacity-50">
                             {isLoginLoading ? <Icon name="loader-2" size={16} className="animate-spin" /> : <span>INITIALIZE LINK</span>}
                             {!isLoginLoading && <Icon name="arrow-right" size={16} className="group-hover:translate-x-1 transition-transform" />}
                         </button>
+=======
+                        
+                        {/* [舊版程式碼保留：原始登入按鈕]
+                        <button type="submit" className="w-full bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-cyan-900/50 border border-cyan-400/30 transition-all active:scale-95 flex items-center justify-center gap-2 mt-4 group">
+                            <span>INITIALIZE LINK</span>
+                            <Icon name="arrow-right" size={16} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
+                        */}
+                        {/* [新增：帶有 Loading 狀態的登入按鈕] */}
+                        <button type="submit" disabled={isLoginLoading} className="w-full bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-cyan-900/50 border border-cyan-400/30 transition-all active:scale-95 flex items-center justify-center gap-2 mt-4 group disabled:opacity-50">
+                            {isLoginLoading ? <Icon name="loader-2" size={16} className="animate-spin" /> : <span>INITIALIZE LINK</span>}
+                            {!isLoginLoading && <Icon name="arrow-right" size={16} className="group-hover:translate-x-1 transition-transform" />}
+                        </button>
+
+>>>>>>> Stashed changes
                     </form>
                     <div className="mt-6 text-center">
                         <button onClick={() => { setActiveTab('register'); setAuthError(''); setAuthForm({ username: '', password: '', confirmPassword: '' }); }} className="text-slate-500 text-xs hover:text-cyan-400 transition-colors">
@@ -1468,7 +1657,10 @@
                 </div>
             );
 
+<<<<<<< Updated upstream
             // Stats Variables
+=======
+>>>>>>> Stashed changes
             const safeHistory = Array.isArray(weeklyHistory) ? weeklyHistory : [];
             const hasHistory = safeHistory.length > 0;
             const weeklyStats = safeHistory.reduce((acc, trip) => {
@@ -1476,7 +1668,10 @@
             }, { totalScore: 0, overspeed: 0, braking: 0, tilt: 0 });
             const averageScore = hasHistory ? Math.round(weeklyStats.totalScore / safeHistory.length) : '---';
 
+<<<<<<< Updated upstream
             // [新增：動態歷史評分與 EventHeatmapChart 渲染功能]
+=======
+>>>>>>> Stashed changes
             const EventHeatmapChart = ({ data, dataKey, color, label }) => {
                 const timeSlots = [
                     { label: '凌晨', idx: 0, range: '00:00-04:00' }, { label: '早晨', idx: 1, range: '04:00-08:00' }, { label: '午間', idx: 2, range: '08:00-12:00' },
@@ -1661,12 +1856,25 @@
                 </div>
             );
 
+<<<<<<< Updated upstream
             // [刪除：原本重複的 renderHome、renderEvents、renderStats、renderHudPage、renderSettings 區塊，留白於此以保持清爽]
             
             
             
             
             // [新增：登入與註冊畫面切換邏輯，控制未登入狀態下的顯示介面]
+=======
+            /* [舊版程式碼保留：多餘重複的 return 區塊]
+            return (
+                <div className="flex justify-center items-center min-h-screen bg-black font-sans p-0 md:p-4 lg:p-6 overflow-hidden">
+                    <div className="w-full h-[100dvh] md:max-w-[420px] md:h-[90vh] md:max-h-[880px] bg-slate-950 md:rounded-[3rem] md:border-[8px] md:border-slate-800 overflow-hidden relative shadow-2xl flex flex-col md:ring-1 md:ring-white/10 transition-all duration-300">
+                        ...
+                    </div>
+                </div>
+            );
+            */
+
+>>>>>>> Stashed changes
             return (
                 <div className="flex justify-center items-center min-h-screen bg-black font-sans p-0 md:p-4 lg:p-6 overflow-hidden">
                     <div className="w-full h-[100dvh] md:max-w-[420px] md:h-[90vh] md:max-h-[880px] bg-slate-950 md:rounded-[3rem] md:border-[8px] md:border-slate-800 overflow-hidden relative shadow-2xl flex flex-col md:ring-1 md:ring-white/10 transition-all duration-300">
