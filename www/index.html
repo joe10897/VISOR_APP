@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
     <!-- 修正：允許地圖圖塊載入與混合內容 -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: cdvfile: https://ssl.gstatic.com 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.org https://unpkg.com; connect-src *;">
-
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: cdvfile: https://ssl.gstatic.com 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net ; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.org https://unpkg.com; connect-src * https://*.supabase.co wss://*.supabase.co;">    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>V.I.S.O.R. MK-XXV</title>
@@ -28,6 +27,9 @@
     
     <link rel="stylesheet" href="lib/css/leaflet.css"/>
     <script src="lib/js/leaflet.js"></script>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <!-- Cordova 核心 (打包後自動生效) -->
     <script src="cordova.js"></script>
@@ -138,6 +140,20 @@
         const { useState, useEffect, useMemo, useRef, useCallback } = React;
         const Recharts = window.Recharts || null;
         const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } = Recharts || {};
+
+        // --- Supabase 初始化區塊 ---
+        const supabaseUrl = 'https://klocpegynqrkrsggtdpa.supabase.co';
+        const supabaseKey = 'sb_publishable_F8milukMYwEBxDjyAOb3KQ_38jmgTpB';
+        
+        // 使用 window.supabase 確保在 Cordova 環境中正確抓取全域物件
+        const _supabase = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
+
+        if (_supabase) {
+            logToScreen("V.I.S.O.R. Supabase 雲端模組已就緒");
+        } else {
+            logToScreen("Supabase SDK 載入失敗，請檢查網路或 CSP 設定", true);
+        }
+        // -------------------------
 
         // --- 1. Audio System (Softer Tones) ---
         window._visorAudioCtx = null;
@@ -665,6 +681,27 @@
             const [forceSpeeding, setForceSpeeding] = React.useState(true); // 控制騎乘模擬是否超速
             const currentRideDataRef = React.useRef([]); //分析專用的 Ref
             const [weeklyHistory, setWeeklyHistory] = React.useState([]); //放置分析歷史紀錄
+
+            const [instruments, setInstruments] = useState([]); //supabase用
+
+            useEffect(() => {
+                const fetchInstruments = async () => {
+                    if (!_supabase) return;
+                    
+                    const { data, error } = await _supabase
+                        .from('History')
+                        .select('*');
+
+                    if (error) {
+                        logToScreen.error("抓取失敗:", error.message);
+                    } else {
+                        logToScreen("從雲端抓取的資料:", data);
+                        setInstruments(data);
+                    }
+                };
+
+                fetchInstruments();
+            }, []);
 
             //檢查初始載入 讀取分析歷史紀錄
             React.useEffect(() => {
