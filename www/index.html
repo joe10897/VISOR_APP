@@ -729,6 +729,7 @@
             // Login/Register Form State
             const [authForm, setAuthForm] = useState({ username: '', password: '', confirmPassword: '' });
             const [authError, setAuthError] = useState('');
+            const [loading, setLoading] = useState(false);
 
             // Pass Detection Logic
             const prevAlertRef = useRef(null);
@@ -756,35 +757,81 @@
                 }
             }, []);
 
-            const handleLogin = (e) => {
+            const handleLogin = async (e) => {
                 e.preventDefault();
+                setLoading(true);
                 setAuthError('');
-                const result = window.AuthService.login(authForm.username, authForm.password);
-                if (result) {
-                    setCurrentUser(result.user);
-                    setActiveTab('home');
-                    // Reset form
-                    setAuthForm({ username: '', password: '', confirmPassword: '' });
-                } else {
-                    setAuthError('帳號或密碼錯誤');
-                    playWarningSound('warning');
+
+                try {
+                    const { data, error } = await _supabase.auth.signInWithPassword({
+                        email: `${authForm.username}@visor.com`,
+                        password: authForm.password,
+                    });
+
+                    // 2. 處理錯誤
+                    if (error) {
+                        let msg = error.message;
+                        if (msg.includes("Invalid login credentials")) {
+                            msg = "帳號或密碼錯誤";
+                        } else if (msg.includes("Email not confirmed")) {
+                            msg = "帳號尚未驗證，請聯繫管理員";
+                        }
+                        setAuthError(msg);
+                        playWarningSound('warning');
+                        setLoading(false);
+                        return;
+                    }
+
+                    // 3. 登入成功
+                    if (data.user) {
+                        logToScreen(`V.I.S.O.R. 系統登入：${authForm.username}`);
+                        setCurrentUser(data.user); 
+                        setActiveTab('home'); 
+                    }
+                } catch (err) {
+                    setAuthError("通訊失敗，請檢查網路");
+                } finally {
+                    setLoading(false);
                 }
             };
 
-            const handleRegister = (e) => {
+            const handleRegister = async(e) => {
                 e.preventDefault();
-                setAuthError('');
+                
+                if (authForm.password.length < 6) {
+                    setAuthError("密碼太短囉！請至少輸入 6 個字元");
+                    return;
+                }
                 if (authForm.password !== authForm.confirmPassword) {
                     setAuthError('兩次密碼輸入不一致');
                     return;
                 }
-                const result = window.AuthService.register(authForm.username, authForm.password);
-                if (result) {
-                    alert('註冊成功！請登入。');
-                    setActiveTab('login');
-                    setAuthForm({ username: '', password: '', confirmPassword: '' });
-                } else {
-                    setAuthError('帳號已存在');
+
+                setLoading(true);
+                setAuthError('');
+
+                try {
+                    const { data, error } = await _supabase.auth.signUp({
+                        email: `${authForm.username}@visor.com`, // 強制轉成 email 格式
+                        password: authForm.password,
+                        options: {
+                            data: { display_name: authForm.username } // 把純用戶名存進元數據
+                        }
+                    });
+
+                    if (error) {
+                        setAuthError(error.message);
+                    } else if (data.user) {
+                        logToScreen("註冊成功：系統已建立帳號 " + authForm.username);
+                        alert("註冊成功！請登入。");
+                        setActiveTab('login'); // 註冊完自動跳轉到登入畫面
+                    } else {
+                        setAuthError('帳號已存在');
+                    }
+                } catch (err) {
+                    setAuthError("連線異常");
+                } finally {
+                    setLoading(false);
                 }
             };
 
