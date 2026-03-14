@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V.I.S.O.R. v15 | 導航修復與全襯線美學版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Noto+Serif+TC:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #00c7b3;
+            --font-main: 'Playfair Display', 'Noto Serif TC', serif;
+            --grey-900: #0d0d0d;
+            --grey-800: #121212;
+            --grey-700: #242426;
+            --grey-300: #dadada;
+            --grey-200: #f0f0f0;
+            --grey-100: #ececeb;
+        }
+        
+        html {
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--grey-800);
+            color: #f5f5f5;
+            font-family: var(--font-main);
+            overflow-x: hidden;
+            line-height: 1.8;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .stack-section {
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+            position: sticky;
+            top: 0;
+            min-height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-top: 100px; /* 增加頂部內距防止遮擋 */
+            box-shadow: 0 -20px 50px rgba(0,0,0,0.15);
+            /* 修正導航跳轉目標位置 */
+            scroll-margin-top: 0px; 
+        }
+
+        .v3-tag {
+            font-family: var(--font-main);
+            font-size: 10px;
+            letter-spacing: 0.6em;
+            text-transform: uppercase;
+            font-weight: 900; /* 加強粗細 */
+            transition: color 0.5s ease;
+        }
+        /* 強化標籤顏色對比 */
+        .dark-bg .v3-tag { color: rgba(255, 255, 255, 0.9); }
+        .light-bg .v3-tag { color: rgba(0, 0, 0, 0.7); }
+
+        .v2-heading {
+            font-family: var(--font-main);
+            font-weight: 900;
+            letter-spacing: -0.01em;
+        }
+
+        .italic-serif { font-style: italic; }
+
+        .pop-reveal {
+            opacity: 0;
+            transform: translateY(30px) scale(0.97);
+            transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .pop-reveal.active {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .stagger-1 { transition-delay: 0.15s; }
+        .stagger-2 { transition-delay: 0.3s; }
+
+        .tech-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 0.5px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .tech-card:hover { border-color: var(--accent); transform: translateY(-5px); }
+
+        .light-card {
+            background: rgba(0, 0, 0, 0.03);
+            border: 0.5px solid rgba(0, 0, 0, 0.08);
+            transition: all 0.6s ease;
+        }
+        .light-card:hover { border-color: var(--accent); background: rgba(0, 0, 0, 0.05); }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            opacity: 0.4;
+        }
+
+        ::-webkit-scrollbar { width: 0px; }
+    </style>
+</head>
+<body class="selection:bg-[#00c7b3] selection:text-black">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-[1000] border-b border-white/5 bg-[#121212]/70 backdrop-blur-xl">
+        <div class="max-w-7xl mx-auto px-10 h-24 flex items-center justify-between">
+            <span class="text-xl font-black italic tracking-tighter cursor-pointer hover:text-[#00c7b3] transition-colors" onclick="window.scrollTo({top:0, behavior:'smooth'})">V.I.S.O.R.</span>
+            <div class="hidden md:flex gap-16 items-center">
+                <!-- 修改為 JS 控制的跳轉 -->
+                <button onclick="scrollToSection('motivation')" class="v3-tag dark-bg hover:text-[#00c7b3] transition-colors">Motivation</button>
+                <button onclick="scrollToSection('definition')" class="v3-tag dark-bg hover:text-[#00c7b3] transition-colors">Definition</button>
+                <button onclick="scrollToSection('goals')" class="v3-tag dark-bg hover:text-[#00c7b3] transition-colors">Goals</button>
+                <button onclick="scrollToSection('architecture')" class="v3-tag dark-bg hover:text-[#00c7b3] transition-colors">Architecture</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="stack-section z-10 px-10 dark-bg" style="background-color: var(--grey-800);">
+        <div class="max-w-6xl mx-auto w-full">
+            <div class="pop-reveal active">
+                <span class="v3-tag mb-12 block">PROJECT VISUAL INTELLIGENT SAFETY ON ROAD</span>
+                <h1 class="v2-heading text-5xl md:text-7xl leading-[1.2] mb-12 text-[#f5f5f5]">
+                    V.I.S.O.R. <br>
+                    <span class="italic-serif text-white/30 text-2xl md:text-4xl block mt-4 leading-relaxed">基於 Raspberry Pi 5 與 YOLOv8 的全方位輔助系統</span>
+                </h1>
+                <p class="text-lg md:text-xl text-zinc-500 font-light italic-serif max-w-2xl leading-relaxed">
+                    我們致力於利用邊緣運算與深度學習技術，為機車騎士構建全方位的環境感知與主動預警系統。
+                </p>
+            </div>
+        </div>
+    </header>
+
+    <!-- 一、研究動機 -->
+    <section id="motivation" class="stack-section z-20 light-bg" style="background-color: var(--grey-100); color: var(--text-on-light);">
+        <div class="max-w-6xl mx-auto px-10">
+            <div class="pop-reveal mb-20">
+                <span class="v3-tag mb-6 block">Section 01 / Motivation</span>
+                <h2 class="v2-heading text-5xl md:text-6xl leading-none text-[#1a1a1a]">一、研究動機</h2>
+                <div class="w-20 h-px bg-[#00c7b3] mt-8"></div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+                <div class="light-card p-10 rounded-3xl pop-reveal stagger-1">
+                    <h4 class="v2-heading text-xl mb-6 italic-serif text-[#333]">高事故率</h4>
+                    <p class="text-sm text-[#666] font-normal leading-loose">日益頻繁的交通事故，凸顯了為所有用路人提供先進駕駛輔助系統的迫切性。</p>
+                </div>
+                <div class="light-card p-10 rounded-3xl pop-reveal stagger-2">
+                    <h4 class="v2-heading text-xl mb-6 italic-serif text-[#333]">智慧型手機普及</h4>
+                    <p class="text-sm text-[#666] font-normal leading-loose">利用人手一機的智慧型手機作為運算核心，可大幅降低硬體成本，並透過 App 快速部署至大眾市場。</p>
+                </div>
+                <div class="light-card p-10 rounded-3xl pop-reveal stagger-3">
+                    <h4 class="v2-heading text-xl mb-6 italic-serif text-[#333]">市場潛力</h4>
+                    <p class="text-sm text-[#666] font-normal leading-loose">開發一套即時、有效且低成本的機車行車輔助系統，不僅能提升騎士安全，也具備龐大的市場應用價值。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 二、問題定義 -->
+    <section id="definition" class="stack-section z-30 dark-bg" style="background-color: var(--grey-700);">
+        <div class="max-w-6xl mx-auto px-10">
+            <div class="pop-reveal mb-20 text-right">
+                <span class="v3-tag mb-6 block">Section 02 / Definition</span>
+                <h2 class="v2-heading text-5xl md:text-6xl leading-none text-zinc-200">二、問題定義</h2>
+                <div class="w-20 h-px bg-[#00c7b3] mt-8 ml-auto"></div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="tech-card p-10 rounded-[2rem] pop-reveal stagger-1 flex flex-col md:flex-row gap-8 items-center">
+                    <div class="md:w-1/3"><h4 class="v2-heading text-2xl italic-serif text-zinc-300">環境感知挑戰</h4></div>
+                    <div class="md:w-2/3"><p class="text-sm text-zinc-500 font-normal leading-relaxed">機車騎士需同時應對車輛、行人、號誌等多重動態目標，在複雜路況中難以全面兼顧，易生危險。</p></div>
+                </div>
+                <div class="tech-card p-10 rounded-[2rem] pop-reveal stagger-2 flex flex-col md:flex-row gap-8 items-center">
+                    <div class="md:w-1/3"><h4 class="v2-heading text-2xl italic-serif text-zinc-300">駕駛行為風險</h4></div>
+                    <div class="md:w-2/3"><p class="text-sm text-zinc-500 font-normal leading-relaxed">不當的駕駛行為，如車道偏移、彎道超速或過彎傾角過大，是造成機車自摔或碰撞事故的主要原因之一。</p></div>
+                </div>
+                <div class="tech-card p-10 rounded-[2rem] pop-reveal stagger-3 flex flex-col md:flex-row gap-8 items-center">
+                    <div class="md:w-1/3"><h4 class="v2-heading text-2xl italic-serif text-zinc-300">極端條件限制</h4></div>
+                    <div class="md:w-2/3"><p class="text-sm text-zinc-500 font-normal leading-relaxed">在夜間、雨天或起霧等惡劣天候下，人眼與攝影機的辨識能力皆會顯著下降，導致偵測精度不足。</p></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 三、目標與功能 -->
+    <section id="goals" class="stack-section z-40 light-bg" style="background-color: var(--grey-300);">
+        <div class="max-w-6xl mx-auto px-10">
+            <div class="pop-reveal mb-20">
+                <span class="v3-tag mb-6 block">Section 03 / Goals</span>
+                <h2 class="v2-heading text-5xl md:text-6xl leading-none text-[#1a1a1a]">三、目標與功能</h2>
+                <div class="w-20 h-px bg-[#00c7b3] mt-8"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white/40 backdrop-blur-sm p-10 rounded-3xl pop-reveal stagger-1 border border-white/20">
+                    <div class="flex items-center gap-6 mb-4">
+                        <i data-lucide="alert-triangle" class="text-[#00c7b3] w-6 h-6"></i>
+                        <h4 class="v2-heading text-xl text-[#333]">後方追撞警示</h4>
+                    </div>
+                    <p class="text-sm text-[#555] font-normal leading-relaxed">即時偵測後方車輛，並根據相對距離與位置判斷威脅，發出警示。</p>
+                </div>
+                <div class="bg-white/40 backdrop-blur-sm p-10 rounded-3xl pop-reveal stagger-2 border border-white/20">
+                    <div class="flex items-center gap-6 mb-4">
+                        <i data-lucide="compass" class="text-[#00c7b3] w-6 h-6"></i>
+                        <h4 class="v2-heading text-xl text-[#333]">過彎傾角警示</h4>
+                    </div>
+                    <p class="text-sm text-[#555] font-normal leading-relaxed">偵測機車過彎時的傾斜角度，當角度過大時提醒騎士，預防失控打滑。</p>
+                </div>
+                <div class="bg-white/40 backdrop-blur-sm p-10 rounded-3xl pop-reveal stagger-1 border border-white/20">
+                    <div class="flex items-center gap-6 mb-4">
+                        <i data-lucide="eye" class="text-[#00c7b3] w-8 h-8"></i>
+                        <h4 class="v2-heading text-xl text-[#333]">即時物件偵測</h4>
+                    </div>
+                    <p class="text-sm text-[#555] font-normal leading-relaxed">辨識畫面中的行人、汽車、機車等用路人，提供全面的環境感知。</p>
+                </div>
+                <div class="bg-white/40 backdrop-blur-sm p-10 rounded-3xl pop-reveal stagger-2 border border-white/20">
+                    <div class="flex items-center gap-6 mb-4">
+                        <i data-lucide="layout" class="text-[#00c7b3] w-8 h-8"></i>
+                        <h4 class="v2-heading text-xl text-[#333]">行車資訊顯示</h4>
+                    </div>
+                    <p class="text-sm text-[#555] font-normal leading-relaxed">在畫面上即時顯示目前車速與傾角等關鍵數據，讓騎士一目了然。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 四、系統架構 -->
+    <section id="architecture" class="stack-section z-50 light-bg" style="background-color: var(--grey-200);">
+        <div class="max-w-6xl mx-auto px-10">
+            <div class="pop-reveal mb-16 text-center">
+                <span class="v3-tag mb-6 block">Section 04 / Architecture</span>
+                <h2 class="v2-heading text-5xl md:text-6xl leading-none text-[#1a1a1a]">四、系統架構</h2>
+                <div class="w-20 h-px bg-[#00c7b3] mt-8 mx-auto"></div>
+            </div>
+
+            <div class="space-y-12 relative">
+                <div class="flex flex-col md:flex-row items-center gap-6">
+                    <div class="light-card p-6 rounded-3xl pop-reveal stagger-1 flex-1 w-full relative">
+                        <span class="absolute -top-3 -left-3 w-8 h-8 bg-black text-white rounded-full flex items-center justify-center text-xs italic border-4 border-[#f0f0f0]">01</span>
+                        <h4 class="v2-heading text-base mb-1 text-[#333]">影像輸入</h4>
+                        <p class="text-[10px] text-[#666] leading-relaxed">OpenCV 即時串流讀取</p>
+                    </div>
+                    <div class="flow-arrow hidden md:flex"><i data-lucide="chevron-right" class="w-4 h-4"></i></div>
+                    <div class="light-card p-6 rounded-3xl pop-reveal stagger-2 flex-1 w-full relative">
+                        <span class="absolute -top-3 -left-3 w-8 h-8 bg-black text-white rounded-full flex items-center justify-center text-xs italic border-4 border-[#f0f0f0]">02</span>
+                        <h4 class="v2-heading text-base mb-1 text-[#333]">物件偵測</h4>
+                        <p class="text-[10px] text-[#666] leading-relaxed">YOLOv8n 輕量化模型</p>
+                    </div>
+                    <div class="flow-arrow hidden md:flex"><i data-lucide="chevron-right" class="w-4 h-4"></i></div>
+                    <div class="light-card p-6 rounded-3xl pop-reveal stagger-3 flex-1 w-full relative">
+                        <span class="absolute -top-3 -left-3 w-8 h-8 bg-black text-white rounded-full flex items-center justify-center text-xs italic border-4 border-[#f0f0f0]">03</span>
+                        <h4 class="v2-heading text-base mb-1 text-[#333]">物件追蹤</h4>
+                        <p class="text-[10px] text-[#666] leading-relaxed">CentroidTracker ID</p>
+                    </div>
+                </div>
+                
+                <div class="flex justify-center md:justify-end pr-20 pop-reveal opacity-20">
+                    <div class="w-px h-8 bg-black"></div>
+                </div>
+
+                <div class="flex flex-col md:flex-row-reverse items-center gap-6">
+                    <div class="light-card p-6 rounded-3xl pop-reveal stagger-1 flex-1 w-full relative">
+                        <span class="absolute -top-3 -left-3 w-8 h-8 bg-black text-white rounded-full flex items-center justify-center text-xs italic border-4 border-[#f0f0f0]">04</span>
+                        <h4 class="v2-heading text-base mb-1 text-[#333]">感測器模擬</h4>
+                        <p class="text-[10px] text-[#666] leading-relaxed">GPS / IMU 姿態數據</p>
+                    </div>
+                    <div class="flow-arrow hidden md:flex"><i data-lucide="chevron-left" class="w-4 h-4"></i></div>
+                    <div class="light-card p-6 rounded-3xl pop-reveal stagger-2 flex-1 w-full relative">
+                        <span class="absolute -top-3 -left-3 w-8 h-8 bg-black text-white rounded-full flex items-center justify-center text-xs italic border-4 border-[#f0f0f0]">05</span>
+                        <h4 class="v2-heading text-base mb-1 text-[#333]">融合與決策</h4>
+                        <p class="text-[10px] text-[#666] leading-relaxed">TTC / 距離 預警判定</p>
+                    </div>
+                    <div class="flow-arrow hidden md:flex"><i data-lucide="chevron-left" class="w-4 h-4"></i></div>
+                    <div class="light-card p-6 rounded-3xl pop-reveal stagger-3 flex-1 w-full relative border-2 border-[#00c7b3]">
+                        <span class="absolute -top-3 -left-3 w-8 h-8 bg-[#00c7b3] text-black rounded-full flex items-center justify-center text-xs italic border-4 border-[#f0f0f0]">06</span>
+                        <h4 class="v2-heading text-base mb-1 text-[#333]">警示呈現</h4>
+                        <p class="text-[10px] text-[#666] leading-relaxed">AR HUD 視覺化預警</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="stack-section z-[60] px-10 dark-bg" style="background-color: var(--grey-900);">
+        <div class="max-w-6xl mx-auto w-full text-center">
+            <div class="pop-reveal">
+                <h2 class="v2-heading text-6xl md:text-8xl italic-serif mb-12 hover:text-[#00c7b3] transition-colors cursor-default">V.I.S.O.R.®</h2>
+                <p class="v3-tag leading-relaxed text-zinc-600 mb-12">
+                    致理科技大學 V.I.S.O.R. 研究團隊<br>
+                    楊詠媜 / 王靖雯 / 陳于庭 / 林韋丞 / 林佳嫻 / 翁怡蓉 / 黃澤然
+                </p>
+                <div class="flex justify-center gap-12">
+                    <a href="#" class="v3-tag text-white hover:text-[#00c7b3] italic transition-colors">Documentation</a>
+                    <a href="#" class="v3-tag text-white hover:text-[#00c7b3] italic transition-colors">GitHub</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+
+        // 精準捲動處理邏輯
+        function scrollToSection(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                // 在 Stacking 佈局中，需計算其真實 offset
+                const rect = element.getBoundingClientRect();
+                const absoluteTop = rect.top + window.pageYOffset;
+                window.scrollTo({
+                    top: absoluteTop,
+                    behavior: 'smooth'
+                });
+            }
+        }
+
+        const obs = new IntersectionObserver((entries) => {
+            entries.forEach(e => {
+                if(e.isIntersecting) {
+                    e.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.2 });
+        
+        document.querySelectorAll('.pop-reveal').forEach(el => obs.observe(el));
+    </script>
+</body>
+</html>
