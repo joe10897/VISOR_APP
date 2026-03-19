@@ -682,27 +682,6 @@
             const currentRideDataRef = React.useRef([]); //分析專用的 Ref
             const [weeklyHistory, setWeeklyHistory] = React.useState([]); //放置分析歷史紀錄
 
-            const [instruments, setInstruments] = useState([]); //supabase用
-
-            useEffect(() => {
-                const fetchInstruments = async () => {
-                    if (!_supabase) return;
-                    
-                    const { data, error } = await _supabase
-                        .from('History')
-                        .select('*');
-
-                    if (error) {
-                        logToScreen.error("抓取失敗:", error.message);
-                    } else {
-                        logToScreen("從雲端抓取的資料:", data);
-                        setInstruments(data);
-                    }
-                };
-
-                fetchInstruments();
-            }, []);
-
             //檢查初始載入 讀取分析歷史紀錄
             React.useEffect(() => {
                 const savedHistory = localStorage.getItem('ride_history');
@@ -726,11 +705,6 @@
                 return 'ALL';
             };
             
-            // Login/Register Form State
-            const [authForm, setAuthForm] = useState({ username: '', password: '', confirmPassword: '' });
-            const [authError, setAuthError] = useState('');
-            const [loading, setLoading] = useState(false);
-
             // Pass Detection Logic
             const prevAlertRef = useRef(null);
             
@@ -745,17 +719,40 @@
                 prevAlertRef.current = cameraAlert;
             }, [cameraAlert]);
 
+            //==============================================================================================================
+            //登入、登出、註冊區塊
+            //==============================================================================================================
+            const [authForm, setAuthForm] = useState({ username: '', password: '', confirmPassword: '' });
+            const [authError, setAuthError] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            //監聽及初始化登入狀態
             useEffect(() => {
-                // Initialize Auth
-                window.AuthService.init();
-                const user = window.AuthService.getCurrentUser();
-                if (user) {
-                    setCurrentUser(user);
-                    setActiveTab('home');
-                } else {
-                    setActiveTab('login');
+                // 1. 初始化 AuthService (保持你原有的工具初始化)
+                if (window.AuthService && typeof window.AuthService.init === 'function') {
+                    window.AuthService.init();
                 }
-            }, []);
+
+                // 2. 使用 Supabase 原生監聽器 (處理「第一次載入」+「後續變化」)
+                const { data: { subscription } } = _supabase.auth.onAuthStateChange((event, session) => {
+                    console.log("Auth Event:", event); // INITIAL_SESSION(初始化) 或 SIGNED_IN(登入) 或 SIGNED_OUT(登出)
+
+                    if (session && session.user) {
+                        // 登入成功：存入使用者資訊，跳轉到首頁
+                        setCurrentUser(session.user);
+                        setActiveTab('home');
+                    } else {
+                        // 未登入或登出：清空資訊，跳轉到登入頁
+                        setCurrentUser(null);
+                        setActiveTab('login');
+                    }
+                });
+
+                // 3. 清除監聽器 (當元件被銷毀時，要把監聽關掉，避免記憶體洩漏)
+                return () => {
+                    if (subscription) subscription.unsubscribe();
+                };
+            }, []); 
 
             const handleLogin = async (e) => {
                 e.preventDefault();
@@ -785,12 +782,9 @@
                     // 3. 登入成功
                     if (data.user) {
                         logToScreen(`V.I.S.O.R. 系統登入：${authForm.username}`);
-                        setCurrentUser(data.user); 
-                        setActiveTab('home'); 
                     }
                 } catch (err) {
                     setAuthError("通訊失敗，請檢查網路");
-                } finally {
                     setLoading(false);
                 }
             };
@@ -820,13 +814,11 @@
                     });
 
                     if (error) {
-                        setAuthError(error.message);
+                        setAuthError('帳號已存在');
                     } else if (data.user) {
                         logToScreen("註冊成功：系統已建立帳號 " + authForm.username);
                         alert("註冊成功！請登入。");
                         setActiveTab('login'); // 註冊完自動跳轉到登入畫面
-                    } else {
-                        setAuthError('帳號已存在');
                     }
                 } catch (err) {
                     setAuthError("連線異常");
@@ -835,11 +827,24 @@
                 }
             };
 
-            const handleLogout = () => {
-                window.AuthService.logout();
-                setCurrentUser(null);
-                setActiveTab('login');
+            const handleLogout = async () => {
+                try {
+                    // 1. 叫 Supabase 真正執行登出 (這會清除伺服器端的 Session)
+                    await _supabase.auth.signOut(); 
+                    
+                    // 2. 如果你的 AuthService 還有額外清理工作 (例如清除自訂的 Cookie)
+                    if (window.AuthService && window.AuthService.logout) {
+                        window.AuthService.logout();
+                    }
+                    logToScreen("系統已登出");
+
+                } catch (error) {
+                    logToScreen("登出失敗:", error);
+                }
             };
+            //=======================================================================================
+            //登入、登出、註冊區塊結束
+            //=======================================================================================
 
             useEffect(() => {
                 window._visorIsMuted = isMuted;
