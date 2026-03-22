@@ -1148,27 +1148,37 @@
                 }
             };
 
+            //預留給開始騎乘紀錄按鈕================================================
+            const [isRiding, setIsRiding] = React.useState(false); 
+            const isRidingRef = React.useRef(false);
+
+            // 當 State 改變時，同步更新 Ref
+            React.useEffect(() => {
+                isRidingRef.current = isRiding;
+            }, [isRiding]);
+            //=====================================================================
+
             // 統一處理來自模擬跟實際的數據
             const handleIncomingData = (data) => {
                 // 1. 統一時間格式
-                const timestamp = new Date().toLocaleTimeString([], { 
-                    hour12: false, 
-                    hour: '2-digit', 
-                    minute: '2-digit', 
-                    second: '2-digit' 
-                });
+                const now = new Date();
 
                 // 2. 建立標準數據點 (確保不管來源是誰，存入的欄位名稱都統一)
                 const newPoint = {
-                    time: timestamp,
-                    speed: data.speed,      // 時速
-                    limit: data.limit,      // 限速
-                    braking: data.braking,  // 減速度
-                    tilt: data.tilt         // 傾角
+                    rawTime: now.getTime(), // 用來做數學計算
+                    time: now.toISOString(), // 用來做分析
+                    location: data.location, // 位置資訊
+                    limit: data.limit, // 限速
+                    speed: data.speed, // 時速
+                    tilt: data.tilt  // 傾角
                 };
 
-                // 3. 存入結算用的 Ref (這是之後 analyzeOverspeed 等函數要讀取的資料夾)
-                currentRideDataRef.current.push(newPoint);
+                // 3. 同時檢查 isRiding 或正在模擬 (analyzeOverspeed 等函數要讀取的資料夾)
+                if (isRiding || isSimulatingRef.current) { 
+                    currentRideDataRef.current.push(newPoint);
+                } else {
+                    console.warn("⚠️ 數據被拒絕存入: isRiding =", isRiding, "Simulating =", isSimulatingRef.current);
+                }
 
                 // 4. 同步更新儀表板顯示 (UI)
                 setSimulatedSpeed(data.speed);
@@ -1181,88 +1191,233 @@
             //                 事件判斷區 
             //================================================
 
-            //判斷一段路徑中有幾次超速事件
+            //判斷有幾次超速事件
             const analyzeOverspeed = (ridePoints) => {
-                // 1. 檢查有沒有資料，沒資料就回傳 0
-                if (!ridePoints || ridePoints.length === 0) return 0;
+                // 檢查有沒有資料，沒資料就回傳 0
+                if (!ridePoints || ridePoints.length === 0) { 
+                    return { count: 0, events: [], class: 'normal' }; 
+                }
 
-                let count = 0;           // 紀錄次數
-                let isSpeeding = false;  // 紀錄「現在這一秒」是否正在超速
+                let isSpeeding = false; // 紀錄「現在這一秒」是否正在超速
+                let count = 0; // 紀錄次數
+                let currentEvent = null; // 紀錄當下事件細節
+                let events = []; // 總結事件的細節
 
-                // 2. 開始逐一檢查每一個點
+                // 逐一檢查每個點
                 ridePoints.forEach((point) => {
-                    if (point.limit){
+                    if (point.limit) {
                         const limit = point.limit; // 取得限速
+                        const speedDiff = point.speed - limit; // 計算超速程度
+
                         if (point.speed > limit) { // 如果這秒超過限速
-                            if (isSpeeding === false) { // 而且「前一秒」沒超速 -> 這是一個新的超速開始！
-                                count = count + 1; 
-                                isSpeeding = true; // 標記為：開始超速中
+                            if (!isSpeeding) {// 超速開始
+                                isSpeeding = true;
+                                count++; // 觸發次數+1
+                                currentEvent = {
+                                    time: point.time, // 紀錄起始時間
+                                    maxSpeed: point.speed,
+                                    lowSpeed: point.speed, // 初始化最低速為起點速
+                                    limit: limit
+                                };
+                            } else { // 持續超速中：更新最高、最低速
+                                if (point.speed > currentEvent.maxSpeed) {
+                                    currentEvent.maxSpeed = point.speed;
+                                }
+                                if (point.speed < currentEvent.lowSpeed) {
+                                    currentEvent.lowSpeed = point.speed;
+                                }
                             }
-                        } else {
-                            // 如果這秒速度低於或等於限速
-                            isSpeeding = false; // 標記為：正常行駛
+                        } else { // 超速結束
+                            if (isSpeeding && currentEvent) {
+                                events.push({
+                                    time: currentEvent.time,        // 開始時間
+                                    endtime: point.time,             // 結束時間
+                                    maxspeed: Math.round(currentEvent.maxSpeed), // 這段區間的最高時速
+                                    lowspeed: Math.round(currentEvent.lowSpeed), // 這段區間的最低時速
+                                    limit: currentEvent.limit,
+                                    overspeed: Math.round(currentEvent.maxSpeed - currentEvent.limit), // 這一區間最大的超速量
+                                    class: 'overspeed'
+                                });
+                                isSpeeding = false;
+                                currentEvent = null;
+                            }
                         }
-                    }else{
-                        isSpeeding = false;
                     }
                 });
 
-                return count; // 回傳最後算出來的總次數
-            };
-            /* 請檢查資料長什麼樣子：
-                speed: 使用者的時速。
-                limit: 該路段的限速。 */
+                if (isSpeeding && currentEvent) {// 防止行程結束時還在超速
+                    const lastPoint = ridePoints[ridePoints.length - 1];
+                    events.push({
+                        time: currentEvent.time,
+                        endtime: lastPoint.time,
+                        maxspeed: Math.round(currentEvent.maxSpeed),
+                        lowspeed: Math.round(currentEvent.lowSpeed),
+                        limit: currentEvent.limit,
+                        overspeed: Math.round(currentEvent.maxSpeed - currentEvent.limit),
+                        class: 'overspeed'
+                    });
+                }
 
-            // 判斷一段路徑中有幾次危險傾角事件
+                return { 
+                    count: count, 
+                    events: events 
+                };
+            };
+
+            // 判斷有幾次危險傾角事件
             const analyzeTilt = (ridePoints) => {
-                if (!ridePoints || ridePoints.length === 0) return 0;
+                if (!ridePoints || ridePoints.length === 0) {
+                    return { count: 0, events: [], class: 'normal' };
+                }
 
                 let count = 0;
                 let isTilting = false; // 紀錄「現在」是否正處於危險傾角狀態
+                let currentEvent = null; // 紀錄當下事件細節
+                let events = []; // 總結事件的細節
 
                 ridePoints.forEach((point) => {
+                    // 判定門檻：傾角 >= 40 度
                     if (point.tilt >= 40) {
-                        if (isTilting === false) {
-                            count = count + 1; // 進入危險狀態，算一次
+                        if (!isTilting) {
+                            // 進入危險傾角
                             isTilting = true;
+                            count++;
+                            currentEvent = {
+                                time: point.time,       // 開始傾斜時間
+                                maxTilt: point.tilt,    // 初始傾角
+                                maxSpeed: point.speed,  // 進入時的時速
+                                lowSpeed: point.speed,  // 初始化最低速
+                                class: 'tilt'
+                            };
+                        } else { // 持續傾斜中：更新最大傾角與速度
+                            if (point.tilt > currentEvent.maxTilt) {
+                                currentEvent.maxTilt = point.tilt;
+                            }
+                            if (point.speed > currentEvent.maxSpeed) {
+                                currentEvent.maxSpeed = point.speed;
+                            }
+                            if (point.speed < currentEvent.lowSpeed) {
+                                currentEvent.lowSpeed = point.speed;
+                            }
                         }
                     } else {
-                        isTilting = false; // 回正了，重設開關
+                        if (isTilting && currentEvent) { // 傾角恢復
+                            events.push({
+                                time: currentEvent.time,        // 起始時間
+                                endtime: point.time,             // 結束時間
+                                maxspeed: Math.round(currentEvent.maxSpeed),
+                                lowspeed: Math.round(currentEvent.lowSpeed),
+                                tilt: Math.round(currentEvent.maxTilt), // 記錄這段區間最大的傾角
+                                class: 'tilt'
+                            });
+                            isTilting = false;
+                            currentEvent = null;
+                        }
                     }
                 });
-                return count;
+
+                if (isTilting && currentEvent) {// 防止行程結束時剛好還在傾斜
+                    const lastPoint = ridePoints[ridePoints.length - 1];
+                    events.push({
+                        time: currentEvent.time,
+                        endtime: lastPoint.time,
+                        maxspeed: Math.round(currentEvent.maxSpeed),
+                        lowspeed: Math.round(currentEvent.lowSpeed),
+                        tilt: Math.round(currentEvent.maxTilt),
+                        class: 'tilt'
+                    });
+                }
+
+                return { 
+                    count: count, 
+                    events: events 
+                };
             };
-            /* 請檢查資料長什麼樣子：
-                tilt: 使用者的傾角。 */
             
-            //判斷一段路徑中有幾次急煞事件
+            //判斷有幾次急煞事件
             const analyzeBraking = (ridePoints) => {
-                if (!ridePoints || ridePoints.length === 0) return 0;
+                // 檢查資料，至少需要兩個點才能計算速度變化
+                if (!ridePoints || ridePoints.length < 2) { 
+                    return { count: 0, events: [], class: 'normal' }; 
+                }
 
                 let count = 0;
-                let isBraking = false; // 紀錄「現在」是否正處於急煞狀態
+                let isBraking = false;
+                let currentEvent = null; // 紀錄當下事件細節
+                let events = []; // 總結事件的細節
 
-                ridePoints.forEach((point) => {
-                    if (point.braking >= 3.0) { 
-                        if (isBraking === false) {
-                            count = count + 1; // 進入危險狀態，算一次
+                // 逐點檢查 (從第二個點開始，與前一個點比較)
+                for (let i = 1; i < ridePoints.length; i++) {
+                    const currentPoint = ridePoints[i];
+                    const prevPoint = ridePoints[i - 1];
+
+                    // 計算兩點之間實際過了幾秒 (毫秒 / 1000)
+                    const timeDiff = (currentPoint.rawTime - prevPoint.rawTime) / 1000;
+                    if (timeDiff <= 0) continue; // 避免分母為 0 的極端情況
+
+                    // 計算減速度 (正值代表減速)
+                    const deceleration = (prevPoint.speed - currentPoint.speed) / timeDiff;
+
+                    // 判定門檻：減速 >= 10 km/hr/s
+                    if (deceleration >= 10) {
+                        if (!isBraking) {// 急煞開始
                             isBraking = true;
+                            count++;
+                            currentEvent = {
+                                time: prevPoint.time,    // 煞車開始的時間
+                                maxSpeed: prevPoint.speed, // 煞車前的初始時速
+                                lowSpeed: currentPoint.speed, // 當下的最低速
+                                maxBraking: deceleration, // 初始減速度
+                                class: 'braking'
+                            };
+                        } else { // 持續急煞中：更新最低速、最強的煞車力道
+                            if (currentPoint.speed < currentEvent.lowSpeed) {
+                                currentEvent.lowSpeed = currentPoint.speed;
+                            }
+                            if (deceleration > currentEvent.maxBraking) {
+                                currentEvent.maxBraking = deceleration;
+                            }
                         }
-                    } else {
-                        isBraking = false; // 回正了，重設開關
+                    } else { // 急煞結束
+                        if (isBraking && currentEvent) {
+                            events.push({
+                                time: currentEvent.time,        // 開始急煞時間
+                                endtime: currentPoint.time,      // 結束急煞時間
+                                maxspeed: Math.round(currentEvent.maxSpeed), // 煞車前的最高速
+                                lowspeed: Math.round(currentEvent.lowSpeed), // 煞車後的最低速
+                                braking: Math.round(currentEvent.maxBraking),  // 這段期間最強的煞車力道
+                                class: 'braking'
+                            });
+                            isBraking = false;
+                            currentEvent = null;
+                        }
                     }
-                });
-                return count;
+                }
+
+                if (isBraking && currentEvent) { // 防止行程結束時剛好在急煞
+                    const lastPoint = ridePoints[ridePoints.length - 1];
+                    events.push({
+                        time: currentEvent.time,
+                        endtime: lastPoint.time,
+                        maxspeed: Math.round(currentEvent.maxSpeed),
+                        lowspeed: Math.round(currentEvent.lowSpeed),
+                        braking: Math.round(currentEvent.maxBraking),
+                        class: 'braking'
+                    });
+                }
+
+                return { 
+                    count: count, 
+                    events: events 
+                };
             };
-            /* 請檢查資料長什麼樣子：
-                braking: 使用者的減速度。 */
-            
+
             //================================================
             //                 事件判斷區 結束
             //================================================
 
             // 結算騎乘表現的邏輯
-            const finalizeRide = (camera = null) => {
+            const finalizeRide = async (camera = null) => {
                 // 1. 從 Ref 抓取當前這趟的所有點位
                 const dataToAnalyze = currentRideDataRef.current;
                 console.log("=== 開始分析結算 ===");
@@ -1273,34 +1428,70 @@
                     return;
                 }
                 
-                // 2. 進行數據分析
-                const finalOverspeed = analyzeOverspeed(dataToAnalyze);
-                const finalBraking = analyzeBraking(dataToAnalyze); //統計減速度大於3.0的點
-                const finalTilt = analyzeTilt(dataToAnalyze); // 統計傾角 >=40度的點 (為避免過度敏感
+                // 2. 進行數據分析(回傳的是物件 { count, overspeed/braking, class })
+                const overspeedRes = analyzeOverspeed(dataToAnalyze);
+                const brakingRes = analyzeBraking(dataToAnalyze); 
+                const tiltRes = analyzeTilt(dataToAnalyze);
 
                 // 3. 計算分數
-                const totalPenalty = (finalOverspeed * 2) + (finalBraking * 3) + (finalTilt * 5);
+                const totalPenalty = (overspeedRes.count * 2) + (brakingRes.count * 3) + (tiltRes.count * 5);
                 const finalScore = Math.max(0, 100 - totalPenalty);
 
                 // 取得地點名稱，如果沒傳入就顯示 "未知路段"
                 const locationName = camera ? camera.address : "未知路段";
-
-                // 4. 建立標準歷史格式
-                const summary = {
-                    id: Date.now(),
-                    timestamp: new Date().getTime(),
-                    date: new Date().toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' }),
-                    location: locationName, 
-                    score: finalScore,
-                    overspeedCount: finalOverspeed,
-                    brakingCount: finalBraking,
-                    tiltCount: finalTilt
+                const firstPoint = dataToAnalyze[0]; // 行程開始點
+                const lastPoint = dataToAnalyze[dataToAnalyze.length - 1]; // 取得最後一個點的狀態
+                
+                let recordsToUpload = []; // 準備要上傳的資料陣列
+                
+                // 統一處理函數：
+                const processEvents = (res, type) => {
+                    res.events.forEach(ev => {
+                        recordsToUpload.push({
+                            user_id: currentUser.id,
+                            class: ev.class,
+                            count: ev.count || 1,
+                            time: ev.time,
+                            endtime: ev.endtime,
+                            location: locationName,
+                            limit: lastPoint.limit,
+                            maxspeed: ev.maxspeed,     
+                            lowspeed: ev.lowspeed,  
+                            overspeed: ev.maxoverspeed || 0,
+                            braking: ev.braking || 0,
+                            tilt: ev.tilt || 0,
+                            score: finalScore
+                        });
+                    });
                 };
+
+                processEvents(overspeedRes, 'overspeed');
+                processEvents(brakingRes, 'braking');
+                processEvents(tiltRes, 'tilt');
+
+                 // 如果完全沒事，存一筆正常的紀錄
+                if (recordsToUpload.length === 0) {
+                    recordsToUpload.push({
+                        user_id: currentUser.id, 
+                        class: 'normal', 
+                        count: 0,
+                        time: firstPoint.time,
+                        endtime: lastPoint.time,
+                        location: locationName,
+                        limit: lastPoint.limit,
+                        maxspeed: lastPoint.speed,
+                        lowspeed: lastPoint.speed,
+                        overspeed: 0, 
+                        braking: 0,
+                        tilt: 0,
+                        score: 100
+                    });
+                }
 
                 // 5. 更新狀態與 LocalStorage (包含 7 天過濾邏輯)
                 setWeeklyHistory(prev => {
                     const currentHistory = Array.isArray(prev) ? prev : [];
-                    let updated = [...currentHistory, summary];
+                    let updated = [...currentHistory, ...recordsToUpload];
 
                     // 執行 7 天過濾
                     const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -1311,10 +1502,19 @@
                     console.log("歷史紀錄已更新，目前總筆數:", updated.length);
                     return updated;
                 });
+
+                // 6. 上傳到 Supabase
+                try {
+                    const { error } = await _supabase.from('ride_history').insert(recordsToUpload);
+                    if (error) throw error;
+                    console.log("✅ 成功同步至雲端資料庫");
+                } catch (err) {
+                    console.error("❌ 雲端同步失敗:", err.message);
+                }
                 
                 // 測試用的 alert
                 if (isSimulatingRef.current) {
-                    alert(`✅ 模擬結束：已通過 ${summary.location} 並續行 100m，本次超速：${finalOverspeed} 次，急煞：${finalBraking} 次，危險傾角：${finalTilt} 次，最終得分：${finalScore} 分`);
+                    alert(`✅ 模擬結束：已通過 ${locationName} 並續行 100m，本次超速：${overspeedRes.overspeed} 次，急煞：${brakingRes.braking} 次，危險傾角：${tiltRes.tilt} 次，最終得分：${finalScore} 分`);
                 }
 
                 // 7. 重置臨時數據
@@ -1324,6 +1524,7 @@
             const startSimulation = () => {
                 if(simulationMode) {
                     setSimulationMode(false);
+                    setIsRiding(false);
                     isSimulatingRef.current = false; 
                     if(simRef.current) clearInterval(simRef.current);
                     setCameraAlert(null);
@@ -1346,9 +1547,10 @@
                 let passedTarget = false; // 鎖定通過狀態
                 let tick = 0; 
 
+                isSimulatingRef.current = true;
                 setLocation({ lat: currentLat, lng: currentLng });
                 setSimulationMode(true);
-                isSimulatingRef.current = true;
+                setIsRiding(true);
                 setSimulatedSpeed(speedValue); // 將計算出的速度套用到模擬器
                 setIsConnected(true);
 
@@ -1370,8 +1572,8 @@
 
                         if (forceSpeeding) {
                             // 模擬急煞
-                            if (Math.random() > 0.90) {
-                                braking = 2.44 + (Math.random() * 1.56); // 產生 2.44 ~ 4.0 的減速度
+                            if (Math.random() > 0.80) {
+                                braking = 12 + (Math.random() * 5); // 論文定義 > 10 算急煞
                             }
 
                             // 模擬危險傾角
@@ -1385,6 +1587,7 @@
 
                         const simData = {
                             time: new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                            location: targetCam.address,
                             speed: speedValue, // 啟動時根據按鈕決定的速度
                             limit: targetCam.limit,
                             braking: braking, // 急煞值
@@ -1428,6 +1631,7 @@
 
                         finalizeRide(targetCam); //呼叫結算騎乘表現的邏輯
 
+                        setIsRiding(false);
                         setSimulationMode(false);
                         isSimulatingRef.current = false;
                         
