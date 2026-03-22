@@ -1177,7 +1177,7 @@
                 if (isRiding || isSimulatingRef.current) { 
                     currentRideDataRef.current.push(newPoint);
                 } else {
-                    console.warn("⚠️ 數據被拒絕存入: isRiding =", isRiding, "Simulating =", isSimulatingRef.current);
+                    logToScreen.warn(`⚠️ 數據被拒絕存入: isRiding = ${isRiding}, Simulating = ${isSimulatingRef.current}`);
                 }
 
                 // 4. 同步更新儀表板顯示 (UI)
@@ -1420,11 +1420,11 @@
             const finalizeRide = async (camera = null) => {
                 // 1. 從 Ref 抓取當前這趟的所有點位
                 const dataToAnalyze = currentRideDataRef.current;
-                console.log("=== 開始分析結算 ===");
-                console.log("總共收集點數:", dataToAnalyze.length);
+                logToScreen("=== 開始分析結算 ===");
+                logToScreen(`總共收集點數:${dataToAnalyze.length}`);
 
                 if (dataToAnalyze.length === 0) {
-                    console.log("沒有收集到數據，取消結算");
+                    logToScreen("沒有收集到數據，取消結算");
                     return;
                 }
                 
@@ -1499,7 +1499,7 @@
                     updated = updated.filter(item => !item.timestamp || (now - item.timestamp) < SEVEN_DAYS_MS);
 
                     localStorage.setItem('ride_history', JSON.stringify(updated));
-                    console.log("歷史紀錄已更新，目前總筆數:", updated.length);
+                    logToScreen(`歷史紀錄已更新，目前總筆數:${updated.length}`);
                     return updated;
                 });
 
@@ -1507,9 +1507,9 @@
                 try {
                     const { error } = await _supabase.from('ride_history').insert(recordsToUpload);
                     if (error) throw error;
-                    console.log("✅ 成功同步至雲端資料庫");
+                    logToScreen("✅ 成功同步至雲端資料庫");
                 } catch (err) {
-                    console.error("❌ 雲端同步失敗:", err.message);
+                    logToScreen.error("❌ 雲端同步失敗:", err.message);
                 }
                 
                 // 測試用的 alert
@@ -1605,8 +1605,8 @@
                         passedTarget = true;
                         setCameraAlert(null); // 一通過立刻清除警示
                         playWarningSound('pass', 1); // 強制播放通過音效
-                        console.log("[Sim] Camera Passed -> Alert Cleared & Sound Played");
-                        console.log("成功標記為已通過！"); // 檢查 F12 有沒有這一行
+                        logToScreen("[Sim] Camera Passed -> Alert Cleared & Sound Played");
+                        logToScreen("成功標記為已通過！"); // 檢查 F12 有沒有這一行
                     } 
                     
                     // 只有在「尚未通過」的情況下，才更新距離警示
@@ -1621,7 +1621,7 @@
 
                     // 結束條件：通過後行駛超過 100 公尺
                     if (passedTarget && dist > 100) {
-                        console.log("滿足結束條件，執行結算"); 
+                        logToScreen("滿足結束條件，執行結算"); 
 
                         // 先停止計時器，防止重複觸發
                         if (simRef.current) {
