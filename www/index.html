@@ -554,12 +554,16 @@
                    prevProps.isTracking === nextProps.isTracking;
         });
 
-        const AIReportCard = ({ historyData, summary, avgScore }) => {
+        const AIReportCard = ({ historyData, summary, avgScore, currentUser }) => {
             const [report, setReport] = useState("");
             const [loading, setLoading] = useState(false);
             const [hasGenerated, setHasGenerated] = useState(false);
 
             const generateReport = async () => {
+                if (!currentUser || !currentUser.id) {
+                    setReport("### ⚠️ 存取被拒絕\n請先完成登入，V.I.S.O.R. 才能將分析結果同步至您的帳號。");
+                    return;
+                }
                 if (!historyData || historyData.length === 0) {
                     setReport("### ⚠️ 數據掃描失敗\n 請先進行至少騎乘一次，V.I.S.O.R. 才能進行行為分析。");
                     return;
@@ -590,8 +594,23 @@
                     const result = await callAI(userPrompt, systemPrompt);
                     setReport(result);
                     setHasGenerated(true);
+
+                    // 5. 存入 Supabase (存入後不論成功失敗，UI 都已經顯示了)
+                    const { error } = await _supabase
+                        .from('ai_report') 
+                        .insert({ 
+                            user_id: currentUser.id, 
+                            report: result,
+                            created_at: new Date().toISOString()
+                        });
+
+                    if (error) throw error;
+                    logToScreen("✅ V.I.S.O.R. 分析報告已雲端備份");
+
                 } catch (error) {
-                    setReport("### 🔴 系統故障\n分析核心無法回應，請檢查連線狀態。");
+                    logToScreen(`分析或存檔過程出錯:${error.message}`);
+                    // 只有在完全沒有 report 的情況下才顯示錯誤訊息
+                    if (!report) setReport("### 🔴 系統故障\n分析核心無法回應，請檢查連線。");
                 } finally {
                     setLoading(false);
                 }
@@ -2246,7 +2265,7 @@
                         </button>
                     </div>
                     
-                    <AIReportCard historyData={safeHistory} summary={weeklyStats} avgScore={averageScore} />
+                    <AIReportCard historyData={safeHistory} summary={weeklyStats} avgScore={averageScore} currentUser={currentUser} />
 
                     <div className="space-y-4 px-4 pb-20">
                         <EventHeatmapChart 
