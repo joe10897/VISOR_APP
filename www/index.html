@@ -294,6 +294,15 @@
         };
 
         // --- Utils ---
+        const getTaiwanISOString = () => {
+            const date = new Date();
+            // 將台灣時區的 +8 小時轉換為毫秒並加上去
+            const tzOffset = 8 * 60 * 60 * 1000; 
+            const twTime = new Date(date.getTime() + tzOffset);
+            // 轉為 ISO 格式並把結尾的 'Z' 切掉，讓 Supabase 紀錄字面上的時間
+            return twTime.toISOString().slice(0, -1); 
+        };
+
         const BUILT_IN_CAMERAS = [
             { address: "國道五號南向22.5公里(雪山隧道)", lat: 24.88923, lng: 121.761765, limit: 90, type: "fixed", direct: "往南", heading: 180 },
             { address: "國道五號北向22.5公里(雪山隧道)", lat: 24.889566, lng: 121.762215, limit: 90, type: "fixed", direct: "往北", heading: 0 },
@@ -577,6 +586,19 @@
                     const result = await callAI(userPrompt, systemPrompt);
                     setReport(result);
                     setHasGenerated(true);
+
+                    // 5. 存入 Supabase 
+                    const { error } = await _supabase
+                        .from('ai_report') 
+                        .insert({ 
+                            user_id: currentUser.id, 
+                            report: result,
+                            created_at: getTaiwanISOString()
+                        });
+
+                    if (error) throw error;
+                    logToScreen("✅ V.I.S.O.R. 分析報告已雲端備份");
+
                 } catch (error) {
                     setReport("### 🔴 系統故障\n分析核心無法回應，請檢查連線狀態。");
                 } finally {
@@ -1231,11 +1253,20 @@
 
                 // 2. 建立標準數據點 (確保不管來源是誰，存入的欄位名稱都統一)
                 const newPoint = {
+<<<<<<< Updated upstream
                     time: timestamp,
                     speed: data.speed,      // 時速
                     limit: data.limit,      // 限速
                     braking: data.braking,  // 減速度
                     tilt: data.tilt         // 傾角
+=======
+                    rawTime: now.getTime(), // 用來做數學計算
+                    time: getTaiwanISOString(), // 用來做分析
+                    location: data.location, // 位置資訊
+                    limit: data.limit, // 限速
+                    speed: data.speed, // 時速
+                    tilt: data.tilt  // 傾角
+>>>>>>> Stashed changes
                 };
 
                 // 3. 存入結算用的 Ref (這是之後 analyzeOverspeed 等函數要讀取的資料夾)
