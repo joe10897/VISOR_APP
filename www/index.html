@@ -550,7 +550,7 @@
                    prevProps.isTracking === nextProps.isTracking;
         });
 
-        const AIReportCard = ({ historyData, summary, avgScore }) => {
+        const AIReportCard = ({ historyData, summary, avgScore, supabase }) => {
             const [report, setReport] = useState("");
             const [loading, setLoading] = useState(false);
             const [hasGenerated, setHasGenerated] = useState(false);
@@ -588,7 +588,7 @@
                     setHasGenerated(true);
 
                     // 5. 存入 Supabase 
-                    const { error } = await _supabase
+                    const { error } = await supabase
                         .from('ai_report') 
                         .insert({ 
                             user_id: currentUser.id, 
@@ -752,27 +752,37 @@
                 if (supabase) {
                     try {
                         console.log("正在從雲端驗證帳號...");
-                        const { data, error } = await supabase
-                            .from('user_profiles')
-                            .select('*')
-                            .eq('username', authForm.username)
-                            .single();
-                        
-                        if (data && !error) {
-                            // 如果雲端有資料，但本地還沒這人，或密碼更新了
-                            // 我們把雲端資料同步到本地的 AuthService (localStorage)
-                            const users = JSON.parse(localStorage.getItem('visor_users') || '{}');
-                            users[data.username] = {
-                                id: 'user_' + Date.now(),
-                                username: data.username,
-                                passwordHash: data.password_hash,
-                                settings: {}
+                        const fakeEmail = `${authForm.username}@visor.com`;
+        
+                        // 使用 Supabase 官方 Auth 登入
+                        const { data, error } = await supabase.auth.signInWithPassword({
+                            email: fakeEmail,
+                            password: authForm.password,
+                        });
+        
+                        if (error) {
+                            setAuthError('帳號或密碼錯誤 (雲端拒絕存取)');
+                            playWarningSound('warning');
+                            return;
+                        }
+
+                        if (data.user) {
+                            // 登入成功！把 Supabase 給的 UUID 存起來
+                            const loggedInUser = {
+                                id: data.user.id, // 這是 Supabase 的 UUID
+                                username: authForm.username
                             };
-                            localStorage.setItem('visor_users', JSON.stringify(users));
-                            console.log("✅ 雲端帳號已同步至本地");
+                            setCurrentUser(loggedInUser);
+                            setActiveTab('home');
+                            console.log("✅ 雲端登入成功", loggedInUser);
+            
+                            // 抓取歷史紀錄
+                            fetchUserHistory(data.user.id);
+                            setAuthForm({ username: '', password: '', confirmPassword: '' });
+                            return; // 成功就提早結束，不再跑本地端驗證
                         }
                     } catch (err) {
-                        console.warn("雲端驗證跳過 (可能無此帳號或連線問題)");
+                        console.error("雲端驗證發生異常:", err);
                     }
                 }
 
@@ -810,41 +820,33 @@
                 if (supabase) {
                     try {
                         addNotification('info', '系統驗證', '正在建立雲端戰術檔案...');
-                        
-                        // 1. 先嘗試寫入雲端
-                        const { error: cloudError } = await supabase
-                            .from('user_profiles')
-                            .insert([{
-                                username: authForm.username,
-                                password_hash: btoa(authForm.password)
-                            }]);
+        
+                        // 使用 Supabase 官方 Auth 註冊 (自動把帳號轉成假信箱格式)
+                        const fakeEmail = `${authForm.username}@visor.com`;
+                        const { data, error: cloudError } = await supabase.auth.signUp({
+                            email: fakeEmail,
+                            password: authForm.password,
+                    });
 
-                        if (cloudError) {
-                            if (cloudError.message.includes("unique")) {
-                                setAuthError('此帳號在雲端已被佔用');
-                            } else {
-                                setAuthError(`雲端同步失敗: ${cloudError.message}`);
-                                console.error("Supabase Error:", cloudError);
-                            }
-                            return; // 雲端失敗，停止註冊
-                        }
-
-                        // 2. 雲端成功後，才寫入本地
-                        window.AuthService.register(authForm.username, authForm.password);
-                        
-                        console.log("✅ 雲端與本地帳號同步成功");
-                        alert('戰術檔案建立成功！請登入。');
-                        setActiveTab('login');
-                        setAuthForm({ username: '', password: '', confirmPassword: '' });
-
-                    } catch (err) {
-                        setAuthError(`系統異常: ${err.message}`);
-                        console.error("Critical Reg Error:", err);
+                    if (cloudError) {
+                        setAuthError(`註冊失敗: ${cloudError.message}`);
+                        console.error("Supabase Auth Error:", cloudError);
+                        return; 
                     }
-                } else {
-                    setAuthError('無法連接雲端核心，請檢查 SUPABASE 設定');
+
+                    console.log("✅ 雲端帳號建立成功", data);
+                    alert('戰術檔案建立成功！請登入。');
+                    setActiveTab('login');
+                    setAuthForm({ username: '', password: '', confirmPassword: '' });
+
+                } catch (err) {
+                    setAuthError(`系統異常: ${err.message}`);
+                    console.error("Critical Reg Error:", err);
                 }
-            };
+            } else {
+                setAuthError('無法連接雲端核心，請檢查 SUPABASE 設定');
+            }
+        };
 
             const handleLogout = () => {
                 window.AuthService.logout();
@@ -985,8 +987,8 @@
                const SUPABASE_URL = "https://your-project-id.supabase.co"; 
                const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
             */
-            const SUPABASE_URL = "https://bkdrydrhknjyzgkuajgx.supabase.co"; // <-- 這裡替換為您的 Project URL
-            const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrZHJ5ZHJoa25qeXpna3Vhamd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMjE1MzYsImV4cCI6MjA4ODY5NzUzNn0.Ot1MO0U_i8uBAEpRCyL2hpEfjiM7smWZ2MPBQdq_Y3Y"; // <-- 這裡替換為您的 Anon Key
+            const SUPABASE_URL = "https://klocpegynqrkrsggtdpa.supabase.co "; // <-- 這裡替換為您的 Project URL
+            const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtsb2NwZWd5bnFya3JzZ2d0ZHBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNDYwNzQsImV4cCI6MjA4ODYyMjA3NH0.LBo3AY0DAQAMI3ZciKskKJsCfWgtif13hC_6fwA6OJ8"; // <-- 這裡替換為您的 Anon Key
             
             // 建立 Supabase 客戶端實例
             const supabase = useMemo(() => {
@@ -1023,15 +1025,15 @@
             }, [supabase, addNotification]);
 
             // [新增：使用 Supabase 讀取歷史紀錄的 fetchUserHistory]
-            const fetchUserHistory = async (username) => {
+            const fetchUserHistory = async (userId) => {
                 if (!supabase) return;
                 try {
-                    console.log(`正在為使用者 ${username} 進行雲端同步...`);
+                    console.log(`正在為使用者 ${userId} 進行雲端同步...`);
                     // 從 Supabase 的 ride_history 資料表篩選該使用者的紀錄
                     const { data, error } = await supabase
                         .from('ride_history')
                         .select('*')
-                        .eq('username', username)
+                        .eq('user_id', userId)
                         .order('created_at', { ascending: true }); // 按時間排序
 
                     if (error) throw error;
@@ -1243,8 +1245,9 @@
 
             // 統一處理來自模擬跟實際的數據
             const handleIncomingData = (data) => {
+                const now = new Date();
                 // 1. 統一時間格式
-                const timestamp = new Date().toLocaleTimeString([], { 
+                const timestamp = now.toLocaleTimeString([], { 
                     hour12: false, 
                     hour: '2-digit', 
                     minute: '2-digit', 
@@ -1411,18 +1414,21 @@
                     const uploadToSupabase = async () => {
                         console.log("正在將騎乘紀錄同步至雲端...");
                         try {
-                            const { error } = await supabase
+                            const { data,error } = await supabase
                                 .from('ride_history')
                                 .insert([{
-                                    username: currentUser.username,
+                                    user_id: currentUser.id, // 現在這裡會塞入正確的 UUID 了！
+                                    created_at: getTaiwanISOString(), // 台灣時間
                                     location: summary.location,
                                     score: summary.score,
-                                    overspeed_count: summary.overspeedCount,
-                                    braking_count: summary.brakingCount,
-                                    tilt_count: summary.tiltCount
-                                }]);
+                                    overspeed_count: summary.overspeedCount, // 改成對應 Supabase 的欄位名稱
+                                    braking_count: summary.brakingCount,     // 改成對應 Supabase 的欄位名稱
+                                    tilt_count: summary.tiltCount            // 改成對應 Supabase 的欄位名稱
+                                }])
+                                .select();  
                             
                             if (error) throw error;
+                            console.log("Supabase 實際寫入的資料:", data);
                             console.log("✅ 雲端同步成功");
                             addNotification('success', '雲端同步', '騎乘紀錄已成功上傳至 Supabase');
                         } catch (err) {
@@ -2181,7 +2187,7 @@
                         </button>
                     </div>
                     
-                    <AIReportCard historyData={safeHistory} summary={weeklyStats} avgScore={averageScore} />
+                    <AIReportCard historyData={safeHistory} summary={weeklyStats} avgScore={averageScore} supabase={supabase} />
 
                     <div className="space-y-4 px-4 pb-20">
                         <EventHeatmapChart 
