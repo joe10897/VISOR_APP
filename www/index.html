@@ -7,13 +7,8 @@
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
     <!-- 修正：允許地圖圖塊載入與混合內容 -->
-<<<<<<< Updated upstream
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: cdvfile: https://ssl.gstatic.com 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.org https://unpkg.com; connect-src * https://*.supabase.co ws://* wss://*;">
-
-=======
     <meta http-equiv="Content-Security-Policy"
         content="default-src 'self' data: gap: cdvfile: https://ssl.gstatic.com 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net ; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.org https://unpkg.com; connect-src * https://*.supabase.co wss://*.supabase.co;">
->>>>>>> Stashed changes
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>V.I.S.O.R. MK-XXV</title>
@@ -32,15 +27,6 @@
     <script src="lib/js/CryptoUtils.js"></script>
     <script src="lib/js/GeoUtils.js"></script>
     <script src="lib/js/AuthService.js"></script>
-<<<<<<< Updated upstream
-    
-    <!-- 加入 Supabase CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <link rel="stylesheet" href="lib/css/leaflet.css"/>
-    <script src="lib/js/leaflet.js"></script>
-    
-=======
 
     <link rel="stylesheet" href="lib/css/leaflet.css" />
     <script src="lib/js/leaflet.js"></script>
@@ -48,7 +34,6 @@
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
->>>>>>> Stashed changes
     <!-- Cordova 核心 (打包後自動生效) -->
     <script src="cordova.js"></script>
 
@@ -285,8 +270,6 @@
         const Recharts = window.Recharts || null;
         const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } = Recharts || {};
 
-<<<<<<< Updated upstream
-=======
         // --- Supabase 初始化區塊 ---
         const supabaseUrl = 'https://klocpegynqrkrsggtdpa.supabase.co';
         const supabaseKey = 'sb_publishable_F8milukMYwEBxDjyAOb3KQ_38jmgTpB';
@@ -301,7 +284,6 @@
         }
         // -------------------------
 
->>>>>>> Stashed changes
         // --- 1. Audio System (Softer Tones) ---
         window._visorAudioCtx = null;
         const initAudioContext = () => {
@@ -454,15 +436,6 @@
         };
 
         // --- Utils ---
-        const getTaiwanISOString = () => {
-            const date = new Date();
-            // 將台灣時區的 +8 小時轉換為毫秒並加上去
-            const tzOffset = 8 * 60 * 60 * 1000; 
-            const twTime = new Date(date.getTime() + tzOffset);
-            // 轉為 ISO 格式並把結尾的 'Z' 切掉，讓 Supabase 紀錄字面上的時間
-            return twTime.toISOString().slice(0, -1); 
-        };
-
         const BUILT_IN_CAMERAS = [
             { address: "國道五號南向22.5公里(雪山隧道)", lat: 24.88923, lng: 121.761765, limit: 90, type: "fixed", direct: "往南", heading: 180 },
             { address: "國道五號北向22.5公里(雪山隧道)", lat: 24.889566, lng: 121.762215, limit: 90, type: "fixed", direct: "往北", heading: 0 },
@@ -714,12 +687,10 @@
                 prevProps.isTracking === nextProps.isTracking;
         });
 
-        const AIReportCard = ({ historyData, summary, avgScore, supabase }) => {
+        const AIReportCard = ({ historyData, summary, avgScore, currentUser }) => {
             const [report, setReport] = useState("");
             const [loading, setLoading] = useState(false);
             const [hasGenerated, setHasGenerated] = useState(false);
-<<<<<<< Updated upstream
-=======
             const [isInitialLoading, setIsInitialLoading] = useState(true); // 用於區分初次讀取資料庫
 
             // 1. 初始化：進頁面先抓最新的一筆，並填入 report
@@ -757,7 +728,6 @@
 
                 fetchLatestReport();
             }, [currentUser]);
->>>>>>> Stashed changes
 
             const generateReport = async () => {
                 if (!historyData || historyData.length === 0) {
@@ -792,17 +762,10 @@
                     setHasGenerated(true);
 
                     // 5. 存入 Supabase 
-<<<<<<< Updated upstream
-                    const { error } = await supabase
-                        .from('ai_report') 
-                        .insert({ 
-                            user_id: currentUser.id, 
-=======
                     const { error } = await _supabase
                         .from('ai_report')
                         .insert({
                             user_id: currentUser.id,
->>>>>>> Stashed changes
                             report: result,
                             created_at: getTaiwanISOString()
                         });
@@ -811,7 +774,9 @@
                     logToScreen("✅ V.I.S.O.R. 分析報告已雲端備份");
 
                 } catch (error) {
-                    setReport("### 🔴 系統故障\n分析核心無法回應，請檢查連線狀態。");
+                    logToScreen(`分析或存檔過程出錯:${error.message}`);
+                    // 只有在完全沒有 report 的情況下才顯示錯誤訊息
+                    if (!report) setReport("### 🔴 系統故障\n分析核心無法回應，請檢查連線。");
                 } finally {
                     setLoading(false);
                 }
@@ -821,16 +786,12 @@
                 <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 mt-4 relative overflow-hidden">
                     <div className="flex justify-between items-center mb-3">
                         <h3 className="text-cyan-400 font-bold text-sm flex items-center gap-2"><Icon name="brain-circuit" size={16} /> V.I.S.O.R. 戰術分析</h3>
-                        {!hasGenerated && !loading && (
-                            <button onClick={generateReport} className="bg-cyan-900/50 hover:bg-cyan-800 text-cyan-300 text-xs px-3 py-1.5 rounded-full border border-cyan-500/30 transition-all flex items-center gap-1"><Icon name="sparkles" size={12} /> 啟動分析</button>)}
+                        {!hasGenerated && !loading && !isInitialLoading && (
+                            <button onClick={generateReport} className="bg-cyan-900/50 hover:bg-cyan-800 text-cyan-300 text-xs px-3 py-1.5 rounded-full border border-cyan-500/30 transition-all flex items-center gap-1"><Icon name="sparkles" size={12} />啟動分析</button>
+                        )}
                     </div>
-<<<<<<< Updated upstream
-                    {loading && <div className="flex items-center justify-center py-4 space-x-2 text-cyan-400/70 animate-pulse"><Icon name="loader-2" size={20} className="animate-spin" /><span className="text-xs font-mono">UPLOADING...</span></div>}
-                    {!loading && report && <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50"><div className="text-xs text-slate-300 leading-relaxed font-mono typing-cursor" dangerouslySetInnerHTML={{ __html: window.marked.parse(report) }}></div></div>}
-=======
                     {(loading || isInitialLoading) && (<div className="flex items-center justify-center py-4 space-x-2 text-cyan-400/70 animate-pulse"><Icon name="loader-2" size={20} className="animate-spin" /><span className="text-xs font-mono">UPLOADING...</span></div>)}
                     {!loading && !isInitialLoading && report && (<div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50"><div className="text-xs text-slate-300 leading-relaxed font-mono typing-cursor" dangerouslySetInnerHTML={{ __html: window.marked.parse(report) }}></div></div>)}
->>>>>>> Stashed changes
                 </div>
             );
         };
@@ -947,13 +908,6 @@
                 if (dirText.includes('西')) return 270;
                 return 'ALL';
             };
-<<<<<<< Updated upstream
-            
-            // Login/Register Form State
-            const [authForm, setAuthForm] = useState({ username: '', password: '', confirmPassword: '' });
-            const [authError, setAuthError] = useState('');
-=======
->>>>>>> Stashed changes
 
             // Pass Detection Logic
             const prevAlertRef = useRef(null);
@@ -969,18 +923,19 @@
                 prevAlertRef.current = cameraAlert;
             }, [cameraAlert]);
 
+            //==============================================================================================================
+            //登入、登出、註冊區塊
+            //==============================================================================================================
+            const [authForm, setAuthForm] = useState({ username: '', password: '', confirmPassword: '' });
+            const [authError, setAuthError] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            //監聽及初始化登入狀態
             useEffect(() => {
-                // Initialize Auth
-                window.AuthService.init();
-                const user = window.AuthService.getCurrentUser();
-                if (user) {
-                    setCurrentUser(user);
-                    setActiveTab('home');
-                } else {
-                    setActiveTab('login');
+                // 1. 初始化 AuthService (保持你原有的工具初始化)
+                if (window.AuthService && typeof window.AuthService.init === 'function') {
+                    window.AuthService.init();
                 }
-<<<<<<< Updated upstream
-=======
 
                 // 2. 使用 Supabase 原生監聽器 (處理「第一次載入」+「後續變化」)
                 const { data: { subscription } } = _supabase.auth.onAuthStateChange((event, session) => {
@@ -1001,127 +956,81 @@
                 return () => {
                     if (subscription) subscription.unsubscribe();
                 };
->>>>>>> Stashed changes
             }, []);
 
             const handleLogin = async (e) => {
                 e.preventDefault();
+                setLoading(true);
                 setAuthError('');
 
-                /* [新增：Supabase 帳號預抓取/同步] */
-                if (supabase) {
-                    try {
-                        console.log("正在從雲端驗證帳號...");
-                        const fakeEmail = `${authForm.username}@visor.com`;
-        
-                        // 使用 Supabase 官方 Auth 登入
-                        const { data, error } = await supabase.auth.signInWithPassword({
-                            email: fakeEmail,
-                            password: authForm.password,
-                        });
-        
-                        if (error) {
-                            setAuthError('帳號或密碼錯誤 (雲端拒絕存取)');
-                            playWarningSound('warning');
-                            return;
-                        }
+                try {
+                    const { data, error } = await _supabase.auth.signInWithPassword({
+                        email: `${authForm.username}@visor.com`,
+                        password: authForm.password,
+                    });
 
-                        if (data.user) {
-                            // 登入成功！把 Supabase 給的 UUID 存起來
-                            const loggedInUser = {
-                                id: data.user.id, // 這是 Supabase 的 UUID
-                                username: authForm.username
-                            };
-                            setCurrentUser(loggedInUser);
-                            setActiveTab('home');
-                            console.log("✅ 雲端登入成功", loggedInUser);
-            
-                            // 抓取歷史紀錄
-                            fetchUserHistory(data.user.id);
-                            setAuthForm({ username: '', password: '', confirmPassword: '' });
-                            return; // 成功就提早結束，不再跑本地端驗證
+                    // 2. 處理錯誤
+                    if (error) {
+                        let msg = error.message;
+                        if (msg.includes("Invalid login credentials")) {
+                            msg = "帳號或密碼錯誤";
+                        } else if (msg.includes("Email not confirmed")) {
+                            msg = "帳號尚未驗證，請聯繫管理員";
                         }
-                    } catch (err) {
-                        console.error("雲端驗證發生異常:", err);
-                    }
-                }
-
-                const result = window.AuthService.login(authForm.username, authForm.password);
-                if (result) {
-                    setCurrentUser(result.user);
-                    setActiveTab('home');
-                    
-                    /* [新增：Supabase 雲端同步邏輯] */
-                    // 當本地登入成功後，嘗試從 Supabase 抓取該使用者的歷史紀錄
-                    if (supabase) {
-                        console.log("偵測到 Supabase 連線，正在同步雲端資料...");
-                        fetchUserHistory(authForm.username);
-                    } else {
-                        console.log("Supabase 未設定，使用本地存儲模式。");
+                        setAuthError(msg);
+                        playWarningSound('warning');
+                        setLoading(false);
+                        return;
                     }
 
-                    // Reset form
-                    setAuthForm({ username: '', password: '', confirmPassword: '' });
-                } else {
-                    setAuthError('帳號或密碼錯誤');
-                    playWarningSound('warning');
+                    // 3. 登入成功
+                    if (data.user) {
+                        logToScreen(`V.I.S.O.R. 系統登入：${authForm.username}`);
+                    }
+                } catch (err) {
+                    setAuthError("通訊失敗，請檢查網路");
+                    setLoading(false);
                 }
             };
 
             const handleRegister = async (e) => {
                 e.preventDefault();
-<<<<<<< Updated upstream
-                setAuthError('');
-=======
 
                 if (authForm.password.length < 6) {
                     setAuthError("密碼太短囉！請至少輸入 6 個字元");
                     return;
                 }
->>>>>>> Stashed changes
                 if (authForm.password !== authForm.confirmPassword) {
                     setAuthError('兩次密碼輸入不一致');
                     return;
                 }
 
-                /* [修改：雲端優先註冊邏輯] */
-                if (supabase) {
-                    try {
-                        addNotification('info', '系統驗證', '正在建立雲端戰術檔案...');
-        
-                        // 使用 Supabase 官方 Auth 註冊 (自動把帳號轉成假信箱格式)
-                        const fakeEmail = `${authForm.username}@visor.com`;
-                        const { data, error: cloudError } = await supabase.auth.signUp({
-                            email: fakeEmail,
-                            password: authForm.password,
+                setLoading(true);
+                setAuthError('');
+
+                try {
+                    const { data, error } = await _supabase.auth.signUp({
+                        email: `${authForm.username}@visor.com`, // 強制轉成 email 格式
+                        password: authForm.password,
+                        options: {
+                            data: { display_name: authForm.username } // 把純用戶名存進元數據
+                        }
                     });
 
-                    if (cloudError) {
-                        setAuthError(`註冊失敗: ${cloudError.message}`);
-                        console.error("Supabase Auth Error:", cloudError);
-                        return; 
+                    if (error) {
+                        setAuthError('帳號已存在');
+                    } else if (data.user) {
+                        logToScreen("註冊成功：系統已建立帳號 " + authForm.username);
+                        alert("註冊成功！請登入。");
+                        setActiveTab('login'); // 註冊完自動跳轉到登入畫面
                     }
-
-                    console.log("✅ 雲端帳號建立成功", data);
-                    alert('戰術檔案建立成功！請登入。');
-                    setActiveTab('login');
-                    setAuthForm({ username: '', password: '', confirmPassword: '' });
-
                 } catch (err) {
-                    setAuthError(`系統異常: ${err.message}`);
-                    console.error("Critical Reg Error:", err);
+                    setAuthError("連線異常");
+                } finally {
+                    setLoading(false);
                 }
-            } else {
-                setAuthError('無法連接雲端核心，請檢查 SUPABASE 設定');
-            }
-        };
+            };
 
-<<<<<<< Updated upstream
-            const handleLogout = () => {
-                window.AuthService.logout();
-                setCurrentUser(null);
-                setActiveTab('login');
-=======
             const handleLogout = async () => {
                 try {
                     // 1. 叫 Supabase 真正執行登出 (這會清除伺服器端的 Session)
@@ -1136,8 +1045,10 @@
                 } catch (error) {
                     logToScreen("登出失敗:", error);
                 }
->>>>>>> Stashed changes
             };
+            //=======================================================================================
+            //登入、登出、註冊區塊結束
+            //=======================================================================================
 
             useEffect(() => {
                 window._visorIsMuted = isMuted;
@@ -1265,93 +1176,6 @@
             const lastTiltWarningRef = useRef(0);
             const crashStartRef = useRef(null);
             const hasCrashedRef = useRef(false);
-            // [新增：Supabase 設定參數]
-            // 請在此處填入您 Supabase 專案的 URL 與 Anon Key (可從 Supabase Dashboard 取得)
-            /* 
-               填寫範例：
-               const SUPABASE_URL = "https://your-project-id.supabase.co"; 
-               const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
-            */
-            const SUPABASE_URL = "https://klocpegynqrkrsggtdpa.supabase.co "; // <-- 這裡替換為您的 Project URL
-            const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtsb2NwZWd5bnFya3JzZ2d0ZHBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNDYwNzQsImV4cCI6MjA4ODYyMjA3NH0.LBo3AY0DAQAMI3ZciKskKJsCfWgtif13hC_6fwA6OJ8"; // <-- 這裡替換為您的 Anon Key
-            
-            // 建立 Supabase 客戶端實例
-            const supabase = useMemo(() => {
-                // 檢查 Supabase 庫是否載入成功
-                if (!window.supabase) {
-                    console.error("Supabase SDK not loaded!");
-                    return null;
-                }
-
-                // 檢查網址是否已被使用者修改 (只要不是預設的佔位符即可)
-                const isConfigured = SUPABASE_URL && 
-                                   SUPABASE_URL !== "YOUR_SUPABASE_URL" && 
-                                   SUPABASE_URL.startsWith("http");
-
-                if (isConfigured) {
-                    try {
-                        console.log("V.I.S.O.R. Supabase Client Initializing...");
-                        const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                        // 這裡不適合在 useMemo 裡呼叫 addNotification，我們改用 console 指示連線已建立
-                        return client;
-                    } catch (e) {
-                        console.error("Supabase Initialization Failed:", e);
-                        return null;
-                    }
-                }
-                return null;
-            }, []);
-
-            // [新增：連線成功視覺回饋]
-            useEffect(() => {
-                if (supabase) {
-                    addNotification('success', '雲端核心', '已成功連線至 Supabase 資料庫');
-                }
-            }, [supabase, addNotification]);
-
-            // [新增：使用 Supabase 讀取歷史紀錄的 fetchUserHistory]
-            const fetchUserHistory = async (userId) => {
-                if (!supabase) return;
-                try {
-                    console.log(`正在為使用者 ${userId} 進行雲端同步...`);
-                    // 從 Supabase 的 ride_history 資料表篩選該使用者的紀錄
-                    const { data, error } = await supabase
-                        .from('ride_history')
-                        .select('*')
-                        .eq('user_id', userId)
-                        .order('created_at', { ascending: true }); // 按時間排序
-
-                    if (error) throw error;
-
-                    // 無論雲端是否有資料，都應同步至本地 (雲端為準)
-                    const formattedData = (data || []).map(item => {
-                        const dateObj = new Date(item.created_at);
-                        return {
-                            id: item.id,
-                            timestamp: dateObj.getTime(),
-                            date: dateObj.toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' }),
-                            location: item.location,
-                            score: item.score,
-                            overspeedCount: item.overspeed_count,
-                            brakingCount: item.braking_count,
-                            tilt_count: item.tilt_count // 修正欄位名稱對應
-                        };
-                    });
-                    
-                    // 強制更新本地狀態與存儲
-                    setWeeklyHistory(formattedData);
-                    localStorage.setItem('ride_history', JSON.stringify(formattedData));
-                    
-                    if (formattedData.length > 0) {
-                        addNotification('success', '雲端同步', `已同步 ${formattedData.length} 筆紀錄`);
-                    } else {
-                        console.log("雲端無歷史紀錄。");
-                    }
-                } catch (error) {
-                    console.error("Supabase 同步失敗:", error);
-                    addNotification('warning', '同步失敗', '無法連接雲端庫，暫用本機離線資料');
-                }
-            };
 
             // SOS Trigger Handler
             const triggerSOS = useCallback((isAuto = false) => {
@@ -1528,8 +1352,6 @@
                 }
             };
 
-<<<<<<< Updated upstream
-=======
             //預留給開始騎乘紀錄按鈕================================================
             const [isRiding, setIsRiding] = React.useState(false);
             const isRidingRef = React.useRef(false);
@@ -1540,43 +1362,27 @@
             }, [isRiding]);
             //=====================================================================
 
->>>>>>> Stashed changes
             // 統一處理來自模擬跟實際的數據
             const handleIncomingData = (data) => {
-                const now = new Date();
                 // 1. 統一時間格式
-                const timestamp = now.toLocaleTimeString([], { 
-                    hour12: false, 
-                    hour: '2-digit', 
-                    minute: '2-digit', 
-                    second: '2-digit' 
-                });
+                const now = new Date();
 
                 // 2. 建立標準數據點 (確保不管來源是誰，存入的欄位名稱都統一)
                 const newPoint = {
                     rawTime: now.getTime(), // 用來做數學計算
-<<<<<<< Updated upstream
-                    time: getTaiwanISOString(), // 用來做分析
-=======
                     time: getTaiwanISOString(now), // 用來做分析
->>>>>>> Stashed changes
                     location: data.location, // 位置資訊
                     limit: data.limit, // 限速
                     speed: data.speed, // 時速
                     tilt: data.tilt  // 傾角
                 };
 
-<<<<<<< Updated upstream
-                // 3. 存入結算用的 Ref (這是之後 analyzeOverspeed 等函數要讀取的資料夾)
-                currentRideDataRef.current.push(newPoint);
-=======
                 // 3. 同時檢查 isRiding 或正在模擬 (analyzeOverspeed 等函數要讀取的資料夾)
                 if (isRiding || isSimulatingRef.current) {
                     currentRideDataRef.current.push(newPoint);
                 } else {
                     logToScreen.warn(`⚠️ 數據被拒絕存入: isRiding = ${isRiding}, Simulating = ${isSimulatingRef.current}`);
                 }
->>>>>>> Stashed changes
 
                 // 4. 同步更新儀表板顯示 (UI)
                 setSimulatedSpeed(data.speed);
@@ -1589,42 +1395,60 @@
             //                 事件判斷區 
             //================================================
 
-            //判斷一段路徑中有幾次超速事件
+            //判斷有幾次超速事件
             const analyzeOverspeed = (ridePoints) => {
-<<<<<<< Updated upstream
-                // 1. 檢查有沒有資料，沒資料就回傳 0
-                if (!ridePoints || ridePoints.length === 0) return 0;
-=======
                 // 檢查有沒有資料，沒資料就回傳 0
                 if (!ridePoints || ridePoints.length === 0) {
                     return { count: 0, events: [], class: 'normal' };
                 }
->>>>>>> Stashed changes
 
-                let count = 0;           // 紀錄次數
-                let isSpeeding = false;  // 紀錄「現在這一秒」是否正在超速
+                let isSpeeding = false; // 紀錄「現在這一秒」是否正在超速
+                let count = 0; // 紀錄次數
+                let currentEvent = null; // 紀錄當下事件細節
+                let events = []; // 總結事件的細節
 
-                // 2. 開始逐一檢查每一個點
+                // 逐一檢查每個點
                 ridePoints.forEach((point) => {
-                    if (point.limit){
+                    if (point.limit) {
                         const limit = point.limit; // 取得限速
+                        const speedDiff = point.speed - limit; // 計算超速程度
+
                         if (point.speed > limit) { // 如果這秒超過限速
-                            if (isSpeeding === false) { // 而且「前一秒」沒超速 -> 這是一個新的超速開始！
-                                count = count + 1; 
-                                isSpeeding = true; // 標記為：開始超速中
+                            if (!isSpeeding) {// 超速開始
+                                isSpeeding = true;
+                                count++; // 觸發次數+1
+                                currentEvent = {
+                                    time: point.time, // 紀錄起始時間
+                                    maxSpeed: point.speed,
+                                    lowSpeed: point.speed, // 初始化最低速為起點速
+                                    limit: limit
+                                };
+                            } else { // 持續超速中：更新最高、最低速
+                                if (point.speed > currentEvent.maxSpeed) {
+                                    currentEvent.maxSpeed = point.speed;
+                                }
+                                if (point.speed < currentEvent.lowSpeed) {
+                                    currentEvent.lowSpeed = point.speed;
+                                }
                             }
-                        } else {
-                            // 如果這秒速度低於或等於限速
-                            isSpeeding = false; // 標記為：正常行駛
+                        } else { // 超速結束
+                            if (isSpeeding && currentEvent) {
+                                events.push({
+                                    time: currentEvent.time,        // 開始時間
+                                    endtime: point.time,             // 結束時間
+                                    maxspeed: Math.round(currentEvent.maxSpeed), // 這段區間的最高時速
+                                    lowspeed: Math.round(currentEvent.lowSpeed), // 這段區間的最低時速
+                                    limit: currentEvent.limit,
+                                    overspeed: Math.round(currentEvent.maxSpeed - currentEvent.limit), // 這一區間最大的超速量
+                                    class: 'overspeed'
+                                });
+                                isSpeeding = false;
+                                currentEvent = null;
+                            }
                         }
-                    }else{
-                        isSpeeding = false;
                     }
                 });
 
-<<<<<<< Updated upstream
-                return count; // 回傳最後算出來的總次數
-=======
                 if (isSpeeding && currentEvent) {// 防止行程結束時還在超速
                     const lastPoint = ridePoints[ridePoints.length - 1];
                     events.push({
@@ -1642,39 +1466,59 @@
                     count: count,
                     events: events
                 };
->>>>>>> Stashed changes
             };
-            /* 請檢查資料長什麼樣子：
-                speed: 使用者的時速。
-                limit: 該路段的限速。 */
 
-            // 判斷一段路徑中有幾次危險傾角事件
+            // 判斷有幾次危險傾角事件
             const analyzeTilt = (ridePoints) => {
-                if (!ridePoints || ridePoints.length === 0) return 0;
+                if (!ridePoints || ridePoints.length === 0) {
+                    return { count: 0, events: [], class: 'normal' };
+                }
 
                 let count = 0;
                 let isTilting = false; // 紀錄「現在」是否正處於危險傾角狀態
+                let currentEvent = null; // 紀錄當下事件細節
+                let events = []; // 總結事件的細節
 
                 ridePoints.forEach((point) => {
+                    // 判定門檻：傾角 >= 40 度
                     if (point.tilt >= 40) {
-                        if (isTilting === false) {
-                            count = count + 1; // 進入危險狀態，算一次
+                        if (!isTilting) {
+                            // 進入危險傾角
                             isTilting = true;
+                            count++;
+                            currentEvent = {
+                                time: point.time,       // 開始傾斜時間
+                                maxTilt: point.tilt,    // 初始傾角
+                                maxSpeed: point.speed,  // 進入時的時速
+                                lowSpeed: point.speed,  // 初始化最低速
+                                class: 'tilt'
+                            };
+                        } else { // 持續傾斜中：更新最大傾角與速度
+                            if (point.tilt > currentEvent.maxTilt) {
+                                currentEvent.maxTilt = point.tilt;
+                            }
+                            if (point.speed > currentEvent.maxSpeed) {
+                                currentEvent.maxSpeed = point.speed;
+                            }
+                            if (point.speed < currentEvent.lowSpeed) {
+                                currentEvent.lowSpeed = point.speed;
+                            }
                         }
                     } else {
-                        isTilting = false; // 回正了，重設開關
+                        if (isTilting && currentEvent) { // 傾角恢復
+                            events.push({
+                                time: currentEvent.time,        // 起始時間
+                                endtime: point.time,             // 結束時間
+                                maxspeed: Math.round(currentEvent.maxSpeed),
+                                lowspeed: Math.round(currentEvent.lowSpeed),
+                                tilt: Math.round(currentEvent.maxTilt), // 記錄這段區間最大的傾角
+                                class: 'tilt'
+                            });
+                            isTilting = false;
+                            currentEvent = null;
+                        }
                     }
                 });
-<<<<<<< Updated upstream
-                return count;
-            };
-            /* 請檢查資料長什麼樣子：
-                tilt: 使用者的傾角。 */
-            
-            //判斷一段路徑中有幾次急煞事件
-            const analyzeBraking = (ridePoints) => {
-                if (!ridePoints || ridePoints.length === 0) return 0;
-=======
 
                 if (isTilting && currentEvent) {// 防止行程結束時剛好還在傾斜
                     const lastPoint = ridePoints[ridePoints.length - 1];
@@ -1700,24 +1544,58 @@
                 if (!ridePoints || ridePoints.length < 2) {
                     return { count: 0, events: [], class: 'normal' };
                 }
->>>>>>> Stashed changes
 
                 let count = 0;
-                let isBraking = false; // 紀錄「現在」是否正處於急煞狀態
+                let isBraking = false;
+                let currentEvent = null; // 紀錄當下事件細節
+                let events = []; // 總結事件的細節
 
-                ridePoints.forEach((point) => {
-                    if (point.braking >= 3.0) { 
-                        if (isBraking === false) {
-                            count = count + 1; // 進入危險狀態，算一次
+                // 逐點檢查 (從第二個點開始，與前一個點比較)
+                for (let i = 1; i < ridePoints.length; i++) {
+                    const currentPoint = ridePoints[i];
+                    const prevPoint = ridePoints[i - 1];
+
+                    // 計算兩點之間實際過了幾秒 (毫秒 / 1000)
+                    const timeDiff = (currentPoint.rawTime - prevPoint.rawTime) / 1000;
+                    if (timeDiff <= 0) continue; // 避免分母為 0 的極端情況
+
+                    // 計算減速度 (正值代表減速)
+                    const deceleration = (prevPoint.speed - currentPoint.speed) / timeDiff;
+
+                    // 判定門檻：減速 >= 10 km/hr/s
+                    if (deceleration >= 10) {
+                        if (!isBraking) {// 急煞開始
                             isBraking = true;
+                            count++;
+                            currentEvent = {
+                                time: prevPoint.time,    // 煞車開始的時間
+                                maxSpeed: prevPoint.speed, // 煞車前的初始時速
+                                lowSpeed: currentPoint.speed, // 當下的最低速
+                                maxBraking: deceleration, // 初始減速度
+                                class: 'braking'
+                            };
+                        } else { // 持續急煞中：更新最低速、最強的煞車力道
+                            if (currentPoint.speed < currentEvent.lowSpeed) {
+                                currentEvent.lowSpeed = currentPoint.speed;
+                            }
+                            if (deceleration > currentEvent.maxBraking) {
+                                currentEvent.maxBraking = deceleration;
+                            }
                         }
-                    } else {
-                        isBraking = false; // 回正了，重設開關
+                    } else { // 急煞結束
+                        if (isBraking && currentEvent) {
+                            events.push({
+                                time: currentEvent.time,        // 開始急煞時間
+                                endtime: currentPoint.time,      // 結束急煞時間
+                                maxspeed: Math.round(currentEvent.maxSpeed), // 煞車前的最高速
+                                lowspeed: Math.round(currentEvent.lowSpeed), // 煞車後的最低速
+                                braking: Math.round(currentEvent.maxBraking),  // 這段期間最強的煞車力道
+                                class: 'braking'
+                            });
+                            isBraking = false;
+                            currentEvent = null;
+                        }
                     }
-<<<<<<< Updated upstream
-                });
-                return count;
-=======
                 }
 
                 if (isBraking && currentEvent) { // 防止行程結束時剛好在急煞
@@ -1736,61 +1614,35 @@
                     count: count,
                     events: events
                 };
->>>>>>> Stashed changes
             };
-            /* 請檢查資料長什麼樣子：
-                braking: 使用者的減速度。 */
-            
+
             //================================================
             //                 事件判斷區 結束
             //================================================
 
             // 結算騎乘表現的邏輯
-            const finalizeRide = (camera = null) => {
+            const finalizeRide = async (camera = null) => {
                 // 1. 從 Ref 抓取當前這趟的所有點位
                 const dataToAnalyze = currentRideDataRef.current;
-                console.log("=== 開始分析結算 ===");
-                console.log("總共收集點數:", dataToAnalyze.length);
+                logToScreen("=== 開始分析結算 ===");
+                logToScreen(`總共收集點數:${dataToAnalyze.length}`);
 
                 if (dataToAnalyze.length === 0) {
-                    console.log("沒有收集到數據，取消結算");
+                    logToScreen("沒有收集到數據，取消結算");
                     return;
                 }
-<<<<<<< Updated upstream
-                
-                // 2. 進行數據分析
-                const finalOverspeed = analyzeOverspeed(dataToAnalyze);
-                const finalBraking = analyzeBraking(dataToAnalyze); //統計減速度大於3.0的點
-                const finalTilt = analyzeTilt(dataToAnalyze); // 統計傾角 >=40度的點 (為避免過度敏感
-=======
 
                 // 2. 進行數據分析(回傳的是物件 { count, overspeed/braking, class })
                 const overspeedRes = analyzeOverspeed(dataToAnalyze);
                 const brakingRes = analyzeBraking(dataToAnalyze);
                 const tiltRes = analyzeTilt(dataToAnalyze);
->>>>>>> Stashed changes
 
                 // 3. 計算分數
-                const totalPenalty = (finalOverspeed * 2) + (finalBraking * 3) + (finalTilt * 5);
+                const totalPenalty = (overspeedRes.count * 2) + (brakingRes.count * 3) + (tiltRes.count * 5);
                 const finalScore = Math.max(0, 100 - totalPenalty);
 
                 // 取得地點名稱，如果沒傳入就顯示 "未知路段"
                 const locationName = camera ? camera.address : "未知路段";
-<<<<<<< Updated upstream
-
-                // 4. 建立標準歷史格式
-                const summary = {
-                    id: Date.now(),
-                    timestamp: new Date().getTime(),
-                    date: new Date().toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' }),
-                    location: locationName, 
-                    score: finalScore,
-                    overspeedCount: finalOverspeed,
-                    brakingCount: finalBraking,
-                    tiltCount: finalTilt
-                };
-
-=======
                 const firstPoint = dataToAnalyze[0]; // 行程開始點
                 const lastPoint = dataToAnalyze[dataToAnalyze.length - 1]; // 取得最後一個點的狀態
 
@@ -1840,11 +1692,10 @@
                     });
                 }
 
->>>>>>> Stashed changes
                 // 5. 更新狀態與 LocalStorage (包含 7 天過濾邏輯)
                 setWeeklyHistory(prev => {
                     const currentHistory = Array.isArray(prev) ? prev : [];
-                    let updated = [...currentHistory, summary];
+                    let updated = [...currentHistory, ...recordsToUpload];
 
                     // 執行 7 天過濾
                     const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -1856,43 +1707,22 @@
                     });
 
                     localStorage.setItem('ride_history', JSON.stringify(updated));
-                    console.log("歷史紀錄已更新，目前總筆數:", updated.length);
+                    logToScreen(`歷史紀錄已更新，目前總筆數:${updated.length}`);
                     return updated;
                 });
 
-                /* [新增：Supabase 雲端上傳邏輯] */
-                if (supabase && currentUser) {
-                    const uploadToSupabase = async () => {
-                        console.log("正在將騎乘紀錄同步至雲端...");
-                        try {
-                            const { data,error } = await supabase
-                                .from('ride_history')
-                                .insert([{
-                                    user_id: currentUser.id, // 現在這裡會塞入正確的 UUID 了！
-                                    created_at: getTaiwanISOString(), // 台灣時間
-                                    location: summary.location,
-                                    score: summary.score,
-                                    overspeed_count: summary.overspeedCount, // 改成對應 Supabase 的欄位名稱
-                                    braking_count: summary.brakingCount,     // 改成對應 Supabase 的欄位名稱
-                                    tilt_count: summary.tiltCount            // 改成對應 Supabase 的欄位名稱
-                                }])
-                                .select();  
-                            
-                            if (error) throw error;
-                            console.log("Supabase 實際寫入的資料:", data);
-                            console.log("✅ 雲端同步成功");
-                            addNotification('success', '雲端同步', '騎乘紀錄已成功上傳至 Supabase');
-                        } catch (err) {
-                            console.error("❌ 雲端同步失敗:", err.message);
-                            addNotification('warning', '同步失敗', '無法上傳至雲端，資料已儲存於本機');
-                        }
-                    };
-                    uploadToSupabase();
+                // 6. 上傳到 Supabase
+                try {
+                    const { error } = await _supabase.from('ride_history').insert(recordsToUpload);
+                    if (error) throw error;
+                    logToScreen("✅ 成功同步至雲端資料庫");
+                } catch (err) {
+                    logToScreen.error("❌ 雲端同步失敗:", err.message);
                 }
 
                 // 測試用的 alert
                 if (isSimulatingRef.current) {
-                    alert(`✅ 模擬結束：已通過 ${summary.location} 並續行 100m，本次超速：${finalOverspeed} 次，急煞：${finalBraking} 次，危險傾角：${finalTilt} 次，最終得分：${finalScore} 分`);
+                    alert(`✅ 模擬結束：已通過 ${locationName} 並續行 100m，本次超速：${overspeedRes.overspeed} 次，急煞：${brakingRes.braking} 次，危險傾角：${tiltRes.tilt} 次，最終得分：${finalScore} 分`);
                 }
 
                 // 7. 重置臨時數據
@@ -1902,14 +1732,9 @@
             const startSimulation = () => {
                 if (simulationMode) {
                     setSimulationMode(false);
-<<<<<<< Updated upstream
-                    isSimulatingRef.current = false; 
-                    if(simRef.current) clearInterval(simRef.current);
-=======
                     setIsRiding(false);
                     isSimulatingRef.current = false;
                     if (simRef.current) clearInterval(simRef.current);
->>>>>>> Stashed changes
                     setCameraAlert(null);
                     return;
                 }
@@ -1930,9 +1755,10 @@
                 let passedTarget = false; // 鎖定通過狀態
                 let tick = 0;
 
+                isSimulatingRef.current = true;
                 setLocation({ lat: currentLat, lng: currentLng });
                 setSimulationMode(true);
-                isSimulatingRef.current = true;
+                setIsRiding(true);
                 setSimulatedSpeed(speedValue); // 將計算出的速度套用到模擬器
                 setIsConnected(true);
 
@@ -1954,8 +1780,8 @@
 
                         if (forceSpeeding) {
                             // 模擬急煞
-                            if (Math.random() > 0.90) {
-                                braking = 2.44 + (Math.random() * 1.56); // 產生 2.44 ~ 4.0 的減速度
+                            if (Math.random() > 0.80) {
+                                braking = 12 + (Math.random() * 5); // 論文定義 > 10 算急煞
                             }
 
                             // 模擬危險傾角
@@ -1969,6 +1795,7 @@
 
                         const simData = {
                             time: new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                            location: targetCam.address,
                             speed: speedValue, // 啟動時根據按鈕決定的速度
                             limit: targetCam.limit,
                             braking: braking, // 急煞值
@@ -1986,17 +1813,10 @@
                         passedTarget = true;
                         setCameraAlert(null); // 一通過立刻清除警示
                         playWarningSound('pass', 1); // 強制播放通過音效
-<<<<<<< Updated upstream
-                        console.log("[Sim] Camera Passed -> Alert Cleared & Sound Played");
-                        console.log("成功標記為已通過！"); // 檢查 F12 有沒有這一行
-                    } 
-                    
-=======
                         logToScreen("[Sim] Camera Passed -> Alert Cleared & Sound Played");
                         logToScreen("成功標記為已通過！"); // 檢查 F12 有沒有這一行
                     }
 
->>>>>>> Stashed changes
                     // 只有在「尚未通過」的情況下，才更新距離警示
                     if (!passedTarget) {
                         if (dist < 1000 && enableSpeedCam) {
@@ -2009,11 +1829,7 @@
 
                     // 結束條件：通過後行駛超過 100 公尺
                     if (passedTarget && dist > 100) {
-<<<<<<< Updated upstream
-                        console.log("滿足結束條件，執行結算"); 
-=======
                         logToScreen("滿足結束條件，執行結算");
->>>>>>> Stashed changes
 
                         // 先停止計時器，防止重複觸發
                         if (simRef.current) {
@@ -2023,6 +1839,7 @@
 
                         finalizeRide(targetCam); //呼叫結算騎乘表現的邏輯
 
+                        setIsRiding(false);
                         setSimulationMode(false);
                         isSimulatingRef.current = false;
 
@@ -2288,7 +2105,6 @@
                                 />
                             </div>
                         </div>
-                        
 
                         <div className="space-y-1">
                             <label className="text-xs text-slate-400 font-bold ml-1">PASSCODE / 密碼</label>
@@ -2311,26 +2127,9 @@
                         </button>
                     </form>
 
-                    <div className="mt-6 text-center space-y-4">
-                        <button onClick={() => { setActiveTab('register'); setAuthError(''); setAuthForm({ username: '', password: '', confirmPassword: '' }); }} className="text-slate-500 text-xs hover:text-cyan-400 transition-colors block w-full">
+                    <div className="mt-6 text-center">
+                        <button onClick={() => { setActiveTab('register'); setAuthError(''); setAuthForm({ username: '', password: '', confirmPassword: '' }); }} className="text-slate-500 text-xs hover:text-cyan-400 transition-colors">
                             建立新戰術檔案 (Register)
-                        </button>
-                        
-                        {/* [新增：清除本地資料按鈕] */}
-                        <button 
-                            onClick={() => {
-                                if(confirm("確定要清除本地所有帳號與紀錄嗎？(不會刪除雲端資料)")) {
-                                    localStorage.removeItem('visor_users');
-                                    localStorage.removeItem('ride_history');
-                                    localStorage.removeItem('visor_current_user');
-                                    localStorage.removeItem('visor_auth_token');
-                                    alert("本地暫存已清空，系統已重置。");
-                                    location.reload();
-                                }
-                            }}
-                            className="text-red-900/50 text-[10px] hover:text-red-500 transition-colors uppercase tracking-tighter"
-                        >
-                            Developer: Reset Local Storage
                         </button>
                     </div>
                 </div>
@@ -2651,13 +2450,8 @@
                             🗑️ 清除所有歷史
                         </button>
                     </div>
-<<<<<<< Updated upstream
-                    
-                    <AIReportCard historyData={safeHistory} summary={weeklyStats} avgScore={averageScore} supabase={supabase} />
-=======
 
                     <AIReportCard historyData={safeHistory} summary={weeklyStats} avgScore={averageScore} currentUser={currentUser} />
->>>>>>> Stashed changes
 
                     <div className="space-y-4 px-4 pb-20">
                         <EventHeatmapChart
