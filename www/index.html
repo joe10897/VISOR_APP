@@ -1253,20 +1253,12 @@
 
                 // 2. 建立標準數據點 (確保不管來源是誰，存入的欄位名稱都統一)
                 const newPoint = {
-<<<<<<< Updated upstream
-                    time: timestamp,
-                    speed: data.speed,      // 時速
-                    limit: data.limit,      // 限速
-                    braking: data.braking,  // 減速度
-                    tilt: data.tilt         // 傾角
-=======
                     rawTime: now.getTime(), // 用來做數學計算
                     time: getTaiwanISOString(), // 用來做分析
                     location: data.location, // 位置資訊
                     limit: data.limit, // 限速
                     speed: data.speed, // 時速
                     tilt: data.tilt  // 傾角
->>>>>>> Stashed changes
                 };
 
                 // 3. 存入結算用的 Ref (這是之後 analyzeOverspeed 等函數要讀取的資料夾)
