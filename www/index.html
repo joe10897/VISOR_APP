@@ -444,10 +444,7 @@
         ];
 
         const toPascalCase = (str) => str.replace(/(^\w|-\w)/g, (text) => text.replace(/-/, '').toUpperCase());
-        const getTaiwanISOString = (date = new Date()) => {
-            const tzOffset = date.getTimezoneOffset() * 60000;
-            return new Date(date.getTime() - tzOffset).toISOString().slice(0, -1) + "+08:00";
-        };
+        
         const Icon = ({ name, size = 24, className = "" }) => {
             const containerRef = useRef(null);
             useEffect(() => {
@@ -767,7 +764,7 @@
                         .insert({
                             user_id: currentUser.id,
                             report: result,
-                            created_at: getTaiwanISOString()
+                            created_at: result
                         });
 
                     if (error) throw error;
@@ -1260,7 +1257,7 @@
                     current_speed: rideMaxSpeedRef.current, // 存入：全趟最高時速
                     latitude: rideMaxCamSpeedRef.current,   // 借放：測速區最高時速
                     speed_limit: -1, 
-                    created_at: getTaiwanISOString()
+                    
                 }]);
 
                 let tiltReport = "未連接硬體";
@@ -1271,7 +1268,7 @@
                     // --- 處理傾角 ---
                     if (events.tilt.length === 0) {
                         // 寫入資料庫，代表硬體有連線且整趟安全
-                        await _supabase.from('real_lean_angle').insert([{ user_id: uid, session_id: sid, status: 'safe', angle: 0, created_at: getTaiwanISOString() }]);
+                        await _supabase.from('real_lean_angle').insert([{ user_id: uid, session_id: sid, status: 'safe', angle: 0}]);
                         tiltReport = "✅ 本次騎乘安全";
                     } else {
                         tiltReport = `⚠️ 不安全 (發生 ${events.tilt.length} 次危險傾角，最大 ${Math.max(...events.tilt)}°)`;
@@ -1280,7 +1277,7 @@
                     // --- 處理急煞 ---
                     if (events.brake.length === 0) {
                         // 寫入資料庫，代表硬體有連線且整趟安全
-                        await _supabase.from('real_hard_brake').insert([{ user_id: uid, session_id: sid, status: 'safe', deceleration: 0, created_at: getTaiwanISOString() }]);
+                        await _supabase.from('real_hard_brake').insert([{ user_id: uid, session_id: sid, status: 'safe', deceleration: 0 }]);
                         brakeReport = "✅ 本次騎乘安全";
                     } else {
                         brakeReport = `⚠️ 不安全 (發生 ${events.brake.length} 次急煞，最大 -${Math.max(...events.brake).toFixed(1)} km/h/s)`;
@@ -1639,7 +1636,7 @@
                 // 2. 建立標準數據點 (確保不管來源是誰，存入的欄位名稱都統一)
                 const newPoint = {
                     rawTime: now.getTime(), // 用來做數學計算
-                    time: getTaiwanISOString(now), // 用來做分析
+                    time: now.toISOString(), // 用來做分析
                     location: data.location, // 位置資訊
                     limit: data.limit, // 限速
                     speed: data.speed, // 時速
@@ -2290,7 +2287,7 @@
                                                     session_id: currentSessionIdRef.current,
                                                     deceleration: decel,
                                                     status: 'danger',
-                                                    created_at: getTaiwanISOString()
+                                                    
                                                 }]).then(({ error }) => {
                                                     if (!error) {
                                                         realRideEventsRef.current.brake.push(decel);
@@ -2319,7 +2316,7 @@
                                                     longitude: pos.coords.longitude,
                                                     current_speed: speedKmh,
                                                     speed_limit: currentCam.limit,
-                                                    created_at: getTaiwanISOString()
+                                                    
                                                 }]);
 
                                             if (error) throw error;
@@ -2382,7 +2379,7 @@
                                 session_id: currentSessionIdRef.current,
                                 angle: finalTilt,
                                 status: 'danger',
-                                created_at: getTaiwanISOString()
+                                
                             }]);
                             if (!error) {
                                 realRideEventsRef.current.tilt.push(finalTilt);
