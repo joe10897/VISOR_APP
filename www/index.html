@@ -1219,7 +1219,7 @@
                 // 2. 建立標準數據點 (確保不管來源是誰，存入的欄位名稱都統一)
                 const newPoint = {
                     rawTime: now.getTime(), // 用來做數學計算
-                    time: now.toISOString(), // 用來做分析
+                    time: now.toISOString(), // 用於上傳supabase
                     location: data.location, // 位置資訊
                     limit: data.limit, // 限速
                     speed: data.speed, // 時速
@@ -1267,9 +1267,10 @@
                                 isSpeeding = true;
                                 count++; // 觸發次數+1
                                 currentEvent = {
-                                    time: point.time, // 紀錄起始時間
+                                    time: point.time, // 紀錄起始時間(字串)
+                                    rawTime: point.rawTime, // 紀錄起始時間(數字)
                                     maxSpeed: point.speed,
-                                    lowSpeed: point.speed, // 初始化最低速為起點速
+                                    lowSpeed: point.speed, 
                                     limit: limit
                                 };
                             } else { // 持續超速中：更新最高、最低速
@@ -1282,9 +1283,11 @@
                             }
                         } else { // 超速結束
                             if (isSpeeding && currentEvent) {
+                                const eventSeconds = (point.rawTime - currentEvent.rawTime)/ 1000;
                                 events.push({
-                                    time: currentEvent.time,        // 開始時間
-                                    endtime: point.time,             // 結束時間
+                                    time: currentEvent.time,        // 開始時間(字串)
+                                    endtime: point.time,             // 結束時間(字串)
+                                    duration: eventSeconds, //紀錄超速幾秒
                                     maxspeed: Math.round(currentEvent.maxSpeed), // 這段區間的最高時速
                                     lowspeed: Math.round(currentEvent.lowSpeed), // 這段區間的最低時速
                                     limit: currentEvent.limit,
@@ -1301,8 +1304,9 @@
                 if (isSpeeding && currentEvent) {// 防止行程結束時還在超速
                     const lastPoint = ridePoints[ridePoints.length - 1];
                     events.push({
-                        time: currentEvent.time,
-                        endtime: lastPoint.time,
+                        time: currentEvent.time, 
+                        endtime: lastPoint.time, 
+                        duration: (lastPoint.rawTime - currentEvent.rawTime)/ 1000,
                         maxspeed: Math.round(currentEvent.maxSpeed),
                         lowspeed: Math.round(currentEvent.lowSpeed),
                         limit: currentEvent.limit,
@@ -1336,7 +1340,8 @@
                             isTilting = true;
                             count++;
                             currentEvent = {
-                                time: point.time,       // 開始傾斜時間
+                                time: point.time,       // 開始傾斜時間(字串)
+                                rawTime: point.rawTime,       // 開始傾斜時間(數字)
                                 maxTilt: point.tilt,    // 初始傾角
                                 maxSpeed: point.speed,  // 進入時的時速
                                 lowSpeed: point.speed,  // 初始化最低速
@@ -1355,9 +1360,11 @@
                         }
                     } else {
                         if (isTilting && currentEvent) { // 傾角恢復
+                            const eventSeconds = (point.rawTime - currentEvent.rawTime) / 1000;
                             events.push({
                                 time: currentEvent.time,        // 起始時間
                                 endtime: point.time,             // 結束時間
+                                duration: eventSeconds, // 傾斜持續幾秒
                                 maxspeed: Math.round(currentEvent.maxSpeed),
                                 lowspeed: Math.round(currentEvent.lowSpeed),
                                 tilt: Math.round(currentEvent.maxTilt), // 記錄這段區間最大的傾角
@@ -1374,6 +1381,7 @@
                     events.push({
                         time: currentEvent.time,
                         endtime: lastPoint.time,
+                        duration: (lastPoint.rawTime - currentEvent.rawTime) / 1000,
                         maxspeed: Math.round(currentEvent.maxSpeed),
                         lowspeed: Math.round(currentEvent.lowSpeed),
                         tilt: Math.round(currentEvent.maxTilt),
@@ -1506,11 +1514,12 @@
                             count: ev.count || 1,
                             time: ev.time,
                             endtime: ev.endtime,
+                            duration: ev.duration || 0,
                             location: locationName,
                             limit: lastPoint.limit,
                             maxspeed: ev.maxspeed,     
                             lowspeed: ev.lowspeed,  
-                            overspeed: ev.maxoverspeed || 0,
+                            overspeed: ev.overspeed || 0,
                             braking: ev.braking || 0,
                             tilt: ev.tilt || 0,
                             score: finalScore
@@ -1530,6 +1539,7 @@
                         count: 0,
                         time: firstPoint.time,
                         endtime: lastPoint.time,
+                        duration: 0,
                         location: locationName,
                         limit: lastPoint.limit,
                         maxspeed: lastPoint.speed,
@@ -1561,8 +1571,8 @@
                     const { error } = await _supabase.from('ride_history').insert(recordsToUpload);
                     if (error) throw error;
                     logToScreen("✅ 成功同步至雲端資料庫");
-                } catch (err) {
-                    logToScreen.error("❌ 雲端同步失敗:", err.message);
+                } catch (error) {
+                    logToScreen(`❌ 雲端同步失敗:${error.message}`);
                 }
                 
                 // 測試用的 alert
