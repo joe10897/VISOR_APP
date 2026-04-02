@@ -1333,7 +1333,7 @@
                 let events = []; // 總結事件的細節
 
                 ridePoints.forEach((point) => {
-                    // 判定門檻：傾角 >= 40 度
+                    // 判定門檻：傾角 >= 40 度，論文定義危險壓彎計次區間 (30° ~ 45°)，為避免過於敏感，這裡設定在 40° 以上才算一次事件開始
                     if (point.tilt >= 40) {
                         if (!isTilting) {
                             // 進入危險傾角
@@ -1494,9 +1494,35 @@
                 const brakingRes = analyzeBraking(dataToAnalyze); 
                 const tiltRes = analyzeTilt(dataToAnalyze);
 
-                // 3. 計算分數
-                const totalPenalty = (overspeedRes.count * 2) + (brakingRes.count * 3) + (tiltRes.count * 5);
+                // 計算分數
+                let overspeedPenalty = 0;
+                let tiltPenalty = 0;
+
+                // 超速扣分邏輯
+                overspeedRes.events.forEach(ev => {
+                    // n 代表過了幾個 5 秒 (0s=0, 5s=1, 10s=2)
+                    const n = Math.floor(ev.duration / 5);
+                    // 公式：2 的 (n+1) 次方
+                    // 0~4.9s  => 2^1 = 2分
+                    // 5~9.9s  => 2^2 = 4分
+                    // 10~14.9s => 2^3 = 8分
+                    overspeedPenalty += Math.pow(2, n + 1);
+                });
+
+                // 危險傾角扣分邏輯
+                tiltRes.events.forEach(ev => {
+                    const n = Math.floor(ev.duration / 5);
+                    tiltPenalty += Math.pow(5, n + 1);
+                });
+
+                // 急煞扣分邏輯
+                const brakingPenalty = (brakingRes.count || 0) * 3;
+
+                // 總結分數
+                const totalPenalty = overspeedPenalty + tiltPenalty + brakingPenalty;
                 const finalScore = Math.max(0, 100 - totalPenalty);
+
+                logToScreen(`扣分統計: 超速-${overspeedPenalty}, 傾角-${tiltPenalty}, 急煞-${brakingPenalty}`);
 
                 // 取得地點名稱，如果沒傳入就顯示 "未知路段"
                 const locationName = camera ? camera.address : "未知路段";
