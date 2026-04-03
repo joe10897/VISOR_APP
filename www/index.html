@@ -1569,6 +1569,7 @@
                 // 3. 萬一都沒抓到，才是未知路段
                 const locationName = (camera && camera.address) || (lastPoint && lastPoint.location) || "未知路段";
                 
+                const rideId = Date.now().toString(); // 用來判斷是否為同一趟用
                 let recordsToUpload = []; // 準備要上傳的資料陣列
                 
                 // 統一處理函數：
@@ -1588,7 +1589,8 @@
                             overspeed: ev.overspeed || 0,
                             braking: ev.braking || 0,
                             tilt: ev.tilt || 0,
-                            score: finalScore
+                            score: finalScore,
+                            ride_id: rideId // 用來判斷是否為同一趟用
                         });
                     });
                 };
@@ -1613,7 +1615,8 @@
                         overspeed: 0, 
                         braking: 0,
                         tilt: 0,
-                        score: 100
+                        score: 100,
+                        ride_id: rideId
                     });
                 }
 
