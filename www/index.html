@@ -1201,15 +1201,51 @@
                 }
             };
 
-            //預留給開始騎乘紀錄按鈕================================================
+            // 偵測開始騎乘/結束騎乘邏輯
             const [isRiding, setIsRiding] = React.useState(false); 
             const isRidingRef = React.useRef(false);
+            const rideStartTimeRef = useRef(0);
+
 
             // 當 State 改變時，同步更新 Ref
             React.useEffect(() => {
                 isRidingRef.current = isRiding;
             }, [isRiding]);
-            //=====================================================================
+
+            const handleToggleDetection = () => {
+                const newState = !enableSpeedCam;
+
+                // 同步更新所有相關狀態
+                setEnableSpeedCam(newState);
+                setIsRiding(newState); 
+                isRidingRef.current = newState;
+
+                if (newState) {
+                    // 啟動監控
+                    rideStartTimeRef.current = Date.now(); // 記錄開始時間
+
+                    // 重置單次行車數據與臨時紀錄
+                    setRideData([]);
+                    currentRideDataRef.current = [];
+
+                    logToScreen(`V.I.S.O.R. 實際偵測啟動`);
+                    addNotification('success', '監控啟動', '已開始紀錄實際行駛數據');
+                } else {
+                    // 停止監控
+                    const duration = Date.now() - rideStartTimeRef.current;
+
+                    // 防呆機制：判斷是否超過 3 秒 (3000 毫秒)
+                    if (duration > 3000) {
+                        logToScreen("V.I.S.O.R.實際偵測已停止，產生報告...");
+                        addNotification('info', '監控結束', '騎乘紀錄處理中');
+                        finalizeRide(); //觸發結算邏輯
+                    } else {
+                        logToScreen("啟動時間過短 (< 3秒)，已取消紀錄");
+                        addNotification('warning', '偵測取消', '啟動時間不足 3 秒，視為誤觸不予紀錄');
+                        currentRideDataRef.current = []; // 不記錄，清空
+                    }
+                }
+            };
 
             // 統一處理來自模擬跟實際的數據
             const handleIncomingData = (data) => {
@@ -1240,9 +1276,9 @@
                 setRideData(prev => [...prev, newPoint]);
             };
 
-            //================================================
+            //===========================================================
             //                 事件判斷區 
-            //================================================
+            //===========================================================
 
             //判斷有幾次超速事件
             const analyzeOverspeed = (ridePoints) => {
@@ -1473,9 +1509,9 @@
                 };
             };
 
-            //================================================
+            //=============================================================
             //                 事件判斷區 結束
-            //================================================
+            //=============================================================
 
             // 結算騎乘表現的邏輯
             const finalizeRide = async (camera = null) => {
@@ -1525,9 +1561,13 @@
                 logToScreen(`扣分統計: 超速-${overspeedPenalty}, 傾角-${tiltPenalty}, 急煞-${brakingPenalty}`);
 
                 // 取得地點名稱，如果沒傳入就顯示 "未知路段"
-                const locationName = camera ? camera.address : "未知路段";
                 const firstPoint = dataToAnalyze[0]; // 行程開始點
                 const lastPoint = dataToAnalyze[dataToAnalyze.length - 1]; // 取得最後一個點的狀態
+                // 優先順序：
+                // 1. 傳入的實體相機地址 
+                // 2. 數據點內的 location 欄位 
+                // 3. 萬一都沒抓到，才是未知路段
+                const locationName = (camera && camera.address) || (lastPoint && lastPoint.location) || "未知路段";
                 
                 let recordsToUpload = []; // 準備要上傳的資料陣列
                 
@@ -1603,7 +1643,7 @@
                 
                 // 測試用的 alert
                 if (isSimulatingRef.current) {
-                    alert(`✅ 模擬結束：已通過 ${locationName} 並續行 100m，本次超速：${overspeedRes.overspeed} 次，急煞：${brakingRes.braking} 次，危險傾角：${tiltRes.tilt} 次，最終得分：${finalScore} 分`);
+                    alert(`✅ 模擬結束：已通過 ${locationName} 並續行 100m，本次超速：${overspeedRes.count} 次，急煞：${brakingRes.count} 次，危險傾角：${tiltRes.count} 次，最終得分：${finalScore} 分`);
                 }
 
                 // 7. 重置臨時數據
@@ -1708,24 +1748,24 @@
                         if (cameraAlert !== null) setCameraAlert(null);
                     }
 
-                    // 結束條件：通過後行駛超過 100 公尺
-                    if (passedTarget && dist > 100) {
-                        logToScreen("滿足結束條件，執行結算"); 
+                    // // 結束條件：通過後行駛超過 100 公尺
+                    // if (passedTarget && dist > 100) {
+                    //     logToScreen("滿足結束條件，執行結算"); 
 
-                        // 先停止計時器，防止重複觸發
-                        if (simRef.current) {
-                            clearInterval(simRef.current);
-                            simRef.current = null;
-                        }
+                    //     // 先停止計時器，防止重複觸發
+                    //     if (simRef.current) {
+                    //         clearInterval(simRef.current);
+                    //         simRef.current = null;
+                    //     }
 
-                        finalizeRide(targetCam); //呼叫結算騎乘表現的邏輯
+                    //     finalizeRide(targetCam); //呼叫結算騎乘表現的邏輯
 
-                        setIsRiding(false);
-                        setSimulationMode(false);
-                        isSimulatingRef.current = false;
+                    //     setIsRiding(false);
+                    //     setSimulationMode(false);
+                    //     isSimulatingRef.current = false;
                         
-                        setSimulatedSpeed(0);
-                    }
+                    //     setSimulatedSpeed(0);
+                    // }
                     
                     // --- 隨機觸發邊緣預警 ---
                     if (Math.random() > 0.96) {
@@ -2102,7 +2142,10 @@
                         <div className="grid grid-cols-2 gap-4">
                             <button onClick={toggleSentry} className={`p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all duration-300 border active:scale-95 ${isSentryMode ? 'bg-cyan-900/30 border-cyan-500/50' : 'bg-slate-800 border-slate-700'}`}><Icon name="eye" size={24} className={isSentryMode ? 'text-cyan-400' : 'text-slate-400'} /><span className={`font-medium text-sm ${isSentryMode ? 'text-cyan-100' : 'text-slate-400'}`}>{isSentryMode ? '哨兵模式' : '哨兵待機'}</span></button>
                             
-                            <button onClick={() => setEnableSpeedCam(!enableSpeedCam)} className={`p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all duration-300 border active:scale-95 ${enableSpeedCam ? 'bg-green-900/30 border-green-500/50' : 'bg-slate-800 border-slate-700'}`}><Icon name={enableSpeedCam ? "camera" : "camera-off"} size={24} className={enableSpeedCam ? 'text-green-400' : 'text-slate-400'} /><span className={`font-medium text-sm ${enableSpeedCam ? 'text-green-100' : 'text-slate-400'}`}>{enableSpeedCam ? '測速預警' : '測速關閉'}</span></button>
+                            <button onClick={handleToggleDetection} className={`p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all duration-300 border active:scale-95 ${enableSpeedCam ? 'bg-green-900/30 border-green-500/50' : 'bg-slate-800 border-slate-700'}`}>
+                                <Icon name={enableSpeedCam ? "camera" : "camera-off"} size={24} className={enableSpeedCam ? 'text-green-400' : 'text-slate-400'} />
+                                <span className={`font-medium text-sm ${enableSpeedCam ? 'text-green-100' : 'text-slate-400'}`}>{enableSpeedCam ? '偵測啟動' : '未偵測'}</span>
+                            </button>
                         </div>
                         
                         <div className="flex flex-col gap-2 mb-4 p-3 bg-gray-800 rounded-xl border border-gray-700">
