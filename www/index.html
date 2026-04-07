@@ -554,7 +554,7 @@
                    prevProps.isTracking === nextProps.isTracking;
         });
 
-        const AIReportCard = ({ historyData, summary, avgScore, currentUser }) => {
+        const AIReportCard = ({ currentUser }) => {
             const [report, setReport] = useState("");
             const [loading, setLoading] = useState(false);
             const [hasGenerated, setHasGenerated] = useState(false);
@@ -597,32 +597,52 @@
             }, [currentUser]);
 
             const generateReport = async () => {
-                if (!historyData || historyData.length === 0) {
-                    setReport("### ⚠️ 數據掃描失敗\n 請先進行至少騎乘一次，V.I.S.O.R. 才能進行行為分析。");
-                    return;
-                }
+                if (!currentUser) return;
                 setLoading(true);
                 try {
-                    const data = historyData || [];
-                    const recentData = data.slice(-10).map(d => ({
-                        s: d.score || 0,
-                        o: d.overspeedCount || 0,
-                        b: d.brakingCount || 0
-                    }));
+                    // 近10天
+                    const { data: dayStats, error: dayError } = await _supabase
+                        .from('day_ride')
+                        .select('*')
+                        .eq('user_id', currentUser.id)
+                        .limit(10); 
+                    // 歷史月統計
+                    const { data: monthStats, error: monthError } = await _supabase
+                        .from('month_ride')
+                        .select('*')
+                        .eq('user_id', currentUser.id)
+
+                    // 如果兩張表都沒資料，就停止並報錯
+                    if (!dayStats || dayStats.length === 0) {
+                        setReport("### ⚠️ 數據掃描失敗\n目前資料庫中尚無您的騎乘紀錄。V.I.S.O.R. 需要數據才能進行行為分析。");
+                        setLoading(false);
+                        return;
+                    }
+
+                    // 3. 封裝給 AI
+                    const airideData = {
+                        recent: dayStats,     
+                        history: monthStats  
+                    };
+
+                    const userPrompt = `
+                    【V.I.S.O.R. 深度行為分析】
+                    分析對象：${currentUser.id}
+                    長期趨勢 (月): ${JSON.stringify(airideData.history)}
+                    近期細節 (日): ${JSON.stringify(airideData.recent)}
+                    `;
 
                     const systemPrompt = 
                     `
                     系統提示:你現在是 V.I.S.O.R.，騎士的專屬 AI 夥伴。請根據遙測數據提供一份「專業」的騎乘分析。
                     回應準則：
                     1. 語氣：白話、親切、精簡。
-                    2. 結構(html邏輯)：我是 V.I.S.O.R.，你的專屬騎乘 AI 夥伴，以下是分析結果：<br><b>===近期行為分析===</b><br>內容：根據最近的騎乘數據，分析騎士在安全評分、超速次數、急煞次數等方面的表現。<br><b>===行為建議===</b><br>內容：根據分析出來的結果，給予適當的建議。<br>==============================================<br>內容：以鼓勵的語氣結尾，激勵騎士持續保持安全的騎乘習慣。
+                    2. 結構(html邏輯)：我是 V.I.S.O.R.，你的專屬騎乘 AI 夥伴，以下是分析結果：<br><b>===行為分析===</b><br>內容：根據長期趨勢及近期細節的數據，分析騎士在安全評分、超速次數、急煞次數、騎乘習慣等方面的表現。<br><b>===行為建議===</b><br>內容：根據分析出來的結果，給予適當的建議。<br>==============================================<br>內容：以鼓勵的語氣結尾，激勵騎士持續保持安全的騎乘習慣。
                     3. 格式：繁體中文，Markdown 格式。
                     4. 避開過於艱澀的術語，改用一般人聽得懂的說法。
                     5. 避免直接標示出數據的具體數值。
                     6. Temperature = 0.0。
                     `;
-
-                    const userPrompt = `【V.I.S.O.R. 遙測數據上傳完成】\n平均安全評分: ${avgScore}\n樣本數據: ${JSON.stringify(recentData)}`;
 
                     const result = await callAI(userPrompt, systemPrompt);
                     setReport(result);
@@ -2209,204 +2229,206 @@
                     ))}
                 </div>
             );
+            //=========================================================
+            // 分析頁圖表與數據處理邏輯
+            //=========================================================
+            const [analyzeData, setanalyzeData] = useState([]); // 儲存從 Supabase 讀取的分析數據
+            const [isInitialLoading, setIsInitialLoading] = useState(true); // 用於區分初次讀取資料庫
 
-            // 1. 確保數據存在且為陣列
-            const safeHistory = Array.isArray(weeklyHistory) ? weeklyHistory : [];
-            const hasHistory = safeHistory.length > 0;
+            // 切換到分析頁，讀取分析數據
+            React.useEffect(() => {
+                    const fenthAnalyze = async () => {
+                    if (!currentUser) return;
 
-            // 2. 彙整 7 天總量
-            const weeklyStats = safeHistory.reduce((acc, trip) => {
-                return {
-                    totalScore: acc.totalScore + (trip.score || 0),
-                    overspeed: acc.overspeed + (trip.overspeedCount || 0),
-                    braking: acc.braking + (trip.brakingCount || 0),
-                    tilt: acc.tilt + (trip.tiltCount || 0)
-                };
-            }, { totalScore: 0, overspeed: 0, braking: 0, tilt: 0 });
+                    try {
+                        // 從 Supabase 抓取 近31天的數據 (View: day_ride)
+                        const { data, error } = await _supabase
+                            .from('day_ride') 
+                            .select('*')
+                            .eq('user_id', currentUser.id)
+                            .order('date_label', { ascending: false }) // 按日期由新到舊排序
+                            .limit(31);
+                        
+                        if (error) throw error;
 
-            // 3. 計算平均分數
-            const averageScore = hasHistory ? Math.round(weeklyStats.totalScore / safeHistory.length) : '---';
+                        // 更新狀態
+                        setanalyzeData(data || []);
+                        logToScreen(`✅ 已成功獲取最近 ${data?.length || 0} 天的騎乘分析數據`);
 
-            const { 
-                ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis, 
-                CartesianGrid, Tooltip, AreaChart, Area 
-            } = Recharts;   
-
-            const EventHeatmapChart = ({ data, dataKey, color, label }) => {
-                const timeSlots = [
-                    { label: '凌晨', idx: 0, range: '00:00-04:00' },
-                    { label: '早晨', idx: 1, range: '04:00-08:00' },
-                    { label: '午間', idx: 2, range: '08:00-12:00' },
-                    { label: '下午', idx: 3, range: '12:00-16:00' },
-                    { label: '傍晚', idx: 4, range: '16:00-20:00' },
-                    { label: '深夜', idx: 5, range: '20:00-24:00' }
-                ];
-
-                const [selectedSlot, setSelectedSlot] = React.useState(null);
-
-                // 1. 產生過去 7 天的日期字串
-                const days = Array.from({ length: 7 }).map((_, i) => {
-                    const d = new Date();
-                    d.setDate(d.getDate() - (6 - i));
-                    return {
-                        dateStr: `${d.getMonth() + 1}/${d.getDate()}`,
-                        fullDate: d.toDateString()
-                    };
-                });
-
-                // 3. 數據歸類 
-                const grid = Array(6).fill(0).map(() => Array(7).fill(0).map(() => []));
-                data.forEach(item => {
-                    const itemDate = new Date(item.timestamp);
-                    const dayIndex = days.findIndex(day => day.fullDate === itemDate.toDateString());
-                    if (dayIndex !== -1) {
-                        const slotIndex = Math.floor(itemDate.getHours() / 4);
-                        if (item[dataKey] > 0) {
-                            grid[slotIndex][dayIndex].push(item);
-                        }
+                    } catch (error) {
+                        logToScreen(`❌ 讀取分析數據失敗: ${error.message}`);
+                    } finally {
+                        setIsInitialLoading(false);
                     }
-                });
+                };
+                if (currentUser && activeTab === 'stats') { 
+                    fenthAnalyze();
+                }
+            }, [currentUser, activeTab]); 
+
+            // 記分板用========================================
+
+            // 產生今日標籤 (YYYY-MM-DD)
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+
+            const todayLabel = `${year}-${month}-${day}`;
+
+            // 比對日期，找到今天的數據
+            const todayData = analyzeData.find(d => d.date_label === todayLabel);
+
+            // 輸出記分板
+            const stats = {
+                averageScore: todayData ? Math.round(parseFloat(todayData.avg_score || 0)) : '---',
+                overspeed: todayData ? (todayData.total_overspeed || 0) : 0,
+                braking: todayData ? (todayData.total_breaking || 0) : 0,
+                tilt: todayData ? (todayData.total_tilt || 0) : 0,
+                trips: todayData ? (todayData.total_trips || 0) : 0
+            };
+            // 記分板 結束========================================================
+
+            const RollingCalendarChart = ({ data, dataKey, color, label }) => {
+                // 產生「固定 30 天」的資料，不補白，直接排滿
+                const generateRollingDays = () => {
+                    const today = new Date();
+                    const calendar = [];
+                    
+                    // 為了讓今天的格子出現在最後面，我們從 29 天前開始算起
+                    for (let i = 29; i >= 0; i--) {
+                        const d = new Date();
+                        d.setDate(today.getDate() - i);
+                        
+                        const month = d.getMonth() + 1;
+                        const date = d.getDate();
+                        const labelStr = d.toLocaleDateString('en-CA'); // YYYY-MM-DD
+                        
+                        calendar.push({
+                            fullDate: labelStr,
+                            displayMD: `${month}/${date}`, // 格式如 4/5
+                            isToday: i === 0
+                        });
+                    }
+                    return calendar;
+                };
+
+                const days = generateRollingDays();
 
                 return (
-                    <div className="bg-gray-800 rounded-xl border border-gray-700/bg-slate-800 rounded-xl p-4 border border-slate-700 mt-4 relative overflow-hidden mt-4 relative ">
+                    <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700 shadow-xl">
+                        {/* 標題 */}
                         <div className="flex items-center justify-between mb-4">
-                            <span className="text-xs font-bold text-slate-400 tracking-widest uppercase">{label}(過去7天)</span>
-                            <span className="text-[8px] font-bold text-slate-400 tracking-widest uppercase">(點擊查看詳細資料)</span>
-                            {selectedSlot && (
-                                <button onClick={() => setSelectedSlot(null)} className="text-[10px] text-cyan-400">✕ 關閉視窗</button>
-                            )}
-                            
-                        </div>
-
-                        {/* 主要圖表區域 */}
-                        <div className="flex flex-col">
-                            {/* 日期列 */}
-                            <div className="flex gap-2 mb-2">
-                                <div className="w-10"></div> {/* 這裡是用來對齊左側文字的空位 */}
-                                <div className="flex-1 grid grid-cols-7 gap-2">
-                                    {days.map((day, i) => (
-                                        <div key={i} className="text-[10px] text-center text-slate-600 font-mono">{day.dateStr}</div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="flex gap-2">
-                                {/* Y 軸文字 */}
-                                <div className="w-10 grid grid-rows-6 gap-2 text-[10px] text-slate-500 font-medium">
-                                    {timeSlots.map(slot => (
-                                        <div key={slot.idx} className="flex items-center justify-end h-8 pr-1">{slot.label}</div>
-                                    ))}
-                                </div>
-
-                                {/* 格子區域 */}
-                                <div className="flex-1 grid grid-rows-6 gap-2">
-                                    {[0, 1, 2, 3, 4, 5].map((slotIdx) => (
-                                        <div key={slotIdx} className="grid grid-cols-7 gap-2 h-8">
-                                            {[0, 1, 2, 3, 4, 5, 6].map((dayIdx) => {
-                                                const items = grid[slotIdx][dayIdx];
-                                                const count = items.reduce((sum, curr) => sum + curr[dataKey], 0);
-                                                const isSelected = selectedSlot?.dIdx === dayIdx && selectedSlot?.sIdx === slotIdx;
-
-                                                return (
-                                                    <div
-                                                        key={dayIdx}
-                                                        onClick={() => count > 0 && setSelectedSlot({ dIdx: dayIdx, sIdx: slotIdx, items, count })}
-                                                        className={`rounded-sm transition-all border ${
-                                                            count > 0 ? 'cursor-pointer' : 'cursor-default'
-                                                        } ${isSelected ? 'border-white scale-110 z-10 shadow-lg' : 'border-white/5'}`}
-                                                        style={{
-                                                            backgroundColor: count > 0 ? color : 'rgba(255,255,255,0.02)',
-                                                            opacity: count > 0 ? Math.min(0.4 + (count * 0.1), 1) : 1
-                                                        }}
-                                                    />
-                                                );
-                                            })}
-                                        </div>
-                                    ))}
-                                </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-4 rounded-full" style={{backgroundColor: color}}></div>
+                                <h3 className="text-sm font-bold text-slate-200">{label} 近 30 日分析</h3>
                             </div>
                         </div>
 
-                        {/* 彈出詳細資料框 (Tooltip 樣式 + 可滾動) */}
-                        {selectedSlot && (
-                            <div className="absolute top-12 left-4 right-4 z-50 bg-slate-950 border border-white/20 rounded-lg shadow-2xl p-3 flex flex-col max-h-[180px]">
-                                <div className="flex justify-between items-center mb-2 pb-1 border-b border-white/10">
-                                    <span className="text-[11px] font-bold text-white">
-                                        🗓️{days[selectedSlot.dIdx].dateStr} {timeSlots.find(s=>s.idx===selectedSlot.sIdx).label} ({selectedSlot.count}次)
-                                    </span>
-                                </div>
+                        {/* 網格佈局：每橫排 6 格 (6x5 = 30) 或是 5 格 (5x6 = 30) */}
+                        {/* 這裡建議用 grid-cols-5，手機版比例比較好看 */}
+                        <div className="grid grid-cols-5 gap-2">
+                            {days.map((day) => {
+                                const dayData = data.find(d => d.date_label === day.fullDate);
+                                const val = dayData ? dayData[dataKey] : 0;
                                 
-                                {/* 滾動列表 */}
-                                <div className="overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                                    {selectedSlot.items.map((item, i) => (
-                                        <div key={i} className="text-[10px] bg-white/5 p-2 rounded border-l-2" style={{borderColor: color}}>
-                                            <div className="flex justify-between text-cyan-400 mb-1">
-                                                <span>{new Date(item.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</span>
-                                                <span className="font-bold">{item[dataKey]} 次</span>
-                                            </div>
-                                            <div className="text-slate-300 truncate">📍 {item.location}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+                                // 顏色邏輯
+                                const opacity = val > 0 ? Math.min(0.3 + (val * 0.15), 1) : 0.1;
+                                const bgColor = val > 0 ? color : 'rgba(255,255,255,1)';
+
+                                return (
+                                    <div
+                                        key={day.fullDate}
+                                        className={`
+                                            aspect-square rounded-lg flex flex-col items-center justify-center
+                                            transition-all border
+                                            ${day.isToday ? 'border-white/40 ring-1 ring-white/20' : 'border-transparent'}
+                                        `}
+                                        style={{ 
+                                            backgroundColor: bgColor,
+                                            opacity: opacity
+                                        }}
+                                    >
+                                        {/* 月/日 文字 */}
+                                        <span className={`
+                                            text-[10px] font-black leading-none
+                                            ${val > 0 ? 'text-slate-900' : 'text-slate-400'}
+                                        `}>
+                                            {day.displayMD}
+                                        </span>
+
+                                        {/* 數據小點 (如果有數據，加個小點增加視覺感) */}
+                                        {val > 0 && (
+                                            <span className="text-[9px] mt-0.5 font-mono text-slate-900/70">
+                                                {val}
+                                            </span>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* 底部說明 */}
+                        <div className="mt-4 flex justify-between items-center text-[10px] text-slate-500 font-mono italic">
+                            <span>START: {days[0].displayMD}</span>
+                            <span className="opacity-50">30-DAY ROLLING TRACKER</span>
+                            <span>TODAY: {days[29].displayMD}</span>
+                        </div>
                     </div>
                 );
             };
 
-            const renderStats = () => (
-                <div className="space-y-6 animate-fadeIn pb-24">
-                    <h2 className="text-xl font-bold text-white">騎乘分析</h2>
-                    <div className="bg-gradient-to-br from-cyan-950 to-blue-950 p-6 rounded-2xl text-white flex justify-between items-center shadow-lg border border-cyan-500/20">
-                        <div>
-                            <div className="text-cyan-200 text-xs uppercase tracking-wider font-semibold">{hasHistory ? "過去 7 天安全評分" : "尚無騎乘紀錄"}</div>
-                            <div className="text-6xl font-black mt-2 bg-gradient-to-r from-white to-cyan-300 bg-clip-text text-transparent">{averageScore}<span className="text-lg text-cyan-200/50">/100</span></div>
+            const renderStats = () => {
+                return (
+                    <div className="space-y-6 animate-fadeIn pb-24">
+                        {/* 頂部記分板 */}
+                        <div className="bg-gradient-to-br from-cyan-950 to-blue-950 p-6 rounded-2xl text-white flex justify-between items-center shadow-lg border border-cyan-500/20">
+                            <div>
+                                <div className="text-cyan-200 text-xs uppercase tracking-wider font-semibold">
+                                    {todayData ? "今日安全評分" : "尚無數據"}
+                                </div>
+                                <div className="text-6xl font-black mt-2 bg-gradient-to-r from-white to-cyan-300 bg-clip-text text-transparent">
+                                    {stats.averageScore}
+                                </div>
+                            </div>
+                            <div className="text-right space-y-2 border-l border-white/10 pl-6">
+                                <div className="text-xs text-blue-200">超速 <span className="font-bold text-white text-base">{stats.overspeed}</span> 次</div>
+                                <div className="text-xs text-blue-200">急煞 <span className="font-bold text-white text-base">{stats.braking}</span> 次</div>
+                                <div className="text-xs text-blue-200">傾角 <span className="font-bold text-white text-base">{stats.tilt}</span> 次</div>
+                                <div className="text-xs text-blue-200">騎乘次數 <span className="font-bold text-white text-base">{stats.trips}</span> 次</div>
+                            </div>
                         </div>
-                        <div className="text-right space-y-2 border-l border-white/10 pl-6">
-                            <div className="text-xs text-blue-200 flex items-center justify-end gap-2">超速次數 <span className="font-bold text-white text-base">{weeklyStats.overspeed}</span>次</div>
-                            <div className="text-xs text-blue-200 flex items-center justify-end gap-2">急煞次數 <span className="font-bold text-white text-base">{weeklyStats.braking}</span>次</div>
-                            <div className="text-xs text-blue-200 flex items-center justify-end gap-2">危險傾角 <span className="font-bold text-white text-base">{weeklyStats.tilt}</span>次</div>
+
+                        {/* AI 報告 */}
+                        <AIReportCard currentUser={currentUser} />
+
+                        {/* 3. 三大熱力圖 (數據來源：analyzeData) */}
+                        <div className="space-y-4 px-2">
+                            <RollingCalendarChart 
+                                data={analyzeData} 
+                                dataKey="total_overspeed" 
+                                color="#FACC15" 
+                                label="超速熱力圖" 
+                            />
+                            <RollingCalendarChart 
+                                data={analyzeData} 
+                                dataKey="total_breaking" 
+                                color="#FB923C" 
+                                label="急煞熱力圖" 
+                            />
+                            <RollingCalendarChart 
+                                data={analyzeData} 
+                                dataKey="total_tilt" 
+                                color="#F87171" 
+                                label="傾角熱力圖" 
+                            />
                         </div>
                     </div>
-                    <div className="flex gap-2">
-                        <button 
-                            className="flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all bg-red-500 hover:bg-red-600 text-white"
-                            onClick={() => {
-                                localStorage.removeItem('ride_history');
-                                setWeeklyHistory([]);
-                                alert("歷史紀錄已清空");
-                            }}
-                        >
-                            🗑️ 清除所有歷史
-                        </button>
-                    </div>
-                    
-                    <AIReportCard historyData={safeHistory} summary={weeklyStats} avgScore={averageScore} currentUser={currentUser} />
-
-                    <div className="space-y-4 px-4 pb-20">
-                        <EventHeatmapChart 
-                            data={weeklyHistory} 
-                            dataKey="overspeedCount" 
-                            color="#ffff00" 
-                            label="超速次數" 
-                        />
-                        
-                        <EventHeatmapChart 
-                            data={weeklyHistory} 
-                            dataKey="brakingCount" 
-                            color="#ffa500" 
-                            label="急煞次數" 
-                        />
-
-                        <EventHeatmapChart 
-                            data={weeklyHistory} 
-                            dataKey="tiltCount" 
-                            color="#f87171" 
-                            label="傾角次數" 
-                        />
-                    </div>
-                </div>
-            );
+                );
+            };
+            //=========================================================
+            // 分析頁圖表與數據處理邏輯 結束
+            //=========================================================
 
             const renderHudPage = () => {
                 const options = [
