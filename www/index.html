@@ -2289,91 +2289,156 @@
             };
             // 記分板 結束========================================================
 
-            const RollingCalendarChart = ({ data, dataKey, color, label }) => {
-                // 產生「固定 30 天」的資料，不補白，直接排滿
-                const generateRollingDays = () => {
+            const EventCalendar = ({ data, dataKey, color, label }) => {
+                // 1. 管理彈窗狀態
+                const [selectedDay, setSelectedDay] = useState(null); // 存儲點擊的那一天的完整數據
+
+                // 產生「近 30 天」的日期陣列，包含完整標籤與日數
+                const thirtyDays = () => {
                     const today = new Date();
                     const calendar = [];
-                    
-                    // 為了讓今天的格子出現在最後面，我們從 29 天前開始算起
+                    // 從 29 天前開始算起 (共 30 格)
                     for (let i = 29; i >= 0; i--) {
                         const d = new Date();
                         d.setDate(today.getDate() - i);
-                        
-                        const month = d.getMonth() + 1;
-                        const date = d.getDate();
-                        const labelStr = d.toLocaleDateString('en-CA'); // YYYY-MM-DD
-                        
                         calendar.push({
-                            fullDate: labelStr,
-                            displayMD: `${month}/${date}`, // 格式如 4/5
+                            fullDate: d.toLocaleDateString('en-CA'), // YYYY-MM-DD (用於匹配)
+                            monthNum: d.getMonth() + 1, // 月份 (1-12)
+                            dayNum: d.getDate(), // 僅取得「日」(1-31)
                             isToday: i === 0
                         });
                     }
                     return calendar;
                 };
 
-                const days = generateRollingDays();
+                const days = thirtyDays();
+
+                // 關閉彈窗的函數
+                const closePopover = () => setSelectedDay(null);
 
                 return (
-                    <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700 shadow-xl">
-                        {/* 標題 */}
+                    <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700 shadow-xl relative">
+                        {/* 標題與圖例 */}
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
                                 <div className="w-1.5 h-4 rounded-full" style={{backgroundColor: color}}></div>
-                                <h3 className="text-sm font-bold text-slate-200">{label} 近 30 日分析</h3>
+                                <h3 className="text-sm font-bold text-slate-200">近30天{label}資料 </h3>
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-mono">
+                                <span className={`${days[29].isToday ? 'text-cyan-500 font-bold' : ''}`}>今日日期: {days[29].monthNum}/{days[29].dayNum}</span>
                             </div>
                         </div>
 
-                        {/* 網格佈局：每橫排 6 格 (6x5 = 30) 或是 5 格 (5x6 = 30) */}
-                        {/* 這裡建議用 grid-cols-5，手機版比例比較好看 */}
-                        <div className="grid grid-cols-5 gap-2">
+                        {/* 網格佈局 */}
+                        <div className="grid grid-cols-6 gap-2">
                             {days.map((day) => {
+                                // 匹配 Supabase 數據
                                 const dayData = data.find(d => d.date_label === day.fullDate);
-                                const val = dayData ? dayData[dataKey] : 0;
-                                
-                                // 顏色邏輯
-                                const opacity = val > 0 ? Math.min(0.3 + (val * 0.15), 1) : 0.1;
-                                const bgColor = val > 0 ? color : 'rgba(255,255,255,1)';
+
+                                // 取得該日曆關注的事件次數
+                                const eventCount = dayData ? dayData[dataKey] : 0;
+
+                                // 判定
+                                let bgColor = 'rgba(255,255,255,1)'; // 預設：沒騎 (淡白色)
+                                let opacity = 0.2; // 預設透明度
+
+                                if (dayData) {
+                                    if (eventCount > 0) {
+                                        // 有騎、有事件
+                                        bgColor = color; 
+                                        opacity = Math.min(0.2 + (eventCount * 0.15), 1);
+                                    } else {
+                                        // 有騎、沒事件(normal)
+                                        bgColor = '	#3CB371'; // 綠色
+                                        opacity = 1;
+                                    }
+                                }
 
                                 return (
                                     <div
                                         key={day.fullDate}
+                                        onClick={() => {
+                                            if (dayData) {
+                                                setSelectedDay({ ...dayData, monthNum: day.monthNum, dayNum: day.dayNum });
+                                            }
+                                        }}
                                         className={`
-                                            aspect-square rounded-lg flex flex-col items-center justify-center
-                                            transition-all border
-                                            ${day.isToday ? 'border-white/40 ring-1 ring-white/20' : 'border-transparent'}
+                                            aspect-square rounded-lg flex items-center justify-center
+                                            transition-all border relative
+                                            ${eventCount > 0 ? 'cursor-pointer hover:ring-2 hover:ring-white' : 'cursor-default'}
+                                            ${day.isToday ? 'border-cyan-500' : 'border-transparent'}
                                         `}
                                         style={{ 
                                             backgroundColor: bgColor,
                                             opacity: opacity
                                         }}
                                     >
-                                        {/* 月/日 文字 */}
+                                        {/* 只標示日期數字 */}
                                         <span className={`
-                                            text-[10px] font-black leading-none
-                                            ${val > 0 ? 'text-slate-900' : 'text-slate-400'}
+                                            text-[11px] font-black leading-none
+                                            ${eventCount > 0 ? 'text-slate-900' : 'text-slate-600'}
                                         `}>
-                                            {day.displayMD}
+                                            {day.monthNum}/{day.dayNum}
                                         </span>
-
-                                        {/* 數據小點 (如果有數據，加個小點增加視覺感) */}
-                                        {val > 0 && (
-                                            <span className="text-[9px] mt-0.5 font-mono text-slate-900/70">
-                                                {val}
-                                            </span>
-                                        )}
                                     </div>
                                 );
                             })}
                         </div>
 
-                        {/* 底部說明 */}
-                        <div className="mt-4 flex justify-between items-center text-[10px] text-slate-500 font-mono italic">
-                            <span>START: {days[0].displayMD}</span>
-                            <span className="opacity-50">30-DAY ROLLING TRACKER</span>
-                            <span>TODAY: {days[29].displayMD}</span>
+                        {/* 下方提示 */}
+                        <div className="mt-3 flex items-center justify-center text-[9px] text-slate-500 font-mono">
+                            <span>點擊可查看詳細資訊</span>
                         </div>
+
+
+                        {/* ========================================================== */}
+                        {/* 3. 詳細資料彈窗 (Popover) */}
+                        {/* ========================================================== */}
+                        {selectedDay && (
+                            // 遮罩層 (點擊背景可關閉)
+                            <div className="absolute inset-0 bg-slate-950/90 z-20 rounded-2xl flex items-center justify-center p-4 backdrop-blur-sm" onClick={closePopover}>
+                                {/* 彈窗內容 (防止點擊內容也關閉) */}
+                                <div className="bg-slate-900 w-full rounded-xl border border-slate-700 p-4 shadow-2xl relative overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                                    
+                                    {/* 關閉按鈕 */}
+                                    <button onClick={closePopover} className="absolute top-2 right-2 text-slate-500 hover:text-white p-1">
+                                        <Icon name="x" size={16} />
+                                    </button>
+
+                                    {/* 彈窗標題 */}
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="flex flex-col items-center justify-center aspect-square h-12 rounded-lg" style={{backgroundColor: color}}>
+                                            <span className="text-xl font-black text-slate-950">{selectedDay.dayNum}</span>
+                                            <span className="text-[9px] -mt-1 font-mono text-slate-950/70">{selectedDay.date_label}</span>
+                                        </div>
+                                        <h4 className="text-sm font-bold text-slate-100">{label} 行為掃描</h4>
+                                    </div>
+
+                                    {/* 詳細數據列 (從 Supabase 抓到的所有欄位) */}
+                                    <div className="grid grid-cols-2 gap-x-6 gap-y-3 bg-slate-800/60 p-3 rounded-lg border border-slate-700/50">
+                                        {/* 核心指標：顯示你傳進來的 dataKey */}
+                                        <div className="flex items-center justify-between col-span-2 pb-2 border-b border-slate-700">
+                                            <span className="text-xs text-slate-400">當日累積 {label}</span>
+                                            <span className="text-xl font-black" style={{color: color}}>{selectedDay[dataKey]} <span className="text-xs">次</span></span>
+                                        </div>
+
+                                        {/* 其他關聯數據 (你可以把 View 裡有的欄位都放進來) */}
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[11px] text-slate-500">平均安全評分</span>
+                                            <span className="text-xs font-bold text-slate-200">{selectedDay.avg_score || '---'}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[11px] text-slate-500">總騎乘趟數</span>
+                                            <span className="text-xs font-bold text-slate-200">{selectedDay.total_trips || '0'} 趟</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4 text-center text-[9px] text-slate-600 font-mono uppercase tracking-wider">
+                                        V.I.S.O.R. TACTICAL REPORT
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 );
             };
@@ -2402,25 +2467,25 @@
                         {/* AI 報告 */}
                         <AIReportCard currentUser={currentUser} />
 
-                        {/* 3. 三大熱力圖 (數據來源：analyzeData) */}
+                        {/* 3. 月曆圖 (數據來源：analyzeData) */}
                         <div className="space-y-4 px-2">
-                            <RollingCalendarChart 
+                            <EventCalendar 
                                 data={analyzeData} 
                                 dataKey="total_overspeed" 
                                 color="#FACC15" 
-                                label="超速熱力圖" 
+                                label="超速" 
                             />
-                            <RollingCalendarChart 
+                            <EventCalendar 
                                 data={analyzeData} 
                                 dataKey="total_breaking" 
                                 color="#FB923C" 
-                                label="急煞熱力圖" 
+                                label="急煞" 
                             />
-                            <RollingCalendarChart 
+                            <EventCalendar 
                                 data={analyzeData} 
                                 dataKey="total_tilt" 
                                 color="#F87171" 
-                                label="傾角熱力圖" 
+                                label="危險傾角" 
                             />
                         </div>
                     </div>
