@@ -2232,7 +2232,9 @@
             //=========================================================
             // 分析頁圖表與數據處理邏輯
             //=========================================================
-            const [analyzeData, setanalyzeData] = useState([]); // 儲存從 Supabase 讀取的分析數據
+            const [dayAnalyzeData, setDayAnalyzeData] = useState([]); // 儲存從 Supabase 讀取的日分析數據
+            const [monthAnalyzeData, setMonthAnalyzeData] = useState([]); // 儲存從 Supabase 讀取的月分析數據
+            const [sevenDayAnalyzeData, setSevenDayAnalyzeData] = useState([]); // 儲存從 Supabase 讀取的7日分析數據
             const [isInitialLoading, setIsInitialLoading] = useState(true); // 用於區分初次讀取資料庫
 
             // 切換到分析頁，讀取分析數據
@@ -2241,19 +2243,42 @@
                     if (!currentUser) return;
 
                     try {
-                        // 從 Supabase 抓取 近31天的數據 (View: day_ride)
-                        const { data, error } = await _supabase
-                            .from('day_ride') 
-                            .select('*')
-                            .eq('user_id', currentUser.id)
-                            .order('date_label', { ascending: false }) // 按日期由新到舊排序
-                            .limit(31);
+                        const [dayResponse, monthResponse,sevendayResponse] = await Promise.all([
+                            // 1. 抓取最近 30 天 (day_ride)
+                            _supabase
+                                .from('day_ride') 
+                                .select('*')
+                                .eq('user_id', currentUser.id)
+                                .order('date_label', { ascending: false }) // 按日期由新到舊排序
+                                .limit(30),
+                            
+                            // 2. 抓取最近 12 個月 (month_ride)
+                            _supabase
+                                .from('month_ride')
+                                .select('*')
+                                .eq('user_id', currentUser.id)
+                                .order('month_label', { ascending: false })
+                                .limit(12),
+                            
+                            // 3. 抓取最近 7 天 (day_ride)
+                            _supabase
+                                .from('day_ride')
+                                .select('*')
+                                .eq('user_id', currentUser.id)
+                                .order('date_label', { ascending: false })
+                                .limit(7)
+                        ]);
                         
-                        if (error) throw error;
+                        if (dayResponse.error) throw dayResponse.error;
+                        if (monthResponse.error) throw monthResponse.error;
+                        if (sevendayResponse.error) throw sevendayResponse.error;
 
                         // 更新狀態
-                        setanalyzeData(data || []);
-                        logToScreen(`✅ 已成功獲取最近 ${data?.length || 0} 天的騎乘分析數據`);
+                        setDayAnalyzeData(dayResponse.data || []);
+                        setMonthAnalyzeData(monthResponse.data || []);
+                        setSevenDayAnalyzeData(sevendayResponse.data || []);
+
+                        logToScreen(`✅ 已成功獲取騎乘分析數據`);
 
                     } catch (error) {
                         logToScreen(`❌ 讀取分析數據失敗: ${error.message}`);
@@ -2264,7 +2289,28 @@
                 if (currentUser && activeTab === 'stats') { 
                     fenthAnalyze();
                 }
-            }, [currentUser, activeTab]); 
+            }, [currentUser, activeTab]);
+            
+            // 產生「近 30 天」的日期陣列，包含完整標籤與日數
+            const thirtyDays = () => {
+                const today = new Date();
+                const calendar = [];
+                // 從 29 天前開始算起 (共 30 格)
+                for (let i = 29; i >= 0; i--) {
+                    const d = new Date();
+                    d.setDate(today.getDate() - i);
+                    calendar.push({
+                        fullDate: d.toLocaleDateString('en-CA'), // YYYY-MM-DD (用於匹配)
+                        yearNum: d.getFullYear(), // 年份
+                        monthNum: d.getMonth() + 1, // 月份 (1-12)
+                        dayNum: d.getDate(), // 僅取得「日」(1-31)
+                        isToday: i === 0
+                    });
+                }
+                return calendar;
+            };
+
+            const days = thirtyDays();
 
             // 記分板用========================================
 
@@ -2277,7 +2323,7 @@
             const todayLabel = `${year}-${month}-${day}`;
 
             // 比對日期，找到今天的數據
-            const todayData = analyzeData.find(d => d.date_label === todayLabel);
+            const todayData = dayAnalyzeData.find(d => d.date_label === todayLabel);
 
             // 輸出記分板
             const stats = {
@@ -2289,29 +2335,110 @@
             };
             // 記分板 結束========================================================
 
+            const [viewMode, setViewMode] = React.useState('week'); // 'week' or 'month'
+            
+            const activeData = viewMode === 'week' ? sevenDayAnalyzeData : monthAnalyzeData;
+
+            const BarChart = ({ data, viewMode, setViewMode }) => {
+
+                // 根據傳進來的 data 進行處理
+                const filteredData = React.useMemo(() => {
+                    if (!data || data.length === 0) return [];
+
+                    // SQL 是 (新到舊) 圖表需要 [舊 -> 新]，所以直接 reverse
+                    return [...data].reverse(); 
+                }, [data]);
+
+                return (
+                    <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                        {/* 標題與切換按鈕 */}
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-baseline gap-2">
+                                <h3 className="text-lg font-bold text-slate-100">評分趨勢</h3>
+                                <p className="text-xs text-slate-500 font-mono tracking-widest uppercase">
+                                    {viewMode === 'week' ? '近7日' : '近12個月'}
+                                </p>
+                            </div>
+
+                            {/* 切換 Tabs */}
+                            <div className="flex bg-slate-900/80 p-1 rounded-xl border border-slate-700">
+                                <button 
+                                    onClick={() => setViewMode('week')}
+                                    className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${viewMode === 'week' ? 'bg-cyan-500 text-slate-900' : 'text-slate-500'}`}
+                                >
+                                    週
+                                </button>
+                                <button 
+                                    onClick={() => setViewMode('month')}
+                                    className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${viewMode === 'month' ? 'bg-cyan-500 text-slate-900' : 'text-slate-500'}`}
+                                >
+                                    月
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* 圖表本體 */}
+                        <div className="h-48 w-full flex items-end gap-2 px-2">
+                            {filteredData.map((item, index) => {
+                                const score = Math.round(Number(item.avg_score || 0));                                
+                                // 定義顏色變數
+                                let barColor = "#FF7575"; // 預設紅色
+                                if (score >= 90) {
+                                    barColor = "#A6FFA6"; // 綠色
+                                } else if (score >= 60) {
+                                    barColor = "#97CBFF"; // 藍色
+                                }
+                                
+                                // 判斷是哪個 label
+                                const currentLabel = item.date_label || item.month_label;
+                                
+                                return (
+                                    // 每個柱狀圖的容器
+                                    <div key={currentLabel || index} className="flex-1 flex flex-col items-center group relative h-full justify-end">
+                                        {/* 分數 */}
+                                        <div className="mb-2 text-[10px] text-cyan-400 font-mono font-black transition-colors">
+                                            {score}
+                                        </div>
+                                        
+                                        {/* 直條 */}
+                                        <div 
+                                            className={`w-full rounded-t-sm transition-all duration-700 ease-out relative ${barColor}`}
+                                            style={{ 
+                                                height: `${Math.max(score)}%`,
+                                                backgroundColor: barColor          // 套用十六進位色碼
+                                            }}
+                                        >
+                                        </div>
+
+                                        {/* X 軸標籤：根據當前的標籤字串進行切割 */}
+                                        <span className="text-xs text-slate-500 mt-3 font-mono">
+                                            {(() => {
+                                                if (!currentLabel) return "--";
+                                                const parts = currentLabel.split('-');
+                                                
+                                                // 如果是週模式 (YYYY-MM-DD)，取第三個部分：日
+                                                // 如果是月模式 (YYYY-MM)，取第二個部分：月
+                                                return viewMode === 'week' 
+                                                    ? (parts[2] || parts[0]) 
+                                                    : (parts[1] || parts[0]);
+                                            })()}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* 底部 */}
+                        <div className="mt-4 border-t border-slate-700/50 pt-3 flex justify-end gap-4 text-xs text-slate-500 font-mono">
+                            <span className={`${days[29].isToday ? 'text-cyan-500 font-bold' : ''}`}>今日日期: {days[29].yearNum}/{days[29].monthNum}/{days[29].dayNum}</span>
+                        </div>
+                    </div>
+                );
+            };
+
             const EventCalendar = ({ data, dataKey, color, label }) => {
                 // 1. 管理彈窗狀態
                 const [selectedDay, setSelectedDay] = useState(null); // 存儲點擊的那一天的完整數據
-
-                // 產生「近 30 天」的日期陣列，包含完整標籤與日數
-                const thirtyDays = () => {
-                    const today = new Date();
-                    const calendar = [];
-                    // 從 29 天前開始算起 (共 30 格)
-                    for (let i = 29; i >= 0; i--) {
-                        const d = new Date();
-                        d.setDate(today.getDate() - i);
-                        calendar.push({
-                            fullDate: d.toLocaleDateString('en-CA'), // YYYY-MM-DD (用於匹配)
-                            monthNum: d.getMonth() + 1, // 月份 (1-12)
-                            dayNum: d.getDate(), // 僅取得「日」(1-31)
-                            isToday: i === 0
-                        });
-                    }
-                    return calendar;
-                };
-
-                const days = thirtyDays();
 
                 // 關閉彈窗的函數
                 const closePopover = () => setSelectedDay(null);
@@ -2446,7 +2573,7 @@
             const renderStats = () => {
                 return (
                     <div className="space-y-6 animate-fadeIn pb-24">
-                        {/* 頂部記分板 */}
+                        {/* 記分板 */}
                         <div className="bg-gradient-to-br from-cyan-950 to-blue-950 p-6 rounded-2xl text-white flex justify-between items-center shadow-lg border border-cyan-500/20">
                             <div>
                                 <div className="text-cyan-200 text-xs uppercase tracking-wider font-semibold">
@@ -2467,22 +2594,29 @@
                         {/* AI 報告 */}
                         <AIReportCard currentUser={currentUser} />
 
-                        {/* 3. 月曆圖 (數據來源：analyzeData) */}
+                        {/* 週/月直條圖 */}
+                        <BarChart 
+                            data={activeData} 
+                            viewMode={viewMode} 
+                            setViewMode={setViewMode} 
+                        />
+
+                        {/* 月曆圖 */}
                         <div className="space-y-4 px-2">
                             <EventCalendar 
-                                data={analyzeData} 
+                                data={dayAnalyzeData} 
                                 dataKey="total_overspeed" 
                                 color="#FACC15" 
                                 label="超速" 
                             />
                             <EventCalendar 
-                                data={analyzeData} 
+                                data={dayAnalyzeData} 
                                 dataKey="total_breaking" 
                                 color="#FB923C" 
                                 label="急煞" 
                             />
                             <EventCalendar 
-                                data={analyzeData} 
+                                data={dayAnalyzeData} 
                                 dataKey="total_tilt" 
                                 color="#F87171" 
                                 label="危險傾角" 
