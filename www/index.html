@@ -115,6 +115,7 @@
         }
 
         /* Edge Lighting Animations - 增強亮度與範圍 */
+<<<<<<< Updated upstream
         @keyframes edgePulse {
             0% {
                 opacity: 0.5;
@@ -180,6 +181,20 @@
                 opacity: 0;
             }
         }
+=======
+        @keyframes edgePulse { 0% { opacity: 0.5; } 100% { opacity: 1; } }
+        .edge-light-front { box-shadow: inset 0 150px 120px -30px rgba(234, 179, 8, 1); animation: edgePulse 0.15s infinite alternate; }
+        .edge-light-rear { box-shadow: inset 0 -150px 120px -30px rgba(239, 68, 68, 1); animation: edgePulse 0.15s infinite alternate; }
+        .edge-light-left { box-shadow: inset 150px 0 120px -30px rgba(234, 179, 8, 1); animation: edgePulse 0.15s infinite alternate; }
+        .edge-light-right { box-shadow: inset -150px 0 120px -30px rgba(234, 179, 8, 1); animation: edgePulse 0.15s infinite alternate; }
+        
+        .font-pixel { font-family: 'Courier New', Courier, monospace; letter-spacing: 1px; }
+        .map-filter { filter: invert(100%) hue-rotate(180deg) contrast(1.2) grayscale(0.2) brightness(0.8); -webkit-filter: invert(100%) hue-rotate(180deg) contrast(1.2) grayscale(0.2) brightness(0.8); mix-blend-mode: hard-light; }
+        .safe-top { padding-top: env(safe-area-inset-top); }
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+        .typing-cursor::after { content: '|'; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+>>>>>>> Stashed changes
         @keyframes fadeOut {
             0% { 
                 opacity: 1; 
@@ -205,14 +220,22 @@
                 max-height: 0; 
                 padding-top: 0; 
                 padding-bottom: 0; 
+<<<<<<< Updated upstream
                 margin-bottom: -0.5rem; /* 抵消外層 gap-2 的間距 */
+=======
+                margin-bottom: -0.5rem; /* 抵消 gap 間距 */
+>>>>>>> Stashed changes
                 border-width: 0; 
                 overflow: hidden;
             }
         }
+<<<<<<< Updated upstream
         .animate-fadeOut {
             animation: fadeOut 0.4s ease-in forwards;
         }
+=======
+        .animate-fadeOut { animation: fadeOut 0.4s ease-in forwards; }
+>>>>>>> Stashed changes
     </style>
 </head>
 
@@ -492,7 +515,11 @@
                 containerRef.current.innerHTML = '';
                 containerRef.current.appendChild(svgElement);
             }, [name, size, className]);
+<<<<<<< Updated upstream
             return <span ref={containerRef} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}></span>;
+=======
+            return <span ref={containerRef} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 0 }}></span>;
+>>>>>>> Stashed changes
         };
         const EdgeLightingOverlay = ({ direction }) => {
             if (!direction) return null;
@@ -612,7 +639,7 @@
                         <Icon name="phone-call" size={32} />
                     </div>
                     <div className="flex flex-col items-start z-10">
-                        <span className={`text-xl font-black tracking-wider ${activating ? 'text-white' : 'text-red-100'}`}>E-SOS 緊急求救</span>
+                        <span className={`text-xl font-black tracking-wide  r ${activating ? 'text-white' : 'text-red-100'}`}>E-SOS 緊急求救</span>
                         <span className="text-xs text-red-300/80 font-mono">{activating ? `釋放以取消 (${countdown})` : '長按 3 秒發送求救訊號'}</span>
                     </div>
                 </button>
@@ -632,9 +659,19 @@
             return (
                 <div className="fixed top-20 left-0 right-0 z-[60] flex flex-col items-center gap-2 pointer-events-none px-4">
                     {notifications.map((note) => (
+<<<<<<< Updated upstream
                         <div key={note.id} className={`pointer-events-auto overflow-hidden w-full max-w-sm p-4 rounded-xl shadow-2xl backdrop-blur-md border flex items-start gap-3 transform transition-all duration-300 ${note.isClosing ? 'animate-fadeOut' : 'animate-fadeIn'} ${note.type === 'danger' ? 'bg-red-900/90 border-red-500 text-white' : (note.type === 'warning' ? 'bg-yellow-900/90 border-yellow-500 text-yellow-100' : 'bg-slate-800/90 border-cyan-500 text-cyan-100')}`}>
                                 <div className={`w-8 h-8 flex items-center justify-center rounded-full shrink-0 ${note.type === 'danger' ? 'bg-red-500 text-white' : (note.type === 'warning' ? 'bg-yellow-500 text-black' : 'bg-cyan-500 text-black')}`}>                                <Icon name={note.type === 'danger' ? 'alert-octagon' : (note.type === 'warning' ? 'alert-triangle' : 'info')} size={18} />
+=======
+                        // 加入 overflow-hidden 防破版，並根據 note.isClosing 切換動畫
+                        <div key={note.id} className={`pointer-events-auto overflow-hidden w-full max-w-sm p-4 rounded-xl shadow-2xl backdrop-blur-md border flex items-start gap-3 transform transition-all duration-300 ${note.isClosing ? 'animate-fadeOut' : 'animate-fadeIn'} ${note.type === 'danger' ? 'bg-red-900/90 border-red-500 text-white' : (note.type === 'warning' ? 'bg-yellow-900/90 border-yellow-500 text-yellow-100' : 'bg-slate-800/90 border-cyan-500 text-cyan-100')}`}>
+                            
+                            {/* 強制圖示容器為正圓形且絕對置中 */}
+                            <div className={`w-8 h-8 flex items-center justify-center rounded-full shrink-0 ${note.type === 'danger' ? 'bg-red-500 text-white' : (note.type === 'warning' ? 'bg-yellow-500 text-black' : 'bg-cyan-500 text-black')}`}>
+                                <Icon name={note.type === 'danger' ? 'alert-octagon' : (note.type === 'warning' ? 'alert-triangle' : 'info')} size={18} />
+>>>>>>> Stashed changes
                             </div>
+
                             <div className="flex-1 min-w-0">
                                 <h4 className="font-bold text-sm leading-tight">{note.title}</h4>
                                 <p className="text-xs opacity-90 mt-1 leading-relaxed">{note.message}</p>
@@ -721,7 +758,10 @@
             const [hasGenerated, setHasGenerated] = useState(false);
             const [isInitialLoading, setIsInitialLoading] = useState(true); // 用於區分初次讀取資料庫
             const [isCollapsed, setIsCollapsed] = useState(false);
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 
             // 1. 初始化：進頁面先抓最新的一筆，並填入 report
             React.useEffect(() => {
@@ -813,6 +853,10 @@
             };
 
             return (
+<<<<<<< Updated upstream
+=======
+                // 加入 max-height 動態縮放
+>>>>>>> Stashed changes
                 <div className={`bg-slate-800 rounded-xl p-4 border border-slate-700 mt-4 relative overflow-hidden transition-all duration-500 ${isCollapsed ? 'max-h-[60px]' : 'max-h-[1000px]'}`}>
                     <div className="flex justify-between items-center mb-3">
                         <h3 className="text-cyan-400 font-bold text-sm flex items-center gap-2">
@@ -821,18 +865,30 @@
                         </h3>
                         
                         <div className="flex items-center gap-2">
+<<<<<<< Updated upstream
                             {/* 展開且沒內容時顯示分析按鈕 */}
+=======
+                            {/* 展開且無內容時顯示啟動按鈕 */}
+>>>>>>> Stashed changes
                             {!isCollapsed && !hasGenerated && !loading && !isInitialLoading && (
                                 <button onClick={generateReport} className="bg-cyan-900/50 hover:bg-cyan-800 text-cyan-300 text-[10px] px-2 py-1 rounded-full border border-cyan-500/30 transition-all flex items-center gap-1">
                                     <Icon name="sparkles" size={10} />啟動分析
                                 </button>
                             )}
                             
+<<<<<<< Updated upstream
                             {/* 縮放按鈕：加入 rotate-180 動畫 */}
                             {!loading && !isInitialLoading && report && (
                                 <button 
                                     onClick={() => setIsCollapsed(!isCollapsed)} 
                                     className={`p-1.5 rounded-full bg-slate-700/50 hover:bg-slate-600 text-cyan-400 transition-transform duration-300 ${isCollapsed ? '' : 'rotate-180'}`}
+=======
+                            {/* 動態旋轉箭頭按鈕 */}
+                            {!loading && !isInitialLoading && report && (
+                                <button 
+                                    onClick={() => setIsCollapsed(!isCollapsed)} 
+                                    className={`w-8 h-8 flex items-center justify-center shrink-0 rounded-full bg-slate-700/50 hover:bg-slate-600 text-cyan-400 transition-transform duration-300 ${isCollapsed ? '' : 'rotate-180'}`}
+>>>>>>> Stashed changes
                                 >
                                     <Icon name="chevron-down" size={16} />
                                 </button>
@@ -840,7 +896,11 @@
                         </div>
                     </div>
                     
+<<<<<<< Updated upstream
                     {/* 內容區塊淡出淡入 (已移除多餘的重複區塊) */}
+=======
+                    {/* 內文淡出淡入控制 */}
+>>>>>>> Stashed changes
                     <div className={`transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
                         {(loading || isInitialLoading) && (<div className="flex items-center justify-center py-4 space-x-2 text-cyan-400/70 animate-pulse"><Icon name="loader-2" size={20} className="animate-spin" /><span className="text-xs font-mono">UPLOADING...</span></div>)}
                         {!loading && !isInitialLoading && report && (<div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50"><div className="text-xs text-slate-300 leading-relaxed font-mono typing-cursor" dangerouslySetInnerHTML={{ __html: window.marked.parse(report) }}></div></div>)}
@@ -1425,6 +1485,7 @@
             const [notifications, setNotifications] = useState([]);
             const [hudConfig, setHudConfig] = useState({ speed: true, camera: true, nav: true, time: true, brightness: 80 });
             const socketRef = useRef(null);
+<<<<<<< Updated upstream
 
             // Notification Helper (強化版：防重複與數量限制)
             const addNotification = useCallback((type, title, message) => {
@@ -1450,6 +1511,30 @@
 
 
 
+=======
+            
+            // Notification Helper
+            // Notification Helper (防洗版與消失動畫升級版)
+            const addNotification = useCallback((type, title, message) => {
+                const id = Date.now() + Math.random(); // 避免極短時間產生相同 ID
+                
+                setNotifications(prev => {
+                    // 防重複通知機制
+                    if (prev.some(n => n.title === title && n.message === message)) return prev;
+                    // 加入 isClosing 屬性，並限制最多保留 3 則
+                    return [...prev, { id, type, title, message, isClosing: false }].slice(-3);
+                });
+
+                // 4.6 秒後觸發退場壓縮動畫
+                setTimeout(() => {
+                    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isClosing: true } : n));
+                }, 3600); 
+
+                // 5 秒後徹底從 DOM 移除
+                setTimeout(() => {
+                    setNotifications(prev => prev.filter(n => n.id !== id));
+                }, 4000); 
+>>>>>>> Stashed changes
             }, []);
 
             const removeNotification = (id) => setNotifications(prev => prev.filter(n => n.id !== id));
