@@ -2658,12 +2658,7 @@
                             {filteredData.map((item, index) => {
                                 const score = Math.round(Number(item.avg_score || 0));                                
                                 // 定義顏色變數
-                                let barColor = "#FF7575"; // 預設紅色
-                                if (score >= 90) {
-                                    barColor = "#A6FFA6"; // 綠色
-                                } else if (score >= 60) {
-                                    barColor = "#97CBFF"; // 藍色
-                                }
+                                let barColor = "#97CBFF"; // 預設藍色
                                 
                                 // 判斷是哪個 label
                                 const currentLabel = item.date_label || item.month_label;
