@@ -743,6 +743,303 @@
                 </div>
             );
         };
+        // ======================================================================================================================================================================================================
+        // 月曆圖
+        // ======================================================================================================================================================================================================
+
+        // 產生「近 30 天」的日期陣列，包含完整標籤與日數
+        const thirtyDays = () => {
+            const today = new Date();
+            const calendar = [];
+            // 從 29 天前開始算起 (共 30 格)
+            for (let i = 29; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(today.getDate() - i);
+                calendar.push({
+                    fullDate: d.toLocaleDateString('en-CA'), // YYYY-MM-DD (用於匹配)
+                    yearNum: d.getFullYear(), // 年份
+                    monthNum: d.getMonth() + 1, // 月份 (1-12)
+                    dayNum: d.getDate(), // 僅取得「日」(1-31)
+                    isToday: i === 0
+                });
+            }
+            return calendar;
+        };
+
+        const days = thirtyDays();
+
+        const EventCalendar = ({ data, dataKey, color, label , currentUser }) => {
+            const [selectedDay, setSelectedDay] = useState(null); // 存點擊的那一天的統計數據
+            const [rideDetails, setRideDetails] = useState([]); // 存詳細行程
+            const [isLoading, setIsLoading] = useState(false);  // 讀取狀態
+
+            // 關閉彈窗的函數
+            const closePopover = () => setSelectedDay(null);
+
+            // 點擊日期後，從 Supabase 抓取該日的詳細騎乘紀錄
+            const fetchDayDetails = async (selectedDate) => {
+                setIsLoading(true);
+                setRideDetails([]); 
+
+                // 時間區間設定：為了對應台灣時區 (UTC+8)
+                const startTime = `${selectedDate}T00:00:00+08:00`;
+                const endTime = `${selectedDate}T23:59:59+08:00`;
+
+                const { data, error } = await _supabase
+                    .from('ride_history')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .gte('time', startTime)
+                    .lte('endtime', endTime)
+                    .order('time', { ascending: true }); // 按時間由早到晚排序
+
+                if (error) {
+                    logToScreen(`❌ 查詢出錯:${error.message}`);
+                    setIsLoading(false);
+                    return;
+                }
+
+                // 如果有抓到資料，使用 reduce進行「分組」
+                if (data && data.length > 0) {
+                    const grouped = data.reduce((acc, curr) => {
+                        const rid = String(curr.ride_id); // 取得這筆資料所屬的行程 ID
+                        if (!rid || rid === "null") return acc;
+
+                        // 如果這個行程 ID 還沒建立過，就初始化它
+                        if (!acc[rid]) {
+                            acc[rid] = {
+                                ride_id: rid,
+                                score: curr.score,
+                                allEvents: [] // 儲存這趟行程「所有」原始事件
+                            };
+                        }
+                        
+                        acc[rid].allEvents.push(curr); // 把這筆事件存入對應行程
+                        return acc;
+                    }, {});
+
+                    const finalDisplay = Object.values(grouped).map(trip => {
+                        const targetEvents = trip.allEvents.filter(e => e.class === dataKey); // 找出符合當前月曆類型的事件
+                        return {
+                            ...trip,
+                            events: targetEvents.length > 0 
+                                ? targetEvents 
+                                : [trip.allEvents.find(e => e.class === 'normal') || trip.allEvents[0]]
+                        };
+                    });
+                    setRideDetails(finalDisplay);
+                }
+                setIsLoading(false);
+            };
+
+            return (
+                <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700 shadow-xl relative">
+                    {/* 標題與圖例 */}
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-4 rounded-full" style={{backgroundColor: color}}></div>
+                            <h3 className="text-sm font-bold text-slate-200">近30天{label}資料 </h3>
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-mono">
+                            <span className={`${days[29].isToday ? 'text-cyan-500 font-bold' : ''}`}>今日日期: {days[29].monthNum}/{days[29].dayNum}</span>
+                        </div>
+                    </div>
+                    {/* 月曆格區 */}
+                    <div className="grid grid-cols-6 gap-2">
+                        {days.map((day) => {
+                            const dayData = data.find(d => d.date_label === day.fullDate); // 匹配 Supabase 數據
+                            const eventCount = dayData ? dayData[dataKey] : 0; // 取得該日曆關注的事件次數
+
+                            // 判定
+                            let bgColor = 'rgba(255,255,255,1)'; // 預設：沒騎 (淡白色)
+                            let opacity = 0.2; // 預設透明度
+
+                            if (dayData) {
+                                if (eventCount > 0) {
+                                    // 有騎、有事件
+                                    bgColor = color; 
+                                    opacity = Math.min(0.2 + (eventCount * 0.15), 1);
+                                } else {
+                                    // 有騎、沒事件(normal)
+                                    bgColor = '	#3CB371'; // 綠色
+                                    opacity = 1;
+                                }
+                            }
+
+                            return (
+                                <div
+                                    key={day.fullDate}
+                                    onClick={() => {
+                                        if (dayData) {
+                                            setSelectedDay({ ...dayData, monthNum: day.monthNum, dayNum: day.dayNum });
+                                            fetchDayDetails(day.fullDate);
+                                        }
+                                    }}
+                                    className={`
+                                        aspect-square rounded-lg flex items-center justify-center
+                                        transition-all border relative
+                                        ${eventCount > 0 ? 'cursor-pointer hover:ring-2 hover:ring-white' : 'cursor-default'}
+                                        ${day.isToday ? 'border-cyan-500' : 'border-transparent'}
+                                    `}
+                                    style={{ 
+                                        backgroundColor: bgColor,
+                                        opacity: opacity
+                                    }}
+                                >
+                                    {/* 標示日期 */}
+                                    <span className={`
+                                        text-[11px] font-black leading-none
+                                        ${eventCount > 0 ? 'text-slate-900' : 'text-slate-600'}
+                                    `}>
+                                        {day.monthNum}/{day.dayNum}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                    {/* 下方提示 */}
+                    <div className="mt-3 flex items-center justify-center text-[9px] text-slate-500 font-mono">
+                        <span>點擊可查看詳細資訊</span>
+                    </div>
+
+                    {/* 詳細資料彈窗 */}
+                    {selectedDay && (
+                        // 遮罩層
+                        <div className="absolute inset-0 bg-slate-950/95 z-50 rounded-2xl flex items-center justify-center p-2 backdrop-blur-md">
+                            {/* 彈窗主體 */}
+                            <div className="bg-slate-900 w-full h-full max-h-[90%] rounded-xl border border-slate-700 p-4 shadow-2xl relative flex flex-col" onClick={(e) => e.stopPropagation()}>
+                                
+                                {/* 標題與關閉按鈕 */}
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex flex-col items-center justify-center aspect-square h-12 rounded-lg" style={{backgroundColor: color}}>
+                                            <span className="text-xl font-black text-slate-950">{selectedDay.monthNum}/{selectedDay.dayNum}</span>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-bold text-slate-100">{label} 詳細資料</h4>
+                                        </div>
+                                    </div>
+                                    <button onClick={closePopover} className="text-slate-500 hover:text-white p-1">
+                                        <Icon name="x" size={20} />
+                                    </button>
+                                </div>
+
+                                {/* 上方統計數據 */}
+                                    <div className="flex items-center justify-between col-span-2 pb-2 border-b border-slate-700">
+                                        <span className="text-xs text-slate-400">{label}</span>
+                                        <span className="text-xs font-black" style={{color: color}}>{selectedDay[dataKey]} <span className="text-xs">次</span></span>
+                                        <span className="text-xs text-slate-400">總評分</span>
+                                        <span className="text-xs font-black" style={{color: color}}>{selectedDay.avg_score || '---'}  <span className="text-xs">分</span></span>
+                                        <span className="text-xs text-slate-400">總騎乘次數</span>
+                                        <span className="text-xs font-black" style={{color: color}}>{selectedDay.total_trips || '0'}  <span className="text-xs">次</span></span>
+                                    </div>
+
+                                {/* 下方詳細資料 */}
+                                <div className="flex-1 overflow-y-auto space-y-4 pr-1 custom-scrollbar">
+                                    {isLoading ? (
+                                        <div className="text-center py-10 text-slate-500 text-xs animate-pulse">讀取中...</div>
+                                    ) : rideDetails.length === 0 ? (
+                                        <div className="text-center py-10 text-slate-500 text-xs">該日無行程數據</div>
+                                    ) : (
+                                        rideDetails.map((trip, idx) => (
+                                            <div key={trip.ride_id} className="bg-slate-800/20 rounded-lg border border-slate-800 overflow-hidden">
+                                                {/* 行程標題 */}
+                                                <div className="bg-slate-800/50 px-3 py-1.5 flex justify-between items-center border-b border-slate-700/30">
+                                                    <span className="text-[10px] font-mono text-slate-500">騎乘第{idx + 1}次</span>
+                                                    <span className="text-[10px] text-cyan-500 font-bold">本次評分: {trip.score}</span>
+                                                </div>
+                                                {/* 事件列表 */}
+                                                <div className="p-2 space-y-2">
+                                                    {trip.events.map((event, eIdx) => {
+                                                        const isNormal = event.class === 'normal';
+                                                        
+                                                        return (
+                                                            <div key={eIdx} className={`p-3 rounded border-l-2 bg-slate-900/40 ${isNormal ? 'border-emerald-500' : 'border-rose-500'}`} style={!isNormal ? {borderColor: color} : {}}>
+                                                                <div className="flex justify-between items-start mb-2">
+                                                                    <span className={`text-[11px] font-bold ${isNormal ? 'text-emerald-400' : ''}`} style={!isNormal ? {color: color} : {}}>
+                                                                        {isNormal ? '正常騎乘紀錄' : `${label}紀錄`}
+                                                                    </span>
+                                                                    <span className="text-[10px] text-slate-500">上傳時間：
+                                                                        {new Date(event.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                    </span>
+                                                                </div>
+
+                                                                {/* 根據事件類型顯示對應的詳細數據 */}
+                                                                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px]">
+                                                                    <div className="text-slate-500 col-span-2 flex items-center gap-1">
+                                                                        <Icon name="map-pin" size={10} />
+                                                                        <span className="text-slate-300">{event.location || '未知路段'}</span>
+                                                                    </div>
+
+                                                                    {isNormal ? (
+                                                                        /* Normal詳細資料 */
+                                                                        <>
+                                                                            <div className="text-slate-500">最高時速: <span className="text-emerald-400 font-bold">{event.maxspeed} km/h</span></div>
+                                                                            <div className="text-slate-500">最低時速: <span className="text-emerald-400 font-bold">{event.lowspeed} km/h</span></div>
+                                                                            <div className="text-slate-500">路段限速: <span className="text-slate-300">{event.limit} km/h</span></div>
+                                                                        </>
+                                                                    ) : dataKey === 'total_overspeed' ? (
+                                                                        /* 超速詳細資料 */
+                                                                        <>
+                                                                            <div className="text-slate-500">最高時速: <span className="text-yellow-400 font-bold">{event.maxspeed} km/h</span></div>
+                                                                            <div className="text-slate-500">最低時速: <span className="text-yellow-400 font-bold">{event.lowspeed} km/h</span></div>
+                                                                            <div className="text-slate-500">路段限速: <span className="text-slate-300">{event.limit} km/h</span></div>
+                                                                            <div className="text-slate-500">超速值: <span className="text-rose-400 font-bold">{event.overspeed}</span></div>
+                                                                            <div className="text-slate-500">持續時間: <span className="text-slate-300">{event.duration}s</span></div>
+                                                                        </>
+                                                                    ) : dataKey === 'total_tilt' ? (
+                                                                        /* 危險傾角詳細資料 */
+                                                                        <>
+                                                                            <div className="text-slate-500">最高時速: <span className="text-slate-400 font-bold">{event.maxspeed} km/h</span></div>
+                                                                            <div className="text-slate-500">最低時速: <span className="text-slate-400 font-bold">{event.lowspeed} km/h</span></div>
+                                                                            <div className="text-slate-500">路段限速: <span className="text-slate-300">{event.limit} km/h</span></div>
+                                                                            <div className="text-slate-500">最大傾角: <span className="text-orange-400 font-bold">{event.tilt}°</span></div>
+                                                                            <div className="text-slate-500">建議傾角: <span className="text-slate-300">{'< 30°'}</span></div>
+                                                                            <div className="text-slate-500">持續時間: <span className="text-slate-300">{event.duration}s</span></div>
+                                                                        </>
+                                                                    ) : dataKey === 'total_braking' ? (
+                                                                        /* 急煞詳細資料 */
+                                                                        <>
+                                                                            <div className="text-slate-500">最高時速: <span className="text-slate-400 font-bold">{event.maxspeed} km/h</span></div>
+                                                                            <div className="text-slate-500">最低時速: <span className="text-slate-400 font-bold">{event.lowspeed} km/h</span></div>
+                                                                            <div className="text-slate-500">路段限速: <span className="text-slate-300">{event.limit} km/h</span></div>
+                                                                            <div className="text-slate-500">急煞程度: <span className="text-rose-400 font-bold">{event.breaking}</span></div>
+                                                                            <div className="text-slate-500">建議: <span className="text-slate-300">{'速度變化 < 10km/hr'}</span></div>
+                                                                        </>
+                                                                    ) : (
+                                                                        /* 選中事件無紀錄但當日有其他事件發生 */
+                                                                        <>
+                                                                            <div><span className="text-[11px] font-bold text-emerald-400">{'本次騎乘無'}{label}紀錄</span></div>
+                                                                            <div className="text-slate-500">最高時速: <span className="text-emerald-400 font-bold">{event.maxspeed} km/h</span></div>
+                                                                            <div className="text-slate-500">最低時速: <span className="text-emerald-400 font-bold">{event.lowspeed} km/h</span></div>
+                                                                            <div className="text-slate-500">路段限速: <span className="text-slate-300">{event.limit} km/h</span></div>
+                                                                        </>
+                                                                    )}
+
+                                                                    {/* 底部事件時間 */}
+                                                                    <div className="text-[10px] text-slate-500 col-span-2 mt-1 pt-1 border-t border-slate-800/50 flex justify-between">
+                                                                        <span>開始於: {new Date(event.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'})}</span>
+                                                                        <span>結束於: {new Date(event.endtime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'})}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+        // ======================================================================================================================================================================================================
+        // 月曆圖 結束 
+        // ======================================================================================================================================================================================================
+
 
         const App = () => {
             const [isBooting, setIsBooting] = useState(true);
@@ -2290,29 +2587,8 @@
                     fenthAnalyze();
                 }
             }, [currentUser, activeTab]);
-            
-            // 產生「近 30 天」的日期陣列，包含完整標籤與日數
-            const thirtyDays = () => {
-                const today = new Date();
-                const calendar = [];
-                // 從 29 天前開始算起 (共 30 格)
-                for (let i = 29; i >= 0; i--) {
-                    const d = new Date();
-                    d.setDate(today.getDate() - i);
-                    calendar.push({
-                        fullDate: d.toLocaleDateString('en-CA'), // YYYY-MM-DD (用於匹配)
-                        yearNum: d.getFullYear(), // 年份
-                        monthNum: d.getMonth() + 1, // 月份 (1-12)
-                        dayNum: d.getDate(), // 僅取得「日」(1-31)
-                        isToday: i === 0
-                    });
-                }
-                return calendar;
-            };
 
-            const days = thirtyDays();
-
-            // 記分板用========================================
+            // 記分板========================================
 
             // 產生今日標籤 (YYYY-MM-DD)
             const now = new Date();
@@ -2333,10 +2609,10 @@
                 tilt: todayData ? (todayData.total_tilt || 0) : 0,
                 trips: todayData ? (todayData.total_trips || 0) : 0
             };
-            // 記分板 結束========================================================
+            // 記分板 結束============================================================================
 
+            // 週/月直條圖=======================================================================
             const [viewMode, setViewMode] = React.useState('week'); // 'week' or 'month'
-            
             const activeData = viewMode === 'week' ? sevenDayAnalyzeData : monthAnalyzeData;
 
             const BarChart = ({ data, viewMode, setViewMode }) => {
@@ -2435,140 +2711,7 @@
                     </div>
                 );
             };
-
-            const EventCalendar = ({ data, dataKey, color, label }) => {
-                // 1. 管理彈窗狀態
-                const [selectedDay, setSelectedDay] = useState(null); // 存儲點擊的那一天的完整數據
-
-                // 關閉彈窗的函數
-                const closePopover = () => setSelectedDay(null);
-
-                return (
-                    <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700 shadow-xl relative">
-                        {/* 標題與圖例 */}
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-2">
-                                <div className="w-1.5 h-4 rounded-full" style={{backgroundColor: color}}></div>
-                                <h3 className="text-sm font-bold text-slate-200">近30天{label}資料 </h3>
-                            </div>
-                            <div className="text-[10px] text-slate-500 font-mono">
-                                <span className={`${days[29].isToday ? 'text-cyan-500 font-bold' : ''}`}>今日日期: {days[29].monthNum}/{days[29].dayNum}</span>
-                            </div>
-                        </div>
-
-                        {/* 網格佈局 */}
-                        <div className="grid grid-cols-6 gap-2">
-                            {days.map((day) => {
-                                // 匹配 Supabase 數據
-                                const dayData = data.find(d => d.date_label === day.fullDate);
-
-                                // 取得該日曆關注的事件次數
-                                const eventCount = dayData ? dayData[dataKey] : 0;
-
-                                // 判定
-                                let bgColor = 'rgba(255,255,255,1)'; // 預設：沒騎 (淡白色)
-                                let opacity = 0.2; // 預設透明度
-
-                                if (dayData) {
-                                    if (eventCount > 0) {
-                                        // 有騎、有事件
-                                        bgColor = color; 
-                                        opacity = Math.min(0.2 + (eventCount * 0.15), 1);
-                                    } else {
-                                        // 有騎、沒事件(normal)
-                                        bgColor = '	#3CB371'; // 綠色
-                                        opacity = 1;
-                                    }
-                                }
-
-                                return (
-                                    <div
-                                        key={day.fullDate}
-                                        onClick={() => {
-                                            if (dayData) {
-                                                setSelectedDay({ ...dayData, monthNum: day.monthNum, dayNum: day.dayNum });
-                                            }
-                                        }}
-                                        className={`
-                                            aspect-square rounded-lg flex items-center justify-center
-                                            transition-all border relative
-                                            ${eventCount > 0 ? 'cursor-pointer hover:ring-2 hover:ring-white' : 'cursor-default'}
-                                            ${day.isToday ? 'border-cyan-500' : 'border-transparent'}
-                                        `}
-                                        style={{ 
-                                            backgroundColor: bgColor,
-                                            opacity: opacity
-                                        }}
-                                    >
-                                        {/* 只標示日期數字 */}
-                                        <span className={`
-                                            text-[11px] font-black leading-none
-                                            ${eventCount > 0 ? 'text-slate-900' : 'text-slate-600'}
-                                        `}>
-                                            {day.monthNum}/{day.dayNum}
-                                        </span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        {/* 下方提示 */}
-                        <div className="mt-3 flex items-center justify-center text-[9px] text-slate-500 font-mono">
-                            <span>點擊可查看詳細資訊</span>
-                        </div>
-
-
-                        {/* ========================================================== */}
-                        {/* 3. 詳細資料彈窗 (Popover) */}
-                        {/* ========================================================== */}
-                        {selectedDay && (
-                            // 遮罩層 (點擊背景可關閉)
-                            <div className="absolute inset-0 bg-slate-950/90 z-20 rounded-2xl flex items-center justify-center p-4 backdrop-blur-sm" onClick={closePopover}>
-                                {/* 彈窗內容 (防止點擊內容也關閉) */}
-                                <div className="bg-slate-900 w-full rounded-xl border border-slate-700 p-4 shadow-2xl relative overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                                    
-                                    {/* 關閉按鈕 */}
-                                    <button onClick={closePopover} className="absolute top-2 right-2 text-slate-500 hover:text-white p-1">
-                                        <Icon name="x" size={16} />
-                                    </button>
-
-                                    {/* 彈窗標題 */}
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="flex flex-col items-center justify-center aspect-square h-12 rounded-lg" style={{backgroundColor: color}}>
-                                            <span className="text-xl font-black text-slate-950">{selectedDay.dayNum}</span>
-                                            <span className="text-[9px] -mt-1 font-mono text-slate-950/70">{selectedDay.date_label}</span>
-                                        </div>
-                                        <h4 className="text-sm font-bold text-slate-100">{label} 行為掃描</h4>
-                                    </div>
-
-                                    {/* 詳細數據列 (從 Supabase 抓到的所有欄位) */}
-                                    <div className="grid grid-cols-2 gap-x-6 gap-y-3 bg-slate-800/60 p-3 rounded-lg border border-slate-700/50">
-                                        {/* 核心指標：顯示你傳進來的 dataKey */}
-                                        <div className="flex items-center justify-between col-span-2 pb-2 border-b border-slate-700">
-                                            <span className="text-xs text-slate-400">當日累積 {label}</span>
-                                            <span className="text-xl font-black" style={{color: color}}>{selectedDay[dataKey]} <span className="text-xs">次</span></span>
-                                        </div>
-
-                                        {/* 其他關聯數據 (你可以把 View 裡有的欄位都放進來) */}
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[11px] text-slate-500">平均安全評分</span>
-                                            <span className="text-xs font-bold text-slate-200">{selectedDay.avg_score || '---'}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[11px] text-slate-500">總騎乘趟數</span>
-                                            <span className="text-xs font-bold text-slate-200">{selectedDay.total_trips || '0'} 趟</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-4 text-center text-[9px] text-slate-600 font-mono uppercase tracking-wider">
-                                        V.I.S.O.R. TACTICAL REPORT
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                );
-            };
+            // 週/月直條圖 結束==========================================================================================================================================================
 
             const renderStats = () => {
                 return (
@@ -2608,18 +2751,21 @@
                                 dataKey="total_overspeed" 
                                 color="#FACC15" 
                                 label="超速" 
+                                currentUser={currentUser}
                             />
                             <EventCalendar 
                                 data={dayAnalyzeData} 
                                 dataKey="total_breaking" 
                                 color="#FB923C" 
-                                label="急煞" 
+                                label="急煞"
+                                currentUser={currentUser}
                             />
                             <EventCalendar 
                                 data={dayAnalyzeData} 
                                 dataKey="total_tilt" 
                                 color="#F87171" 
-                                label="危險傾角" 
+                                label="危險傾角"
+                                currentUser={currentUser}
                             />
                         </div>
                     </div>
