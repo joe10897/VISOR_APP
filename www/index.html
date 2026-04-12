@@ -2675,7 +2675,7 @@
                                         <div 
                                             className={`w-full rounded-t-sm transition-all duration-700 ease-out relative ${barColor}`}
                                             style={{ 
-                                                height: `${Math.max(score)}%`,
+                                                height: `${score > 0 ? (score * 0.8) : 0}%`, // 根據分數調整高度
                                                 backgroundColor: barColor          // 套用十六進位色碼
                                             }}
                                         >
