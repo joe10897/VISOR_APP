@@ -2597,17 +2597,18 @@
             const day = String(now.getDate()).padStart(2, '0');
 
             const todayLabel = `${year}-${month}-${day}`;
+            const monthLabel = `${year}-${month}`;
 
             // 比對日期，找到今天的數據
-            const todayData = dayAnalyzeData.find(d => d.date_label === todayLabel);
+            const monthData = monthAnalyzeData.find(d => d.month_label === monthLabel);
 
             // 輸出記分板
             const stats = {
-                averageScore: todayData ? Math.round(parseFloat(todayData.avg_score || 0)) : '---',
-                overspeed: todayData ? (todayData.total_overspeed || 0) : 0,
-                braking: todayData ? (todayData.total_breaking || 0) : 0,
-                tilt: todayData ? (todayData.total_tilt || 0) : 0,
-                trips: todayData ? (todayData.total_trips || 0) : 0
+                averageScore: monthData ? Math.round(parseFloat(monthData.avg_score || 0)) : '---',
+                overspeed: monthData ? (monthData.total_overspeed || 0) : 0,
+                braking: monthData ? (monthData.total_breaking || 0) : 0,
+                tilt: monthData ? (monthData.total_tilt || 0) : 0,
+                trips: monthData ? (monthData.total_trips || 0) : 0
             };
             // 記分板 結束============================================================================
 
@@ -2715,17 +2716,17 @@
                         <div className="bg-gradient-to-br from-cyan-950 to-blue-950 p-6 rounded-2xl text-white flex justify-between items-center shadow-lg border border-cyan-500/20">
                             <div>
                                 <div className="text-cyan-200 text-xs uppercase tracking-wider font-semibold">
-                                    {todayData ? "今日安全評分" : "尚無數據"}
+                                    {monthData ? "本月安全評分" : "尚無數據"}
                                 </div>
                                 <div className="text-6xl font-black mt-2 bg-gradient-to-r from-white to-cyan-300 bg-clip-text text-transparent">
                                     {stats.averageScore}
                                 </div>
                             </div>
-                            <div className="text-right space-y-2 border-l border-white/10 pl-6">
-                                <div className="text-xs text-blue-200">超速 <span className="font-bold text-white text-base">{stats.overspeed}</span> 次</div>
-                                <div className="text-xs text-blue-200">急煞 <span className="font-bold text-white text-base">{stats.braking}</span> 次</div>
-                                <div className="text-xs text-blue-200">傾角 <span className="font-bold text-white text-base">{stats.tilt}</span> 次</div>
-                                <div className="text-xs text-blue-200">騎乘次數 <span className="font-bold text-white text-base">{stats.trips}</span> 次</div>
+                            <div className="text-right space-y-2 border-l border-white/10 pl-6 flex flex-col">
+                                <div className="text-xs text-blue-200 flex justify-between items-baseline gap-4">超速 <div className="text-xs text-blue-200"><span className="font-bold text-white text-base">{stats.overspeed}</span> 次</div></div>
+                                <div className="text-xs text-blue-200 flex justify-between items-baseline gap-4">急煞 <div className="text-xs text-blue-200"><span className="font-bold text-white text-base">{stats.braking}</span> 次</div></div>
+                                <div className="text-xs text-blue-200 flex justify-between items-baseline gap-4">危險傾角 <div className="text-xs text-blue-200"><span className="font-bold text-white text-base">{stats.tilt}</span> 次</div></div>
+                                <div className="text-xs text-blue-200 flex justify-between items-baseline gap-4">騎乘次數 <div className="text-xs text-blue-200"><span className="font-bold text-white text-base">{stats.trips}</span> 次</div></div>
                             </div>
                         </div>
 
