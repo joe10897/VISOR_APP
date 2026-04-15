@@ -115,6 +115,7 @@
         }
 
         /* Edge Lighting Animations - 增強亮度與範圍 */
+<<<<<<< Updated upstream
         @keyframes edgePulse { 0% { opacity: 0.5; } 100% { opacity: 1; } }
         .edge-light-front { box-shadow: inset 0 150px 120px -30px rgba(234, 179, 8, 1); animation: edgePulse 0.15s infinite alternate; }
         .edge-light-rear { box-shadow: inset 0 -150px 120px -30px rgba(239, 68, 68, 1); animation: edgePulse 0.15s infinite alternate; }
@@ -158,6 +159,150 @@
             }
         }
         .animate-fadeOut { animation: fadeOut 0.4s ease-in forwards; }
+=======
+        @keyframes edgePulse {
+            0% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .edge-light-front {
+            box-shadow: inset 0 150px 120px -30px rgba(234, 179, 8, 1);
+            animation: edgePulse 0.15s infinite alternate;
+        }
+
+        .edge-light-rear {
+            box-shadow: inset 0 -150px 120px -30px rgba(239, 68, 68, 1);
+            animation: edgePulse 0.15s infinite alternate;
+        }
+
+        .edge-light-left {
+            box-shadow: inset 150px 0 120px -30px rgba(234, 179, 8, 1);
+            animation: edgePulse 0.15s infinite alternate;
+        }
+
+        .edge-light-right {
+            box-shadow: inset -150px 0 120px -30px rgba(234, 179, 8, 1);
+            animation: edgePulse 0.15s infinite alternate;
+        }
+
+        .font-pixel {
+            font-family: 'Courier New', Courier, monospace;
+            letter-spacing: 1px;
+        }
+
+        .map-filter {
+            filter: invert(100%) hue-rotate(180deg) contrast(1.2) grayscale(0.2) brightness(0.8);
+            -webkit-filter: invert(100%) hue-rotate(180deg) contrast(1.2) grayscale(0.2) brightness(0.8);
+            mix-blend-mode: hard-light;
+        }
+
+        .safe-top {
+            padding-top: env(safe-area-inset-top);
+        }
+
+        .safe-bottom {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .typing-cursor::after {
+            content: '|';
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        @keyframes fadeOut {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                max-height: 150px;
+                padding-top: 1rem;
+                padding-bottom: 1rem;
+                margin-bottom: 0;
+                border-width: 1px;
+            }
+
+            50% {
+                opacity: 0;
+                transform: translateY(-10px) scale(0.95);
+                max-height: 150px;
+                padding-top: 1rem;
+                padding-bottom: 1rem;
+                margin-bottom: 0;
+                border-width: 1px;
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.9);
+                max-height: 0;
+                padding-top: 0;
+                padding-bottom: 0;
+                margin-bottom: -0.5rem;
+                border-width: 0;
+                overflow: hidden;
+            }
+        }
+
+        .animate-fadeOut {
+            animation: fadeOut 0.4s ease-in forwards;
+        }
+
+        /* 1. 精緻細線滾動條 (V.I.S.O.R. 專屬風格) */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+            /* 極細滾動條 */
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(34, 211, 238, 0.4);
+            /* Cyan 預設微亮 */
+            border-radius: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(34, 211, 238, 0.9);
+            /* 滑鼠游標移過去變亮 */
+        }
+
+        /* 2. 強制 Markdown 內文換行，絕對禁止橫向滾動撐破畫面 */
+        .markdown-body {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            width: 100%;
+        }
+
+        .markdown-body pre,
+        .markdown-body code {
+            white-space: pre-wrap !important;
+            word-break: break-word !important;
+            overflow-x: hidden !important;
+        }
+
+        .markdown-body * {
+            max-width: 100%;
+        }
+>>>>>>> Stashed changes
     </style>
 </head>
 
@@ -437,7 +582,11 @@
                 containerRef.current.innerHTML = '';
                 containerRef.current.appendChild(svgElement);
             }, [name, size, className]);
+<<<<<<< Updated upstream
             return <span ref={containerRef} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 0 }}></span>;
+=======
+            return <span ref={containerRef} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 0 }}></span>;
+>>>>>>> Stashed changes
         };
         const EdgeLightingOverlay = ({ direction }) => {
             if (!direction) return null;
@@ -577,11 +726,16 @@
             return (
                 <div className="fixed top-20 left-0 right-0 z-[60] flex flex-col items-center gap-2 pointer-events-none px-4">
                     {notifications.map((note) => (
+<<<<<<< Updated upstream
                         // 加入 overflow-hidden 防破版，並根據 note.isClosing 切換動畫
                         <div key={note.id} className={`pointer-events-auto overflow-hidden w-full max-w-sm p-4 rounded-xl shadow-2xl backdrop-blur-md border flex items-start gap-3 transform transition-all duration-300 ${note.isClosing ? 'animate-fadeOut' : 'animate-fadeIn'} ${note.type === 'danger' ? 'bg-red-900/90 border-red-500 text-white' : (note.type === 'warning' ? 'bg-yellow-900/90 border-yellow-500 text-yellow-100' : 'bg-slate-800/90 border-cyan-500 text-cyan-100')}`}>
                             
                             {/* 強制圖示容器為正圓形且絕對置中 */}
                             <div className={`w-8 h-8 flex items-center justify-center rounded-full shrink-0 ${note.type === 'danger' ? 'bg-red-500 text-white' : (note.type === 'warning' ? 'bg-yellow-500 text-black' : 'bg-cyan-500 text-black')}`}>
+=======
+                        <div key={note.id} className={`pointer-events-auto overflow-hidden w-full max-w-sm p-4 rounded-xl shadow-2xl backdrop-blur-md border flex items-start gap-3 transform transition-all duration-300 ${note.isClosing ? 'animate-fadeOut' : 'animate-fadeIn'} ${note.type === 'danger' ? 'bg-red-900/90 border-red-500 text-white' : (note.type === 'warning' ? 'bg-yellow-900/90 border-yellow-500 text-yellow-100' : 'bg-slate-800/90 border-cyan-500 text-cyan-100')}`}>
+                            <div className={`w-8 h-8 flex items-center justify-center shrink-0 rounded-full ${note.type === 'danger' ? 'bg-red-500 text-white' : (note.type === 'warning' ? 'bg-yellow-500 text-black' : 'bg-cyan-500 text-black')}`}>
+>>>>>>> Stashed changes
                                 <Icon name={note.type === 'danger' ? 'alert-octagon' : (note.type === 'warning' ? 'alert-triangle' : 'info')} size={18} />
                             </div>
 
@@ -669,7 +823,11 @@
             const [report, setReport] = useState("");
             const [loading, setLoading] = useState(false);
             const [hasGenerated, setHasGenerated] = useState(false);
+<<<<<<< Updated upstream
             const [isInitialLoading, setIsInitialLoading] = useState(true); // 用於區分初次讀取資料庫
+=======
+            const [isInitialLoading, setIsInitialLoading] = useState(true);
+>>>>>>> Stashed changes
             const [isCollapsed, setIsCollapsed] = useState(false);
 
             // 1. 初始化：進頁面先抓最新的一筆，並填入 report
@@ -715,6 +873,7 @@
                 }
                 setLoading(true);
                 try {
+<<<<<<< Updated upstream
                     const data = historyData || [];
                     const recentData = data.slice(-10).map(d => ({
                         s: d.score || 0,
@@ -722,6 +881,40 @@
                         b: d.brakingCount || 0
                     }));
 
+=======
+                    // 近10天
+                    const { data: dayStats, error: dayError } = await _supabase
+                        .from('day_ride')
+                        .select('*')
+                        .eq('user_id', currentUser.id)
+                        .limit(10);
+                    // 歷史月統計
+                    const { data: monthStats, error: monthError } = await _supabase
+                        .from('month_ride')
+                        .select('*')
+                        .eq('user_id', currentUser.id)
+
+                    // 如果兩張表都沒資料，就停止並報錯
+                    if (!dayStats || dayStats.length === 0) {
+                        setReport("### ⚠️ 數據掃描失敗\n目前資料庫中尚無您的騎乘紀錄。V.I.S.O.R. 需要數據才能進行行為分析。");
+                        setLoading(false);
+                        return;
+                    }
+
+                    // 3. 封裝給 AI
+                    const airideData = {
+                        recent: dayStats,
+                        history: monthStats
+                    };
+
+                    const userPrompt = `
+                    【V.I.S.O.R. 深度行為分析】
+                    分析對象：${currentUser.id}
+                    長期趨勢 (月): ${JSON.stringify(airideData.history)}
+                    近期細節 (日): ${JSON.stringify(airideData.recent)}
+                    `;
+
+>>>>>>> Stashed changes
                     const systemPrompt =
                         `
                     系統提示:你現在是 V.I.S.O.R.，騎士的專屬 AI 夥伴。請根據遙測數據提供一份「專業」的騎乘分析。
@@ -762,6 +955,7 @@
             };
 
             return (
+<<<<<<< Updated upstream
                 // 加入 max-height 動態縮放
                 <div className={`bg-slate-800 rounded-xl p-4 border border-slate-700 mt-4 relative overflow-hidden transition-all duration-500 ${isCollapsed ? 'max-h-[60px]' : 'max-h-[1000px]'}`}>
                     <div className="flex justify-between items-center mb-3">
@@ -773,15 +967,37 @@
                         <div className="flex items-center gap-2">
                             {/* 展開且無內容時顯示啟動按鈕 */}
                             {!isCollapsed && !hasGenerated && !loading && !isInitialLoading && (
+=======
+                <div className={`bg-slate-800 rounded-xl p-4 border border-slate-700 mt-4 relative overflow-hidden transition-all duration-500 flex flex-col ${isCollapsed ? 'max-h-[200px]' : 'max-h-[1000px]'}`}>
+
+                    {/* 標題列：加入 shrink-0 防止被擠壓 */}
+                    <div className="flex justify-between items-center mb-3 shrink-0">
+                        <h3 className="text-cyan-400 font-bold text-sm flex items-center gap-2">
+                            <Icon name="brain-circuit" size={16} />
+                            V.I.S.O.R. 戰術分析
+                        </h3>
+
+                        <div className="flex items-center gap-2">
+                            {/* 啟動按鈕：不再因收合而隱藏，改為只要還沒生成就顯示 */}
+                            {!hasGenerated && !loading && !isInitialLoading && (
+>>>>>>> Stashed changes
                                 <button onClick={generateReport} className="bg-cyan-900/50 hover:bg-cyan-800 text-cyan-300 text-[10px] px-2 py-1 rounded-full border border-cyan-500/30 transition-all flex items-center gap-1">
                                     <Icon name="sparkles" size={10} />啟動分析
                                 </button>
                             )}
+<<<<<<< Updated upstream
                             
                             {/* 動態旋轉箭頭按鈕 */}
                             {!loading && !isInitialLoading && report && (
                                 <button 
                                     onClick={() => setIsCollapsed(!isCollapsed)} 
+=======
+
+                            {/* 完美正圓縮放箭頭 */}
+                            {!loading && !isInitialLoading && report && (
+                                <button
+                                    onClick={() => setIsCollapsed(!isCollapsed)}
+>>>>>>> Stashed changes
                                     className={`w-8 h-8 flex items-center justify-center shrink-0 rounded-full bg-slate-700/50 hover:bg-slate-600 text-cyan-400 transition-transform duration-300 ${isCollapsed ? '' : 'rotate-180'}`}
                                 >
                                     <Icon name="chevron-down" size={16} />
@@ -789,11 +1005,29 @@
                             )}
                         </div>
                     </div>
+<<<<<<< Updated upstream
                     
                     {/* 內文淡出淡入控制 */}
                     <div className={`transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
                         {(loading || isInitialLoading) && (<div className="flex items-center justify-center py-4 space-x-2 text-cyan-400/70 animate-pulse"><Icon name="loader-2" size={20} className="animate-spin" /><span className="text-xs font-mono">UPLOADING...</span></div>)}
                         {!loading && !isInitialLoading && report && (<div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50"><div className="text-xs text-slate-300 leading-relaxed font-mono typing-cursor" dangerouslySetInnerHTML={{ __html: window.marked.parse(report) }}></div></div>)}
+=======
+
+                    {/* 2. 內容區塊：限制橫向溢出、加寬右側留白讓滾動條更好看 */}
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar pr-2 w-full">
+                        {(loading || isInitialLoading) && (
+                            <div className="flex items-center justify-center py-4 space-x-2 text-cyan-400/70 animate-pulse">
+                                <Icon name="loader-2" size={20} className="animate-spin" />
+                                <span className="text-xs font-mono">UPLOADING...</span>
+                            </div>
+                        )}
+                        {!loading && !isInitialLoading && report && (
+                            <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 w-full">
+                                {/* 套用 markdown-body 徹底解決橫向撐破的問題 */}
+                                <div className="markdown-body text-xs text-slate-300 leading-relaxed font-mono typing-cursor" dangerouslySetInnerHTML={{ __html: window.marked.parse(report) }}></div>
+                            </div>
+                        )}
+>>>>>>> Stashed changes
                     </div>
                 </div>
             );
@@ -882,6 +1116,7 @@
                     }
                 });
 
+<<<<<<< Updated upstream
                 return (
                     <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 mt-4 relative overflow-hidden">
                         <div className="flex items-center justify-between mb-4">
@@ -902,6 +1137,269 @@
                                             })}
                                         </div>
                                     ))}
+=======
+        const EventCalendar = ({ data, dataKey, color, label, currentUser }) => {
+            const [selectedDay, setSelectedDay] = useState(null); // 存點擊的那一天的統計數據
+            const [rideDetails, setRideDetails] = useState([]); // 存詳細行程
+            const [isLoading, setIsLoading] = useState(false);  // 讀取狀態
+
+            // 關閉彈窗的函數
+            const closePopover = () => setSelectedDay(null);
+
+            // 點擊日期後，從 Supabase 抓取該日的詳細騎乘紀錄
+            const fetchDayDetails = async (selectedDate) => {
+                setIsLoading(true);
+                setRideDetails([]);
+
+                // 時間區間設定：為了對應台灣時區 (UTC+8)
+                const startTime = `${selectedDate}T00:00:00+08:00`;
+                const endTime = `${selectedDate}T23:59:59+08:00`;
+
+                const { data, error } = await _supabase
+                    .from('ride_history')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .gte('time', startTime)
+                    .lte('endtime', endTime)
+                    .order('time', { ascending: true }); // 按時間由早到晚排序
+
+                if (error) {
+                    logToScreen(`❌ 查詢出錯:${error.message}`);
+                    setIsLoading(false);
+                    return;
+                }
+
+                // 如果有抓到資料，使用 reduce進行「分組」
+                if (data && data.length > 0) {
+                    const grouped = data.reduce((acc, curr) => {
+                        const rid = String(curr.ride_id); // 取得這筆資料所屬的行程 ID
+                        if (!rid || rid === "null") return acc;
+
+                        // 如果這個行程 ID 還沒建立過，就初始化它
+                        if (!acc[rid]) {
+                            acc[rid] = {
+                                ride_id: rid,
+                                score: curr.score,
+                                allEvents: [] // 儲存這趟行程「所有」原始事件
+                            };
+                        }
+
+                        acc[rid].allEvents.push(curr); // 把這筆事件存入對應行程
+                        return acc;
+                    }, {});
+
+                    const finalDisplay = Object.values(grouped).map(trip => {
+                        const targetEvents = trip.allEvents.filter(e => e.class === dataKey); // 找出符合當前月曆類型的事件
+                        return {
+                            ...trip,
+                            events: targetEvents.length > 0
+                                ? targetEvents
+                                : [trip.allEvents.find(e => e.class === 'normal') || trip.allEvents[0]]
+                        };
+                    });
+                    setRideDetails(finalDisplay);
+                }
+                setIsLoading(false);
+            };
+
+            return (
+                <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700 shadow-xl relative">
+                    {/* 標題與圖例 */}
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-4 rounded-full" style={{ backgroundColor: color }}></div>
+                            <h3 className="text-sm font-bold text-slate-200">近30天{label}資料 </h3>
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-mono">
+                            <span className={`${days[29].isToday ? 'text-cyan-500 font-bold' : ''}`}>今日日期: {days[29].monthNum}/{days[29].dayNum}</span>
+                        </div>
+                    </div>
+                    {/* 月曆格區 */}
+                    <div className="grid grid-cols-6 gap-2">
+                        {days.map((day) => {
+                            const dayData = data.find(d => d.date_label === day.fullDate); // 匹配 Supabase 數據
+                            const eventCount = dayData ? dayData[dataKey] : 0; // 取得該日曆關注的事件次數
+
+                            // 判定
+                            let bgColor = 'rgba(255,255,255,1)'; // 預設：沒騎 (淡白色)
+                            let opacity = 0.2; // 預設透明度
+
+                            if (dayData) {
+                                if (eventCount > 0) {
+                                    // 有騎、有事件
+                                    bgColor = color;
+                                    opacity = Math.min(0.2 + (eventCount * 0.15), 1);
+                                } else {
+                                    // 有騎、沒事件(normal)
+                                    bgColor = '	#3CB371'; // 綠色
+                                    opacity = 1;
+                                }
+                            }
+
+                            return (
+                                <div
+                                    key={day.fullDate}
+                                    onClick={() => {
+                                        if (dayData) {
+                                            setSelectedDay({ ...dayData, monthNum: day.monthNum, dayNum: day.dayNum });
+                                            fetchDayDetails(day.fullDate);
+                                        }
+                                    }}
+                                    className={`
+                                        aspect-square rounded-lg flex items-center justify-center
+                                        transition-all border relative
+                                        ${eventCount > 0 ? 'cursor-pointer hover:ring-2 hover:ring-white' : 'cursor-default'}
+                                        ${day.isToday ? 'border-cyan-500' : 'border-transparent'}
+                                    `}
+                                    style={{
+                                        backgroundColor: bgColor,
+                                        opacity: opacity
+                                    }}
+                                >
+                                    {/* 標示日期 */}
+                                    <span className={`
+                                        text-[11px] font-black leading-none
+                                        ${eventCount > 0 ? 'text-slate-900' : 'text-slate-600'}
+                                    `}>
+                                        {day.monthNum}/{day.dayNum}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                    {/* 下方提示 */}
+                    <div className="mt-3 flex items-center justify-center text-[9px] text-slate-500 font-mono">
+                        <span>點擊可查看詳細資訊</span>
+                    </div>
+
+                    {/* 詳細資料彈窗 */}
+                    {selectedDay && (
+                        // 遮罩層
+                        <div className="absolute inset-0 bg-slate-950/95 z-50 rounded-2xl flex items-center justify-center p-2 backdrop-blur-md">
+                            {/* 彈窗主體 */}
+                            <div className="bg-slate-900 w-full h-full max-h-[90%] rounded-xl border border-slate-700 p-4 shadow-2xl relative flex flex-col" onClick={(e) => e.stopPropagation()}>
+
+                                {/* 標題與關閉按鈕 */}
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex flex-col items-center justify-center aspect-square h-12 rounded-lg" style={{ backgroundColor: color }}>
+                                            <span className="text-xl font-black text-slate-950">{selectedDay.monthNum}/{selectedDay.dayNum}</span>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-bold text-slate-100">{label} 詳細資料</h4>
+                                        </div>
+                                    </div>
+                                    <button onClick={closePopover} className="text-slate-500 hover:text-white p-1">
+                                        <Icon name="x" size={20} />
+                                    </button>
+                                </div>
+
+                                {/* 上方統計數據 */}
+                                <div className="flex items-center justify-between col-span-2 pb-2 border-b border-slate-700">
+                                    <span className="text-xs text-slate-400">{label}</span>
+                                    <span className="text-xs font-black" style={{ color: color }}>{selectedDay[dataKey]} <span className="text-xs">次</span></span>
+                                    <span className="text-xs text-slate-400">總評分</span>
+                                    <span className="text-xs font-black" style={{ color: color }}>{selectedDay.avg_score || '---'}  <span className="text-xs">分</span></span>
+                                    <span className="text-xs text-slate-400">總騎乘次數</span>
+                                    <span className="text-xs font-black" style={{ color: color }}>{selectedDay.total_trips || '0'}  <span className="text-xs">次</span></span>
+                                </div>
+
+                                {/* 下方詳細資料 */}
+                                <div className="flex-1 overflow-y-auto overflow-x-hidden space-y-4 pr-2 custom-scrollbar w-full">
+                                    {isLoading ? (
+                                        <div className="text-center py-10 text-slate-500 text-xs animate-pulse">讀取中...</div>
+                                    ) : rideDetails.length === 0 ? (
+                                        <div className="text-center py-10 text-slate-500 text-xs">該日無行程數據</div>
+                                    ) : (
+                                        rideDetails.map((trip, idx) => (
+                                            <div key={trip.ride_id} className="bg-slate-800/20 rounded-lg border border-slate-800 overflow-hidden">
+                                                {/* 行程標題 */}
+                                                <div className="bg-slate-800/50 px-3 py-1.5 flex justify-between items-center border-b border-slate-700/30">
+                                                    <span className="text-[10px] font-mono text-slate-500">騎乘第{idx + 1}次</span>
+                                                    <span className="text-[10px] text-cyan-500 font-bold">本次評分: {trip.score}</span>
+                                                </div>
+                                                {/* 事件列表 */}
+                                                <div className="p-2 space-y-2">
+                                                    {trip.events.map((event, eIdx) => {
+                                                        const isNormal = event.class === 'normal';
+
+                                                        return (
+                                                            <div key={eIdx} className={`p-3 rounded border-l-2 bg-slate-900/40 ${isNormal ? 'border-emerald-500' : 'border-rose-500'}`} style={!isNormal ? { borderColor: color } : {}}>
+                                                                <div className="flex justify-between items-start mb-2">
+                                                                    <span className={`text-[11px] font-bold ${isNormal ? 'text-emerald-400' : ''}`} style={!isNormal ? { color: color } : {}}>
+                                                                        {isNormal ? '正常騎乘紀錄' : `${label}紀錄`}
+                                                                    </span>
+                                                                    <span className="text-[10px] text-slate-500">上傳時間：
+                                                                        {new Date(event.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                    </span>
+                                                                </div>
+
+                                                                {/* 根據事件類型顯示對應的詳細數據 */}
+                                                                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px]">
+                                                                    <div className="text-slate-500 col-span-2 flex items-center gap-1">
+                                                                        <Icon name="map-pin" size={10} />
+                                                                        <span className="text-slate-300">{event.location || '未知路段'}</span>
+                                                                    </div>
+
+                                                                    {isNormal ? (
+                                                                        /* Normal詳細資料 */
+                                                                        <>
+                                                                            <div className="text-slate-500">最高時速: <span className="text-emerald-400 font-bold">{event.maxspeed} km/h</span></div>
+                                                                            <div className="text-slate-500">最低時速: <span className="text-emerald-400 font-bold">{event.lowspeed} km/h</span></div>
+                                                                            <div className="text-slate-500">路段限速: <span className="text-slate-300">{event.limit} km/h</span></div>
+                                                                        </>
+                                                                    ) : dataKey === 'total_overspeed' ? (
+                                                                        /* 超速詳細資料 */
+                                                                        <>
+                                                                            <div className="text-slate-500">最高時速: <span className="text-yellow-400 font-bold">{event.maxspeed} km/h</span></div>
+                                                                            <div className="text-slate-500">最低時速: <span className="text-yellow-400 font-bold">{event.lowspeed} km/h</span></div>
+                                                                            <div className="text-slate-500">路段限速: <span className="text-slate-300">{event.limit} km/h</span></div>
+                                                                            <div className="text-slate-500">超速值: <span className="text-rose-400 font-bold">{event.overspeed}</span></div>
+                                                                            <div className="text-slate-500">持續時間: <span className="text-slate-300">{event.duration}s</span></div>
+                                                                        </>
+                                                                    ) : dataKey === 'total_tilt' ? (
+                                                                        /* 危險傾角詳細資料 */
+                                                                        <>
+                                                                            <div className="text-slate-500">最高時速: <span className="text-slate-400 font-bold">{event.maxspeed} km/h</span></div>
+                                                                            <div className="text-slate-500">最低時速: <span className="text-slate-400 font-bold">{event.lowspeed} km/h</span></div>
+                                                                            <div className="text-slate-500">路段限速: <span className="text-slate-300">{event.limit} km/h</span></div>
+                                                                            <div className="text-slate-500">最大傾角: <span className="text-orange-400 font-bold">{event.tilt}°</span></div>
+                                                                            <div className="text-slate-500">建議傾角: <span className="text-slate-300">{'< 30°'}</span></div>
+                                                                            <div className="text-slate-500">持續時間: <span className="text-slate-300">{event.duration}s</span></div>
+                                                                        </>
+                                                                    ) : dataKey === 'total_braking' ? (
+                                                                        /* 急煞詳細資料 */
+                                                                        <>
+                                                                            <div className="text-slate-500">最高時速: <span className="text-slate-400 font-bold">{event.maxspeed} km/h</span></div>
+                                                                            <div className="text-slate-500">最低時速: <span className="text-slate-400 font-bold">{event.lowspeed} km/h</span></div>
+                                                                            <div className="text-slate-500">路段限速: <span className="text-slate-300">{event.limit} km/h</span></div>
+                                                                            <div className="text-slate-500">急煞程度: <span className="text-rose-400 font-bold">{event.breaking}</span></div>
+                                                                            <div className="text-slate-500">建議: <span className="text-slate-300">{'速度變化 < 10km/hr'}</span></div>
+                                                                        </>
+                                                                    ) : (
+                                                                        /* 選中事件無紀錄但當日有其他事件發生 */
+                                                                        <>
+                                                                            <div><span className="text-[11px] font-bold text-emerald-400">{'本次騎乘無'}{label}紀錄</span></div>
+                                                                            <div className="text-slate-500">最高時速: <span className="text-emerald-400 font-bold">{event.maxspeed} km/h</span></div>
+                                                                            <div className="text-slate-500">最低時速: <span className="text-emerald-400 font-bold">{event.lowspeed} km/h</span></div>
+                                                                            <div className="text-slate-500">路段限速: <span className="text-slate-300">{event.limit} km/h</span></div>
+                                                                        </>
+                                                                    )}
+
+                                                                    {/* 底部事件時間 */}
+                                                                    <div className="text-[10px] text-slate-500 col-span-2 mt-1 pt-1 border-t border-slate-800/50 flex justify-between">
+                                                                        <span>開始於: {new Date(event.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                                                                        <span>結束於: {new Date(event.endtime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+>>>>>>> Stashed changes
                                 </div>
                             </div>
                         </div>
@@ -1375,10 +1873,11 @@
             const [notifications, setNotifications] = useState([]);
             const [hudConfig, setHudConfig] = useState({ speed: true, camera: true, nav: true, time: true, brightness: 80 });
             const socketRef = useRef(null);
-            
+
             // Notification Helper
             // Notification Helper (防洗版與消失動畫升級版)
             const addNotification = useCallback((type, title, message) => {
+<<<<<<< Updated upstream
                 const id = Date.now() + Math.random(); // 避免極短時間產生相同 ID
                 
                 setNotifications(prev => {
@@ -1397,6 +1896,19 @@
                 setTimeout(() => {
                     setNotifications(prev => prev.filter(n => n.id !== id));
                 }, 4000); 
+=======
+                const id = Date.now() + Math.random();
+                setNotifications(prev => {
+                    if (prev.some(n => n.title === title && n.message === message)) return prev;
+                    return [...prev, { id, type, title, message, isClosing: false }].slice(-3);
+                });
+                setTimeout(() => {
+                    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isClosing: true } : n));
+                }, 4600);
+                setTimeout(() => {
+                    setNotifications(prev => prev.filter(n => n.id !== id));
+                }, 5000);
+>>>>>>> Stashed changes
             }, []);
 
             const removeNotification = (id) => setNotifications(prev => prev.filter(n => n.id !== id));
@@ -1423,6 +1935,7 @@
                 }
                 addNotification('info', '模式切換', `哨兵模式已${newState ? '開啟' : '關閉'}`);
             };
+<<<<<<< Updated upstream
             // 👇 新增：修復設定頁面黑畫面的陀螺儀授權函式
             const requestGyroPermission = async () => {
                 if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -1445,6 +1958,8 @@
                     addNotification('success', '感測器已啟用', '傾角偵測已就緒');
                 }
             };
+=======
+>>>>>>> Stashed changes
 
             // Refs
             const simRef = useRef(null);
@@ -1628,16 +2143,62 @@
                 }
             };
 
+<<<<<<< Updated upstream
             //預留給開始騎乘紀錄按鈕================================================
+=======
+            // 偵測開始騎乘/結束騎乘邏輯
+            const [isRiding, setIsRiding] = React.useState(false);
+            const isRidingRef = React.useRef(false);
+            const rideStartTimeRef = useRef(0);
+>>>>>>> Stashed changes
 
             // 當 State 改變時，同步更新 Ref (確保底層 GPS 能讀取到最新狀態)
             React.useEffect(() => {
                 isRidingRef.current = isRiding;
+<<<<<<< Updated upstream
                 enableSpeedCamRef.current = enableSpeedCam;
                 cameraAlertRef.current = cameraAlert;
                 currentSessionIdRef.current = currentSessionId;
             }, [isRiding, enableSpeedCam, cameraAlert, currentSessionId]);
             //=====================================================================
+=======
+            }, [isRiding]);
+
+            const handleToggleDetection = () => {
+                const newState = !enableSpeedCam;
+
+                // 同步更新所有相關狀態
+                setEnableSpeedCam(newState);
+                setIsRiding(newState);
+                isRidingRef.current = newState;
+
+                if (newState) {
+                    // 啟動監控
+                    rideStartTimeRef.current = Date.now(); // 記錄開始時間
+
+                    // 重置單次行車數據與臨時紀錄
+                    setRideData([]);
+                    currentRideDataRef.current = [];
+
+                    logToScreen(`V.I.S.O.R. 實際偵測啟動`);
+                    addNotification('success', '監控啟動', '已開始紀錄實際行駛數據');
+                } else {
+                    // 停止監控
+                    const duration = Date.now() - rideStartTimeRef.current;
+
+                    // 防呆機制：判斷是否超過 3 秒 (3000 毫秒)
+                    if (duration > 3000) {
+                        logToScreen("V.I.S.O.R.實際偵測已停止，產生報告...");
+                        addNotification('info', '監控結束', '騎乘紀錄處理中');
+                        finalizeRide(); //觸發結算邏輯
+                    } else {
+                        logToScreen("啟動時間過短 (< 3秒)，已取消紀錄");
+                        addNotification('warning', '偵測取消', '啟動時間不足 3 秒，視為誤觸不予紀錄');
+                        currentRideDataRef.current = []; // 不記錄，清空
+                    }
+                }
+            };
+>>>>>>> Stashed changes
 
             // 統一處理來自模擬跟實際的數據
             const handleIncomingData = (data) => {
@@ -1697,7 +2258,11 @@
                                 currentEvent = {
                                     time: point.time, // 紀錄起始時間
                                     maxSpeed: point.speed,
+<<<<<<< Updated upstream
                                     lowSpeed: point.speed, // 初始化最低速為起點速
+=======
+                                    lowSpeed: point.speed,
+>>>>>>> Stashed changes
                                     limit: limit
                                 };
                             } else { // 持續超速中：更新最高、最低速
@@ -1710,6 +2275,10 @@
                             }
                         } else { // 超速結束
                             if (isSpeeding && currentEvent) {
+<<<<<<< Updated upstream
+=======
+                                const eventSeconds = (point.rawTime - currentEvent.rawTime) / 1000;
+>>>>>>> Stashed changes
                                 events.push({
                                     time: currentEvent.time,        // 開始時間
                                     endtime: point.time,             // 結束時間
@@ -1731,6 +2300,10 @@
                     events.push({
                         time: currentEvent.time,
                         endtime: lastPoint.time,
+<<<<<<< Updated upstream
+=======
+                        duration: (lastPoint.rawTime - currentEvent.rawTime) / 1000,
+>>>>>>> Stashed changes
                         maxspeed: Math.round(currentEvent.maxSpeed),
                         lowspeed: Math.round(currentEvent.lowSpeed),
                         limit: currentEvent.limit,
@@ -1922,7 +2495,17 @@
                 const locationName = camera ? camera.address : "未知路段";
                 const firstPoint = dataToAnalyze[0]; // 行程開始點
                 const lastPoint = dataToAnalyze[dataToAnalyze.length - 1]; // 取得最後一個點的狀態
+<<<<<<< Updated upstream
 
+=======
+                // 優先順序：
+                // 1. 傳入的實體相機地址 
+                // 2. 數據點內的 location 欄位 
+                // 3. 萬一都沒抓到，才是未知路段
+                const locationName = (camera && camera.address) || (lastPoint && lastPoint.location) || "未知路段";
+
+                const rideId = Date.now().toString(); // 用來判斷是否為同一趟用
+>>>>>>> Stashed changes
                 let recordsToUpload = []; // 準備要上傳的資料陣列
 
                 // 統一處理函數：
@@ -1938,7 +2521,11 @@
                             limit: lastPoint.limit,
                             maxspeed: ev.maxspeed,
                             lowspeed: ev.lowspeed,
+<<<<<<< Updated upstream
                             overspeed: ev.maxoverspeed || 0,
+=======
+                            overspeed: ev.overspeed || 0,
+>>>>>>> Stashed changes
                             braking: ev.braking || 0,
                             tilt: ev.tilt || 0,
                             score: finalScore
@@ -2123,6 +2710,16 @@
                         setSimulatedSpeed(0);
                     }
 
+<<<<<<< Updated upstream
+=======
+                    //     setIsRiding(false);
+                    //     setSimulationMode(false);
+                    //     isSimulatingRef.current = false;
+
+                    //     setSimulatedSpeed(0);
+                    // }
+
+>>>>>>> Stashed changes
                     // --- 隨機觸發邊緣預警 ---
                     if (Math.random() > 0.96) {
                         const dirs = ['left', 'right', 'rear'];
@@ -2263,11 +2860,18 @@
 
 // --- GPS 定位與實機數據寫入 ---
             useEffect(() => {
+<<<<<<< Updated upstream
                 let watchId;
                 
                 const startGPS = () => {
                     if (navigator.geolocation) {
                         watchId = navigator.geolocation.watchPosition(async (pos) => {
+=======
+                document.addEventListener("deviceready", () => {
+                    setIsConnected(false);
+                    if (navigator.geolocation) {
+                        navigator.geolocation.watchPosition((pos) => {
+>>>>>>> Stashed changes
                             const newLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                             setLocation(newLoc);
                             if (trackRef.current) trackRef.current.push([newLoc.lat, newLoc.lng]);
@@ -2275,6 +2879,7 @@
                             if (!isSimulatingRef.current) {
                                 const speedKmh = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
                                 setSimulatedSpeed(speedKmh);
+<<<<<<< Updated upstream
                                 // 隨時記錄最高時速
                                 if (enableSpeedCamRef.current && isRidingRef.current) {
                                     if (speedKmh > rideMaxSpeedRef.current) rideMaxSpeedRef.current = speedKmh;
@@ -2344,6 +2949,10 @@
                                     }
                                 }
 
+=======
+
+                                // Update heading only if moving to avoid jitter
+>>>>>>> Stashed changes
                                 if (speedKmh > 3 && pos.coords.heading !== null && !isNaN(pos.coords.heading)) {
                                     setHeading(pos.coords.heading);
                                 }
@@ -2624,12 +3233,20 @@
 
                             <div className="flex gap-2">
                                 {/* 安全模式按鈕 */}
+<<<<<<< Updated upstream
 
                                 <button
                                     onClick={() => setForceSpeeding(false)}
                                     className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all ${!forceSpeeding
                                         ? 'bg-green-600 text-white shadow-lg ring-2 ring-green-400'
                                         : 'bg-gray-700 text-gray-400 opacity-50'
+=======
+                                <button
+                                    onClick={() => setForceSpeeding(false)}
+                                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all ${!forceSpeeding
+                                            ? 'bg-green-600 text-white shadow-lg ring-2 ring-green-400'
+                                            : 'bg-gray-700 text-gray-400 opacity-50'
+>>>>>>> Stashed changes
                                         }`}
                                 >
                                     🟢 安全行駛
@@ -2639,8 +3256,13 @@
                                 <button
                                     onClick={() => setForceSpeeding(true)}
                                     className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all ${forceSpeeding
+<<<<<<< Updated upstream
                                         ? 'bg-red-600 text-white shadow-lg ring-2 ring-red-400'
                                         : 'bg-gray-700 text-gray-400 opacity-50'
+=======
+                                            ? 'bg-red-600 text-white shadow-lg ring-2 ring-red-400'
+                                            : 'bg-gray-700 text-gray-400 opacity-50'
+>>>>>>> Stashed changes
                                         }`}
                                 >
                                     🔴 危險駕駛
@@ -2677,6 +3299,7 @@
                     ))}
                 </div>
             );
+<<<<<<< Updated upstream
 
             // 1. 處理並過濾真實的硬體數據 (排除標記用的 safe 與 -1)
            // 把 renderStats 改成這樣 (加入 useState)
@@ -2690,6 +3313,272 @@
             // ==========================================
             // 主要分析頁面渲染區
             // ==========================================
+=======
+            //=========================================================    
+            // 切換到分析頁，讀取分析數據
+            // 分析頁圖表與數據處理邏輯
+            //=========================================================
+            const [dayAnalyzeData, setDayAnalyzeData] = useState([]); 
+            const [monthAnalyzeData, setMonthAnalyzeData] = useState([]); 
+            const [sevenDayAnalyzeData, setSevenDayAnalyzeData] = useState([]); 
+            const [rawRideHistory, setRawRideHistory] = useState([]); 
+            const [isInitialLoading, setIsInitialLoading] = useState(true); 
+
+            // 切換到分析頁，讀取分析數據
+            React.useEffect(() => {
+                const fenthAnalyze = async () => {
+                    if (!currentUser) return;
+
+                    try {
+                        const [dayResponse, monthResponse, sevendayResponse, rawResponse] = await Promise.all([
+                            _supabase.from('day_ride').select('*').eq('user_id', currentUser.id).order('date_label', { ascending: false }).limit(30),
+                            _supabase.from('month_ride').select('*').eq('user_id', currentUser.id).order('month_label', { ascending: false }).limit(12),
+                            _supabase.from('day_ride').select('*').eq('user_id', currentUser.id).order('date_label', { ascending: false }).limit(7),
+                            _supabase.from('ride_history').select('*').eq('user_id', currentUser.id).order('time', { ascending: false }).limit(150)
+                        ]);
+
+                        if (dayResponse.error) throw dayResponse.error;
+                        if (monthResponse.error) throw monthResponse.error;
+                        if (sevendayResponse.error) throw sevendayResponse.error;
+                        if (rawResponse.error) throw rawResponse.error;
+
+                        // 更新狀態
+                        setDayAnalyzeData(dayResponse.data || []);
+                        setMonthAnalyzeData(monthResponse.data || []);
+                        setSevenDayAnalyzeData(sevendayResponse.data || []);
+                        setRawRideHistory(rawResponse.data || []); // 現在這裡不會報錯了
+
+                        logToScreen(`✅ 已成功獲取騎乘分析數據`);
+
+                    } catch (error) {
+                        logToScreen(`❌ 讀取分析數據失敗: ${error.message}`);
+                    } finally {
+                        setIsInitialLoading(false);
+                    }
+                };
+                if (currentUser && activeTab === 'stats') {
+                    fenthAnalyze();
+                }
+            }, [currentUser, activeTab]);
+
+            // 記分板========================================
+
+            // 產生今日標籤 (YYYY-MM-DD)
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+
+            const todayLabel = `${year}-${month}-${day}`;
+
+            // 比對日期，找到今天的數據
+            const todayData = dayAnalyzeData.find(d => d.date_label === todayLabel);
+
+            // 輸出記分板
+            const stats = {
+                averageScore: todayData ? Math.round(parseFloat(todayData.avg_score || 0)) : '---',
+                overspeed: todayData ? (todayData.total_overspeed || 0) : 0,
+                braking: todayData ? (todayData.total_breaking || 0) : 0,
+                tilt: todayData ? (todayData.total_tilt || 0) : 0,
+                trips: todayData ? (todayData.total_trips || 0) : 0
+            };
+            // 記分板 結束============================================================================
+
+            // 週/月直條圖=======================================================================
+            const [viewMode, setViewMode] = React.useState('week'); // 'week' or 'month'
+            const activeData = viewMode === 'week' ? sevenDayAnalyzeData : monthAnalyzeData;
+
+            const BarChart = ({ data, viewMode, setViewMode }) => {
+
+                // 根據傳進來的 data 進行處理
+                const filteredData = React.useMemo(() => {
+                    if (!data || data.length === 0) return [];
+
+                    // SQL 是 (新到舊) 圖表需要 [舊 -> 新]，所以直接 reverse
+                    return [...data].reverse();
+                }, [data]);
+
+                return (
+                    <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                        {/* 標題與切換按鈕 */}
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-baseline gap-2">
+                                <h3 className="text-lg font-bold text-slate-100">評分趨勢</h3>
+                                <p className="text-xs text-slate-500 font-mono tracking-widest uppercase">
+                                    {viewMode === 'week' ? '近7日' : '近12個月'}
+                                </p>
+                            </div>
+
+                            {/* 切換 Tabs */}
+                            <div className="flex bg-slate-900/80 p-1 rounded-xl border border-slate-700">
+                                <button
+                                    onClick={() => setViewMode('week')}
+                                    className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${viewMode === 'week' ? 'bg-cyan-500 text-slate-900' : 'text-slate-500'}`}
+                                >
+                                    週
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('month')}
+                                    className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${viewMode === 'month' ? 'bg-cyan-500 text-slate-900' : 'text-slate-500'}`}
+                                >
+                                    月
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* 圖表本體 */}
+                        <div className="h-48 w-full flex items-end gap-2 px-2">
+                            {filteredData.map((item, index) => {
+                                const score = Math.round(Number(item.avg_score || 0));
+                                // 定義顏色變數
+                                let barColor = "#97CBFF"; // 預設藍色
+
+                                // 判斷是哪個 label
+                                const currentLabel = item.date_label || item.month_label;
+
+                                return (
+                                    // 每個柱狀圖的容器
+                                    <div key={currentLabel || index} className="flex-1 flex flex-col items-center group relative h-full justify-end">
+                                        {/* 分數 */}
+                                        <div className="mb-2 text-[10px] text-cyan-400 font-mono font-black transition-colors">
+                                            {score}
+                                        </div>
+
+                                        {/* 直條 */}
+                                        <div
+                                            className={`w-full rounded-t-sm transition-all duration-700 ease-out relative ${barColor}`}
+                                            style={{
+                                                height: `${score > 0 ? (score * 0.8) : 0}%`, // 根據分數調整高度
+                                                backgroundColor: barColor          // 套用十六進位色碼
+                                            }}
+                                        >
+                                        </div>
+
+                                        {/* X 軸標籤：根據當前的標籤字串進行切割 */}
+                                        <span className="text-xs text-slate-500 mt-3 font-mono">
+                                            {(() => {
+                                                if (!currentLabel) return "--";
+                                                const parts = currentLabel.split('-');
+
+                                                // 如果是週模式 (YYYY-MM-DD)，取第三個部分：日
+                                                // 如果是月模式 (YYYY-MM)，取第二個部分：月
+                                                return viewMode === 'week'
+                                                    ? (parts[2] || parts[0])
+                                                    : (parts[1] || parts[0]);
+                                            })()}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* 底部 */}
+                        <div className="mt-4 border-t border-slate-700/50 pt-3 flex justify-end gap-4 text-xs text-slate-500 font-mono">
+                            <span className={`${days[29].isToday ? 'text-cyan-500 font-bold' : ''}`}>今日日期: {days[29].yearNum}/{days[29].monthNum}/{days[29].dayNum}</span>
+                        </div>
+                    </div>
+                );
+            };
+            // 週/月直條圖 結束==========================================================================================================================================================
+
+            // 實機硬體偵測紀錄面板 =======================================================
+            const RealDataDashboard = ({ data }) => {
+                const [view, setView] = React.useState('session');
+
+                // 處理資料分類 (加上防呆機制)
+                const safeData = data || []; 
+                const uniqueRides = [];
+                const seenRideIds = new Set();
+                
+                safeData.forEach(item => {
+                    if (item.ride_id && !seenRideIds.has(item.ride_id)) {
+                        seenRideIds.add(item.ride_id);
+                        const rideEvents = safeData.filter(e => e.ride_id === item.ride_id);
+                        const maxSpd = Math.max(...rideEvents.map(e => e.maxspeed || 0));
+                        uniqueRides.push({ ...item, rideMaxSpeed: maxSpd });
+                    } else if (!item.ride_id) {
+                        uniqueRides.push({ ...item, rideMaxSpeed: item.maxspeed || 0 });
+                    }
+                });
+
+                const displaySession = uniqueRides;
+                const displayOverspeed = safeData.filter(i => i.class === 'overspeed');
+                const displayTilt = safeData.filter(i => i.class === 'tilt');
+                const displayBrake = safeData.filter(i => i.class === 'braking');
+
+                return (
+                    <div className="bg-slate-800/80 rounded-2xl p-5 border border-slate-700 shadow-xl mt-6">
+                        <div className="flex justify-between items-center mb-5">
+                            <h3 className="text-white font-bold text-sm flex items-center gap-2">
+                                <Icon name="hard-drive" size={18} className="text-cyan-400" />
+                                實機硬體偵測紀錄
+                            </h3>
+                            <span className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">Real-World Data</span>
+                        </div>
+
+                        {/* 分頁切換按鈕 */}
+                        <div className="flex bg-slate-900 rounded-xl p-1.5 border border-slate-600 mb-4">
+                            <button onClick={() => setView('session')} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${view === 'session' ? 'bg-cyan-900/50 text-cyan-400 border border-cyan-500/50 shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>紀錄 ({displaySession.length})</button>
+                            <button onClick={() => setView('overspeed')} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${view === 'overspeed' ? 'bg-slate-800 text-slate-300 border border-slate-600 shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>超速 ({displayOverspeed.length})</button>
+                            <button onClick={() => setView('tilt')} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${view === 'tilt' ? 'bg-slate-800 text-slate-300 border border-slate-600 shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>傾角 ({displayTilt.length})</button>
+                            <button onClick={() => setView('brake')} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${view === 'brake' ? 'bg-slate-800 text-slate-300 border border-slate-600 shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>急煞 ({displayBrake.length})</button>
+                        </div>
+
+                        {/* 資料表區域 (加入滾動條限制高度) */}
+                        <div className="max-h-[260px] overflow-y-auto custom-scrollbar pr-2 w-full">
+                            <table className="w-full text-left text-xs text-slate-400">
+                                <thead className="bg-slate-900/80 text-slate-500 font-mono sticky top-0 z-10 backdrop-blur-md">
+                                    <tr>
+                                        <th className="p-3 rounded-tl-lg font-bold">{view === 'session' ? '結算時間' : '發生時間'}</th>
+                                        <th className="p-3 font-bold">{view === 'session' ? '全趟最高時速' : '偵測數值'}</th>
+                                        <th className="p-3 rounded-tr-lg font-bold">{view === 'session' ? '測速區最高速' : '基準/限速'}</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-700/50">
+                                    {view === 'session' && displaySession.length === 0 && <tr><td colSpan="3" className="p-6 text-center text-slate-500">尚無完整行駛紀錄</td></tr>}
+                                    {view === 'session' && displaySession.map(item => (
+                                        <tr key={item.id || item.time} className="hover:bg-slate-800/50 transition-colors">
+                                            <td className="p-3 text-white">{new Date(item.time).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</td>
+                                            <td className="p-3 text-cyan-400 font-bold">{item.rideMaxSpeed} km/h</td>
+                                            <td className="p-3 text-slate-500">{item.limit ? `${item.limit} km/h` : '無'}</td>
+                                        </tr>
+                                    ))}
+
+                                    {view === 'overspeed' && displayOverspeed.length === 0 && <tr><td colSpan="3" className="p-6 text-center text-slate-500">表現優良，本次無紀錄</td></tr>}
+                                    {view === 'overspeed' && displayOverspeed.map(item => (
+                                        <tr key={item.id || item.time} className="hover:bg-slate-800/50 transition-colors">
+                                            <td className="p-3 text-white">{new Date(item.time).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</td>
+                                            <td className="p-3 text-red-400 font-bold">{item.maxspeed} km/h</td>
+                                            <td className="p-3 text-slate-500">{item.limit} km/h</td>
+                                        </tr>
+                                    ))}
+
+                                    {view === 'tilt' && displayTilt.length === 0 && <tr><td colSpan="3" className="p-6 text-center text-slate-500">無危險傾角紀錄</td></tr>}
+                                    {view === 'tilt' && displayTilt.map(item => (
+                                        <tr key={item.id || item.time} className="hover:bg-slate-800/50 transition-colors">
+                                            <td className="p-3 text-white">{new Date(item.time).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</td>
+                                            <td className="p-3 text-orange-400 font-bold">{item.tilt}°</td>
+                                            <td className="p-3 text-slate-500">{'< 40°'}</td>
+                                        </tr>
+                                    ))}
+
+                                    {view === 'brake' && displayBrake.length === 0 && <tr><td colSpan="3" className="p-6 text-center text-slate-500">無急煞紀錄</td></tr>}
+                                    {view === 'brake' && displayBrake.map(item => (
+                                        <tr key={item.id || item.time} className="hover:bg-slate-800/50 transition-colors">
+                                            <td className="p-3 text-white">{new Date(item.time).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</td>
+                                            <td className="p-3 text-yellow-400 font-bold">{item.braking} km/h/s</td>
+                                            <td className="p-3 text-slate-500">{'< 10'}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                );
+            };
+
+
+>>>>>>> Stashed changes
             const renderStats = () => {
                 
                 // 處理真實數據
@@ -2732,6 +3621,7 @@
                             </div>
                         </div>
 
+<<<<<<< Updated upstream
                         <div className="bg-gradient-to-br from-cyan-950 to-blue-950 p-6 rounded-2xl text-white flex justify-between items-center shadow-lg border border-cyan-500/20">
                             <div>
                                 <div className="text-cyan-200 text-xs uppercase tracking-wider font-semibold">過去 7 天安全評分</div>
@@ -2775,6 +3665,42 @@
                             <EventHeatmapChart data={displayHistory} dataKey="overspeedCount" color="#ffff00" label="超速次數" />
                             <EventHeatmapChart data={displayHistory} dataKey="brakingCount" color="#ffa500" label="急煞次數" />
                             <EventHeatmapChart data={displayHistory} dataKey="tiltCount" color="#f87171" label="傾角次數" />
+=======
+                        {/* AI 報告 */}
+                        <RealDataDashboard data={rawRideHistory} />
+                        <AIReportCard currentUser={currentUser} />
+
+                        {/* 週/月直條圖 */}
+                        <BarChart
+                            data={activeData}
+                            viewMode={viewMode}
+                            setViewMode={setViewMode}
+                        />
+
+                        {/* 月曆圖 */}
+                        <div className="space-y-4 px-2">
+                            <EventCalendar
+                                data={dayAnalyzeData}
+                                dataKey="total_overspeed"
+                                color="#FACC15"
+                                label="超速"
+                                currentUser={currentUser}
+                            />
+                            <EventCalendar
+                                data={dayAnalyzeData}
+                                dataKey="total_breaking"
+                                color="#FB923C"
+                                label="急煞"
+                                currentUser={currentUser}
+                            />
+                            <EventCalendar
+                                data={dayAnalyzeData}
+                                dataKey="total_tilt"
+                                color="#F87171"
+                                label="危險傾角"
+                                currentUser={currentUser}
+                            />
+>>>>>>> Stashed changes
                         </div>
                     </div>
                 );
@@ -2831,6 +3757,7 @@
                 <div className="space-y-6 animate-fadeIn pb-24">
 
                     <h2 className="text-xl font-bold text-white">設定</h2>
+<<<<<<< Updated upstream
                     <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl p-4 border border-cyan-500/30 shadow-lg">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-cyan-900/40 rounded-full flex items-center justify-center border border-cyan-400/50">
@@ -2858,6 +3785,30 @@
 
                             <h3 className="text-cyan-400 text-sm font-bold mb-4 flex items-center gap-2"><Icon name="volume-2" size={16} /> 系統音效</h3>
 
+=======
+
+                    <div className="space-y-4">
+
+                        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 flex items-center gap-4">
+                            <div className="w-12 h-12 bg-cyan-900/30 rounded-full flex items-center justify-center border border-cyan-500/30 shadow-[0_0_15px_rgba(34,211,238,0.1)]">
+                                <Icon name="user" size={24} className="text-cyan-400" />
+                            </div>
+                            <div>
+                                <div className="text-[10px] text-slate-400 font-mono tracking-widest uppercase">Current Operator</div>
+                                <div className="text-lg font-bold text-white tracking-wide">
+                                    {currentUser?.user_metadata?.display_name || currentUser?.email?.split('@')[0] || 'Unknown'}
+                                </div>
+                            </div>
+                        </div>
+
+
+
+
+                        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+
+                            <h3 className="text-cyan-400 text-sm font-bold mb-4 flex items-center gap-2"><Icon name="volume-2" size={16} /> 系統音效</h3>
+
+>>>>>>> Stashed changes
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center">
                                     <span className="text-white text-sm">全域靜音 (所有預警音)</span>
@@ -2940,7 +3891,7 @@
                         </div>
                         {!hasGyroPermission && (<button onClick={requestGyroPermission} className="w-full bg-slate-800 p-4 rounded-xl border border-slate-700 flex items-center justify-between group hover:border-purple-500/50 transition-all"><div className="flex items-center gap-4"><Icon name="rotate-3d" className="text-purple-400" /><div className="text-left"><div className="text-white font-bold text-sm">啟用陀螺儀</div><div className="text-slate-400 text-xs mt-0.5">點擊以授權傾角偵測 (iOS 必選)</div></div></div><Icon name="chevron-right" className="text-slate-500" /></button>)}
                         <div className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700"><div className="p-4 border-b border-slate-700"><h3 className="text-cyan-400 text-sm font-bold mb-4 uppercase tracking-wider flex items-center gap-2"><Icon name="cpu" size={16} /> AI 防護參數</h3><div className="mb-6"><div className="flex justify-between text-white text-sm mb-2"><span>後方逼車警示距離</span><span className="text-cyan-400 font-mono">8.0m</span></div><input type="range" className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-cyan-500" defaultValue="40" /></div></div></div>
-                        <button className="w-full bg-slate-800 p-4 rounded-xl border border-slate-700 flex items-center justify-between"><div className="flex items-center gap-4"><Icon name="bluetooth" className="text-blue-400" /><span className="text-sm font-bold">藍牙裝置</span></div><span className="text-xs text-slate-400">{isConnected ? '已連線' : '未連線'}</span></button>
+                        
                         <button onClick={toggleFullScreen} className="w-full bg-slate-800 text-slate-300 py-4 rounded-xl font-bold border border-slate-700 hover:bg-slate-700/80 transition-all flex items-center justify-center gap-2"><Icon name="maximize" size={18} /> 切換全螢幕模式</button>
                         <button onClick={handleLogout} className="w-full bg-slate-800 text-red-400 py-4 rounded-xl font-bold border border-slate-700 hover:bg-slate-700/80 transition-all flex items-center justify-center gap-2"><Icon name="log-out" size={18} /> 登出 V.I.S.O.R.</button>
                     </div>
@@ -2952,8 +3903,11 @@
                     <div className="w-full h-[100dvh] md:max-w-[420px] md:h-[90vh] md:max-h-[880px] bg-slate-950 md:rounded-[3rem] md:border-[8px] md:border-slate-800 overflow-hidden relative shadow-2xl flex flex-col md:ring-1 md:ring-white/10 transition-all duration-300">
                         <EdgeLightingOverlay direction={edgeWarning} />
                         <ToastNotification notifications={notifications} removeNotification={removeNotification} />
+<<<<<<< Updated upstream
                             
 
+=======
+>>>>>>> Stashed changes
 
                         <div className="bg-slate-950 px-6 pt-5 safe-top pb-2 flex justify-between items-center z-20 select-none shrink-0">
                             <div className="flex items-center gap-2"><Icon name="shield-check" size={18} className="text-cyan-400" /><h1 className="text-lg font-black text-white tracking-widest italic font-mono">V.I.S.O.R.</h1></div>
