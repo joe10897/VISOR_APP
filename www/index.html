@@ -766,7 +766,7 @@
             return calendar;
         };
 
-        const days = thirtyDays();
+        const thirtyD = thirtyDays();
 
         const EventCalendar = ({ data, dataKey, color, label , currentUser }) => {
             const [selectedDay, setSelectedDay] = useState(null); // 存點擊的那一天的統計數據
@@ -841,12 +841,12 @@
                             <h3 className="text-sm font-bold text-slate-200">近30天{label}資料 </h3>
                         </div>
                         <div className="text-[10px] text-slate-500 font-mono">
-                            <span className={`${days[29].isToday ? 'text-cyan-500 font-bold' : ''}`}>今日日期: {days[29].monthNum}/{days[29].dayNum}</span>
+                            <span className={`${thirtyD[29].isToday ? 'text-cyan-500 font-bold' : ''}`}>今日日期: {thirtyD[29].monthNum}/{thirtyD[29].dayNum}</span>
                         </div>
                     </div>
                     {/* 月曆格區 */}
                     <div className="grid grid-cols-6 gap-2">
-                        {days.map((day) => {
+                        {thirtyD.map((day) => {
                             const dayData = data.find(d => d.date_label === day.fullDate); // 匹配 Supabase 數據
                             const eventCount = dayData ? dayData[dataKey] : 0; // 取得該日曆關注的事件次數
 
@@ -2595,8 +2595,6 @@
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
             const day = String(now.getDate()).padStart(2, '0');
-
-            const todayLabel = `${year}-${month}-${day}`;
             const monthLabel = `${year}-${month}`;
 
             // 比對日期，找到今天的數據
@@ -2618,13 +2616,32 @@
 
             const BarChart = ({ data, viewMode, setViewMode }) => {
 
-                // 根據傳進來的 data 進行處理
                 const filteredData = React.useMemo(() => {
-                    if (!data || data.length === 0) return [];
-
-                    // SQL 是 (新到舊) 圖表需要 [舊 -> 新]，所以直接 reverse
-                    return [...data].reverse(); 
-                }, [data]);
+                    const count = viewMode === 'week' ? 7 : 12;
+                    
+                    // 建立一個固定長度的陣列
+                    return Array.from({ length: count }).map((_, i) => {
+                        const d = new Date();
+                        
+                        // 根據 i 往回推算日期或月份
+                        if (viewMode === 'week') {
+                            d.setDate(d.getDate() - i);
+                            const label = d.toLocaleDateString('en-CA'); // 格式: 2026-04-15
+                            
+                            // 去資料庫回傳的 data 找有沒有匹配這一天
+                            const match = data?.find(item => item.date_label === label);
+                            
+                            // 有就回傳資料，沒資料就回傳一個包含 label 但分數為 0 的「空殼」
+                            return match || { date_label: label, avg_score: 0 };
+                        } else {
+                            d.setMonth(d.getMonth() - i);
+                            const label = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; // 格式: 2026-04
+                            
+                            const match = data?.find(item => item.month_label === label);
+                            return match || { month_label: label, avg_score: 0 };
+                        }
+                    }).reverse(); // 因為是往回推算，所以要反轉回來變成 [舊 -> 新]
+                }, [data, viewMode]);
 
                 return (
                     <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700 shadow-xl">
@@ -2655,44 +2672,48 @@
                         </div>
 
                         {/* 圖表本體 */}
-                        <div className="h-48 w-full flex items-end gap-2 px-2">
+                        <div className="h-48 w-full flex items-end gap-2 px-2"> 
                             {filteredData.map((item, index) => {
-                                const score = Math.round(Number(item.avg_score || 0));                                
-                                // 定義顏色變數
-                                let barColor = "#97CBFF"; // 預設藍色
+                                const score = Math.round(Number(item.avg_score || 0));  
+                                const hasData = score > 0; // 判斷是否有數據      
+                                let barColor = "#97CBFF"; // 直條預設藍色
                                 
-                                // 判斷是哪個 label
-                                const currentLabel = item.date_label || item.month_label;
+                                const currentLabel = item.date_label || item.month_label; //  label判斷是哪個
                                 
                                 return (
                                     // 每個柱狀圖的容器
-                                    <div key={currentLabel || index} className="flex-1 flex flex-col items-center group relative h-full justify-end">
-                                        {/* 分數 */}
-                                        <div className="mb-2 text-[10px] text-cyan-400 font-mono font-black transition-colors">
-                                            {score}
-                                        </div>
-                                        
+                                    <div key={currentLabel || index} className="flex-1 min-w-0 flex flex-col items-center group relative h-full justify-end">
                                         {/* 直條 */}
-                                        <div 
-                                            className={`w-full rounded-t-sm transition-all duration-700 ease-out relative ${barColor}`}
-                                            style={{ 
-                                                height: `${score > 0 ? (score * 0.8) : 0}%`, // 根據分數調整高度
-                                                backgroundColor: barColor          // 套用十六進位色碼
-                                            }}
-                                        >
+                                        <div className="relative w-full flex flex-col items-center justify-end h-full">
+                                            {/* 分數 */}
+                                            <span className={`mb-2 text-[10px] font-mono font-black transition-colors ${hasData ? 'text-cyan-400' : 'text-transparent'}`}>
+                                                {score}
+                                            </span>
+                                            {hasData ? (
+                                                /* 有資料：顯示直條 */
+                                                <div
+                                                    className="w-full rounded-t-sm transition-all duration-700 ease-out"
+                                                    style={{
+                                                        height: `${score * 0.8}%`,
+                                                        backgroundColor: barColor
+                                                    }}
+                                                />
+                                            ) : (
+                                                /* 無資料：顯示驚嘆號圖示 */
+                                                <div className="flex flex-col items-center mb-1 animate-pulse">
+                                                    <div className="text-amber-500 bg-amber-500/10 rounded-full w-6 h-6 flex items-center justify-center border border-amber-500/50">
+                                                        <span className="text-xs font-bold">!</span>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
 
-                                        {/* X 軸標籤：根據當前的標籤字串進行切割 */}
-                                        <span className="text-xs text-slate-500 mt-3 font-mono">
+                                        {/* X 軸標籤：數字 + 單位 */}
+                                        <span className="text-[10px] text-slate-500 mt-3 font-mono whitespace-nowrap">
                                             {(() => {
-                                                if (!currentLabel) return "--";
                                                 const parts = currentLabel.split('-');
-                                                
-                                                // 如果是週模式 (YYYY-MM-DD)，取第三個部分：日
-                                                // 如果是月模式 (YYYY-MM)，取第二個部分：月
-                                                return viewMode === 'week' 
-                                                    ? (parts[2] || parts[0]) 
-                                                    : (parts[1] || parts[0]);
+                                                const value = viewMode === 'week' ? parts[2] : parts[1];
+                                                return `${value}${viewMode === 'week' ? '日' : '月'}`;
                                             })()}
                                         </span>
                                     </div>
@@ -2702,7 +2723,7 @@
 
                         {/* 底部 */}
                         <div className="mt-4 border-t border-slate-700/50 pt-3 flex justify-end gap-4 text-xs text-slate-500 font-mono">
-                            <span className={`${days[29].isToday ? 'text-cyan-500 font-bold' : ''}`}>今日日期: {days[29].yearNum}/{days[29].monthNum}/{days[29].dayNum}</span>
+                            <span className={`${thirtyD[29].isToday ? 'text-cyan-500 font-bold' : ''}`}>今日日期: {thirtyD[29].yearNum}/{thirtyD[29].monthNum}/{thirtyD[29].dayNum}</span>
                         </div>
                     </div>
                 );
