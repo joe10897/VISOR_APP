@@ -115,51 +115,6 @@
         }
 
         /* Edge Lighting Animations - 增強亮度與範圍 */
-<<<<<<< Updated upstream
-        @keyframes edgePulse { 0% { opacity: 0.5; } 100% { opacity: 1; } }
-        .edge-light-front { box-shadow: inset 0 150px 120px -30px rgba(234, 179, 8, 1); animation: edgePulse 0.15s infinite alternate; }
-        .edge-light-rear { box-shadow: inset 0 -150px 120px -30px rgba(239, 68, 68, 1); animation: edgePulse 0.15s infinite alternate; }
-        .edge-light-left { box-shadow: inset 150px 0 120px -30px rgba(234, 179, 8, 1); animation: edgePulse 0.15s infinite alternate; }
-        .edge-light-right { box-shadow: inset -150px 0 120px -30px rgba(234, 179, 8, 1); animation: edgePulse 0.15s infinite alternate; }
-        
-        .font-pixel { font-family: 'Courier New', Courier, monospace; letter-spacing: 1px; }
-        .map-filter { filter: invert(100%) hue-rotate(180deg) contrast(1.2) grayscale(0.2) brightness(0.8); -webkit-filter: invert(100%) hue-rotate(180deg) contrast(1.2) grayscale(0.2) brightness(0.8); mix-blend-mode: hard-light; }
-        .safe-top { padding-top: env(safe-area-inset-top); }
-        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-        .typing-cursor::after { content: '|'; animation: blink 1s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-        @keyframes fadeOut {
-            0% { 
-                opacity: 1; 
-                transform: translateY(0) scale(1); 
-                max-height: 150px; 
-                padding-top: 1rem; 
-                padding-bottom: 1rem; 
-                margin-bottom: 0;
-                border-width: 1px;
-            }
-            50% { 
-                opacity: 0; 
-                transform: translateY(-10px) scale(0.95); 
-                max-height: 150px; 
-                padding-top: 1rem; 
-                padding-bottom: 1rem; 
-                margin-bottom: 0;
-                border-width: 1px;
-            }
-            100% { 
-                opacity: 0; 
-                transform: translateY(-20px) scale(0.9); 
-                max-height: 0; 
-                padding-top: 0; 
-                padding-bottom: 0; 
-                margin-bottom: -0.5rem; /* 抵消 gap 間距 */
-                border-width: 0; 
-                overflow: hidden;
-            }
-        }
-        .animate-fadeOut { animation: fadeOut 0.4s ease-in forwards; }
-=======
         @keyframes edgePulse {
             0% {
                 opacity: 0.5;
@@ -302,7 +257,6 @@
         .markdown-body * {
             max-width: 100%;
         }
->>>>>>> Stashed changes
     </style>
 </head>
 
@@ -567,7 +521,6 @@
         ];
 
         const toPascalCase = (str) => str.replace(/(^\w|-\w)/g, (text) => text.replace(/-/, '').toUpperCase());
-        
         const Icon = ({ name, size = 24, className = "" }) => {
             const containerRef = useRef(null);
             useEffect(() => {
@@ -582,12 +535,9 @@
                 containerRef.current.innerHTML = '';
                 containerRef.current.appendChild(svgElement);
             }, [name, size, className]);
-<<<<<<< Updated upstream
-            return <span ref={containerRef} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 0 }}></span>;
-=======
             return <span ref={containerRef} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 0 }}></span>;
->>>>>>> Stashed changes
         };
+
         const EdgeLightingOverlay = ({ direction }) => {
             if (!direction) return null;
             let lightingClass = "";
@@ -706,7 +656,7 @@
                         <Icon name="phone-call" size={32} />
                     </div>
                     <div className="flex flex-col items-start z-10">
-                        <span className={`text-xl font-black tracking-wide  r ${activating ? 'text-white' : 'text-red-100'}`}>E-SOS 緊急求救</span>
+                        <span className={`text-xl font-black tracking-wider ${activating ? 'text-white' : 'text-red-100'}`}>E-SOS 緊急求救</span>
                         <span className="text-xs text-red-300/80 font-mono">{activating ? `釋放以取消 (${countdown})` : '長按 3 秒發送求救訊號'}</span>
                     </div>
                 </button>
@@ -726,19 +676,10 @@
             return (
                 <div className="fixed top-20 left-0 right-0 z-[60] flex flex-col items-center gap-2 pointer-events-none px-4">
                     {notifications.map((note) => (
-<<<<<<< Updated upstream
-                        // 加入 overflow-hidden 防破版，並根據 note.isClosing 切換動畫
-                        <div key={note.id} className={`pointer-events-auto overflow-hidden w-full max-w-sm p-4 rounded-xl shadow-2xl backdrop-blur-md border flex items-start gap-3 transform transition-all duration-300 ${note.isClosing ? 'animate-fadeOut' : 'animate-fadeIn'} ${note.type === 'danger' ? 'bg-red-900/90 border-red-500 text-white' : (note.type === 'warning' ? 'bg-yellow-900/90 border-yellow-500 text-yellow-100' : 'bg-slate-800/90 border-cyan-500 text-cyan-100')}`}>
-                            
-                            {/* 強制圖示容器為正圓形且絕對置中 */}
-                            <div className={`w-8 h-8 flex items-center justify-center rounded-full shrink-0 ${note.type === 'danger' ? 'bg-red-500 text-white' : (note.type === 'warning' ? 'bg-yellow-500 text-black' : 'bg-cyan-500 text-black')}`}>
-=======
                         <div key={note.id} className={`pointer-events-auto overflow-hidden w-full max-w-sm p-4 rounded-xl shadow-2xl backdrop-blur-md border flex items-start gap-3 transform transition-all duration-300 ${note.isClosing ? 'animate-fadeOut' : 'animate-fadeIn'} ${note.type === 'danger' ? 'bg-red-900/90 border-red-500 text-white' : (note.type === 'warning' ? 'bg-yellow-900/90 border-yellow-500 text-yellow-100' : 'bg-slate-800/90 border-cyan-500 text-cyan-100')}`}>
                             <div className={`w-8 h-8 flex items-center justify-center shrink-0 rounded-full ${note.type === 'danger' ? 'bg-red-500 text-white' : (note.type === 'warning' ? 'bg-yellow-500 text-black' : 'bg-cyan-500 text-black')}`}>
->>>>>>> Stashed changes
                                 <Icon name={note.type === 'danger' ? 'alert-octagon' : (note.type === 'warning' ? 'alert-triangle' : 'info')} size={18} />
                             </div>
-
                             <div className="flex-1 min-w-0">
                                 <h4 className="font-bold text-sm leading-tight">{note.title}</h4>
                                 <p className="text-xs opacity-90 mt-1 leading-relaxed">{note.message}</p>
@@ -819,15 +760,11 @@
                 prevProps.isTracking === nextProps.isTracking;
         });
 
-        const AIReportCard = ({ historyData, summary, avgScore, currentUser }) => {
+        const AIReportCard = ({ currentUser }) => {
             const [report, setReport] = useState("");
             const [loading, setLoading] = useState(false);
             const [hasGenerated, setHasGenerated] = useState(false);
-<<<<<<< Updated upstream
-            const [isInitialLoading, setIsInitialLoading] = useState(true); // 用於區分初次讀取資料庫
-=======
             const [isInitialLoading, setIsInitialLoading] = useState(true);
->>>>>>> Stashed changes
             const [isCollapsed, setIsCollapsed] = useState(false);
 
             // 1. 初始化：進頁面先抓最新的一筆，並填入 report
@@ -867,21 +804,9 @@
             }, [currentUser]);
 
             const generateReport = async () => {
-                if (!historyData || historyData.length === 0) {
-                    setReport("### ⚠️ 數據掃描失敗\n 請先進行至少騎乘一次，V.I.S.O.R. 才能進行行為分析。");
-                    return;
-                }
+                if (!currentUser) return;
                 setLoading(true);
                 try {
-<<<<<<< Updated upstream
-                    const data = historyData || [];
-                    const recentData = data.slice(-10).map(d => ({
-                        s: d.score || 0,
-                        o: d.overspeedCount || 0,
-                        b: d.brakingCount || 0
-                    }));
-
-=======
                     // 近10天
                     const { data: dayStats, error: dayError } = await _supabase
                         .from('day_ride')
@@ -914,20 +839,17 @@
                     近期細節 (日): ${JSON.stringify(airideData.recent)}
                     `;
 
->>>>>>> Stashed changes
                     const systemPrompt =
                         `
                     系統提示:你現在是 V.I.S.O.R.，騎士的專屬 AI 夥伴。請根據遙測數據提供一份「專業」的騎乘分析。
                     回應準則：
                     1. 語氣：白話、親切、精簡。
-                    2. 結構(html邏輯)：我是 V.I.S.O.R.，你的專屬騎乘 AI 夥伴，以下是分析結果：<br><b>===近期行為分析===</b><br>內容：根據最近的騎乘數據，分析騎士在安全評分、超速次數、急煞次數等方面的表現。<br><b>===行為建議===</b><br>內容：根據分析出來的結果，給予適當的建議。<br>==============================================<br>內容：以鼓勵的語氣結尾，激勵騎士持續保持安全的騎乘習慣。
+                    2. 結構(html邏輯)：我是 V.I.S.O.R.，你的專屬騎乘 AI 夥伴，以下是分析結果：<br><b>===行為分析===</b><br>內容：根據長期趨勢及近期細節的數據，分析騎士在安全評分、超速次數、急煞次數、騎乘習慣等方面的表現。<br><b>===行為建議===</b><br>內容：根據分析出來的結果，給予適當的建議。<br>=====================================<br>內容：以鼓勵的語氣結尾，激勵騎士持續保持安全的騎乘習慣。
                     3. 格式：繁體中文，Markdown 格式。
                     4. 避開過於艱澀的術語，改用一般人聽得懂的說法。
                     5. 避免直接標示出數據的具體數值。
                     6. Temperature = 0.0。
                     `;
-
-                    const userPrompt = `【V.I.S.O.R. 遙測數據上傳完成】\n平均安全評分: ${avgScore}\n樣本數據: ${JSON.stringify(recentData)}`;
 
                     const result = await callAI(userPrompt, systemPrompt);
                     setReport(result);
@@ -939,7 +861,7 @@
                         .insert({
                             user_id: currentUser.id,
                             report: result,
-                            created_at: result
+                            created_at: new Date().toISOString()
                         });
 
                     if (error) throw error;
@@ -955,19 +877,6 @@
             };
 
             return (
-<<<<<<< Updated upstream
-                // 加入 max-height 動態縮放
-                <div className={`bg-slate-800 rounded-xl p-4 border border-slate-700 mt-4 relative overflow-hidden transition-all duration-500 ${isCollapsed ? 'max-h-[60px]' : 'max-h-[1000px]'}`}>
-                    <div className="flex justify-between items-center mb-3">
-                        <h3 className="text-cyan-400 font-bold text-sm flex items-center gap-2">
-                            <Icon name="brain-circuit" size={16} /> 
-                            V.I.S.O.R. 戰術分析
-                        </h3>
-                        
-                        <div className="flex items-center gap-2">
-                            {/* 展開且無內容時顯示啟動按鈕 */}
-                            {!isCollapsed && !hasGenerated && !loading && !isInitialLoading && (
-=======
                 <div className={`bg-slate-800 rounded-xl p-4 border border-slate-700 mt-4 relative overflow-hidden transition-all duration-500 flex flex-col ${isCollapsed ? 'max-h-[200px]' : 'max-h-[1000px]'}`}>
 
                     {/* 標題列：加入 shrink-0 防止被擠壓 */}
@@ -980,24 +889,15 @@
                         <div className="flex items-center gap-2">
                             {/* 啟動按鈕：不再因收合而隱藏，改為只要還沒生成就顯示 */}
                             {!hasGenerated && !loading && !isInitialLoading && (
->>>>>>> Stashed changes
                                 <button onClick={generateReport} className="bg-cyan-900/50 hover:bg-cyan-800 text-cyan-300 text-[10px] px-2 py-1 rounded-full border border-cyan-500/30 transition-all flex items-center gap-1">
                                     <Icon name="sparkles" size={10} />啟動分析
                                 </button>
                             )}
-<<<<<<< Updated upstream
-                            
-                            {/* 動態旋轉箭頭按鈕 */}
-                            {!loading && !isInitialLoading && report && (
-                                <button 
-                                    onClick={() => setIsCollapsed(!isCollapsed)} 
-=======
 
                             {/* 完美正圓縮放箭頭 */}
                             {!loading && !isInitialLoading && report && (
                                 <button
                                     onClick={() => setIsCollapsed(!isCollapsed)}
->>>>>>> Stashed changes
                                     className={`w-8 h-8 flex items-center justify-center shrink-0 rounded-full bg-slate-700/50 hover:bg-slate-600 text-cyan-400 transition-transform duration-300 ${isCollapsed ? '' : 'rotate-180'}`}
                                 >
                                     <Icon name="chevron-down" size={16} />
@@ -1005,13 +905,6 @@
                             )}
                         </div>
                     </div>
-<<<<<<< Updated upstream
-                    
-                    {/* 內文淡出淡入控制 */}
-                    <div className={`transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
-                        {(loading || isInitialLoading) && (<div className="flex items-center justify-center py-4 space-x-2 text-cyan-400/70 animate-pulse"><Icon name="loader-2" size={20} className="animate-spin" /><span className="text-xs font-mono">UPLOADING...</span></div>)}
-                        {!loading && !isInitialLoading && report && (<div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50"><div className="text-xs text-slate-300 leading-relaxed font-mono typing-cursor" dangerouslySetInnerHTML={{ __html: window.marked.parse(report) }}></div></div>)}
-=======
 
                     {/* 2. 內容區塊：限制橫向溢出、加寬右側留白讓滾動條更好看 */}
                     <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar pr-2 w-full">
@@ -1027,7 +920,6 @@
                                 <div className="markdown-body text-xs text-slate-300 leading-relaxed font-mono typing-cursor" dangerouslySetInnerHTML={{ __html: window.marked.parse(report) }}></div>
                             </div>
                         )}
->>>>>>> Stashed changes
                     </div>
                 </div>
             );
@@ -1093,51 +985,31 @@
                 </div>
             );
         };
+        // ======================================================================================================================================================================================================
+        // 月曆圖
+        // ======================================================================================================================================================================================================
 
-                    const EventHeatmapChart = ({ data, dataKey, color, label }) => {
-                const timeSlots = [
-                    { label: '凌晨', idx: 0, range: '00:00-04:00' }, { label: '早晨', idx: 1, range: '04:00-08:00' },
-                    { label: '午間', idx: 2, range: '08:00-12:00' }, { label: '下午', idx: 3, range: '12:00-16:00' },
-                    { label: '傍晚', idx: 4, range: '16:00-20:00' }, { label: '深夜', idx: 5, range: '20:00-24:00' }
-                ];
-                const [selectedSlot, setSelectedSlot] = React.useState(null);
-                const days = Array.from({ length: 7 }).map((_, i) => {
-                    const d = new Date(); d.setDate(d.getDate() - (6 - i));
-                    return { dateStr: `${d.getMonth() + 1}/${d.getDate()}`, fullDate: d.toDateString() };
+        // 產生「近 30 天」的日期陣列，包含完整標籤與日數
+        const thirtyDays = () => {
+            const today = new Date();
+            const calendar = [];
+            // 從 29 天前開始算起 (共 30 格)
+            for (let i = 29; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(today.getDate() - i);
+                calendar.push({
+                    fullDate: d.toLocaleDateString('en-CA'), // YYYY-MM-DD (用於匹配)
+                    yearNum: d.getFullYear(), // 年份
+                    monthNum: d.getMonth() + 1, // 月份 (1-12)
+                    dayNum: d.getDate(), // 僅取得「日」(1-31)
+                    isToday: i === 0
                 });
+            }
+            return calendar;
+        };
 
-                const grid = Array(6).fill(0).map(() => Array(7).fill(0).map(() => []));
-                data.forEach(item => {
-                    const itemDate = new Date(item.time || item.timestamp);
-                    const dayIndex = days.findIndex(day => day.fullDate === itemDate.toDateString());
-                    if (dayIndex !== -1) {
-                        const slotIndex = Math.floor(itemDate.getHours() / 4);
-                        if (item[dataKey] > 0) grid[slotIndex][dayIndex].push(item);
-                    }
-                });
+        const days = thirtyDays();
 
-<<<<<<< Updated upstream
-                return (
-                    <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 mt-4 relative overflow-hidden">
-                        <div className="flex items-center justify-between mb-4">
-                            <span className="text-xs font-bold text-slate-400 tracking-widest uppercase">{label}(過去7天)</span>
-                            {selectedSlot && <button onClick={() => setSelectedSlot(null)} className="text-[10px] text-cyan-400">✕ 關閉視窗</button>}
-                        </div>
-                        <div className="flex flex-col">
-                            <div className="flex gap-2 mb-2"><div className="w-10"></div><div className="flex-1 grid grid-cols-7 gap-2">{days.map((day, i) => (<div key={i} className="text-[10px] text-center text-slate-600 font-mono">{day.dateStr}</div>))}</div></div>
-                            <div className="flex gap-2">
-                                <div className="w-10 grid grid-rows-6 gap-2 text-[10px] text-slate-500 font-medium">{timeSlots.map(slot => (<div key={slot.idx} className="flex items-center justify-end h-8 pr-1">{slot.label}</div>))}</div>
-                                <div className="flex-1 grid grid-rows-6 gap-2">
-                                    {[0, 1, 2, 3, 4, 5].map((sIdx) => (
-                                        <div key={sIdx} className="grid grid-cols-7 gap-2 h-8">
-                                            {[0, 1, 2, 3, 4, 5, 6].map((dIdx) => {
-                                                const items = grid[sIdx][dIdx]; const count = items.reduce((sum, curr) => sum + curr[dataKey], 0);
-                                                const isSelected = selectedSlot?.dIdx === dIdx && selectedSlot?.sIdx === sIdx;
-                                                return (<div key={dIdx} onClick={() => count > 0 && setSelectedSlot({ dIdx, sIdx, items, count })} className={`rounded-sm transition-all border ${count > 0 ? 'cursor-pointer' : 'cursor-default'} ${isSelected ? 'border-white scale-110 z-10 shadow-lg' : 'border-white/5'}`} style={{ backgroundColor: count > 0 ? color : 'rgba(255,255,255,0.02)', opacity: count > 0 ? Math.min(0.4 + (count * 0.1), 1) : 1 }} />);
-                                            })}
-                                        </div>
-                                    ))}
-=======
         const EventCalendar = ({ data, dataKey, color, label, currentUser }) => {
             const [selectedDay, setSelectedDay] = useState(null); // 存點擊的那一天的統計數據
             const [rideDetails, setRideDetails] = useState([]); // 存詳細行程
@@ -1399,150 +1271,40 @@
                                             </div>
                                         ))
                                     )}
->>>>>>> Stashed changes
                                 </div>
                             </div>
                         </div>
-                        {selectedSlot && (
-                            <div className="absolute top-12 left-4 right-4 z-50 bg-slate-950 border border-white/20 rounded-lg shadow-2xl p-3 flex flex-col max-h-[180px]">
-                                <div className="flex justify-between items-center mb-2 pb-1 border-b border-white/10"><span className="text-[11px] font-bold text-white">🗓️{days[selectedSlot.dIdx].dateStr} {timeSlots.find(s => s.idx === selectedSlot.sIdx).label} ({selectedSlot.count}次)</span></div>
-                                <div className="overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                                    {selectedSlot.items.map((item, i) => (
-                                        <div key={i} className="text-[10px] bg-white/5 p-2 rounded border-l-2" style={{ borderColor: color }}><div className="flex justify-between text-cyan-400 mb-1"><span>{new Date(item.time || item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span><span className="font-bold">{item[dataKey]} 次</span></div><div className="text-slate-300 truncate">📍 {item.location}</div></div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                );
-            };
-
-            const RealDataDashboard = ({ data }) => {
-                const [view, setView] = useState('session');
-                const displaySession = data.overspeed.filter(i => i.speed_limit === -1);
-                const displayOverspeed = data.overspeed.filter(i => i.speed_limit !== -1);
-                const displayTilt = data.tilt.filter(i => i.status !== 'safe');
-                const displayBrake = data.brake.filter(i => i.status !== 'safe');
-
-                return (
-                    <div className="bg-slate-800/80 rounded-xl p-4 border border-slate-700 mt-6 shadow-lg">
-                        <div className="flex justify-between items-center mb-4"><h3 className="text-white font-bold text-sm flex items-center gap-2"><Icon name="hard-drive" size={16} className="text-cyan-400" />實機硬體偵測紀錄</h3><span className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">Real-World Data</span></div>
-                        <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-600 mb-4">
-                            <button onClick={() => setView('session')} className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-all ${view === 'session' ? 'bg-cyan-900/50 text-cyan-400 border border-cyan-500/50' : 'text-slate-500 hover:text-slate-300'}`}>紀錄 ({displaySession.length})</button>
-                            <button onClick={() => setView('overspeed')} className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-all ${view === 'overspeed' ? 'bg-red-900/50 text-red-400 border border-red-500/50' : 'text-slate-500 hover:text-slate-300'}`}>超速 ({displayOverspeed.length})</button>
-                            <button onClick={() => setView('tilt')} className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-all ${view === 'tilt' ? 'bg-orange-900/50 text-orange-400 border border-orange-500/50' : 'text-slate-500 hover:text-slate-300'}`}>傾角 ({displayTilt.length})</button>
-                            <button onClick={() => setView('brake')} className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-all ${view === 'brake' ? 'bg-yellow-900/50 text-yellow-400 border border-yellow-500/50' : 'text-slate-500 hover:text-slate-300'}`}>急煞 ({displayBrake.length})</button>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left text-xs text-slate-400">
-                                <thead className="bg-slate-900 text-slate-500 font-mono"><tr><th className="p-2 rounded-tl-lg">{view === 'session' ? '結算時間' : '發生時間'}</th><th className="p-2">{view === 'session' ? '全趟最高時速' : '偵測數值'}</th><th className="p-2 rounded-tr-lg">{view === 'session' ? '測速區最高速' : '基準/限速'}</th></tr></thead>
-                                <tbody>
-                                    {view === 'session' && displaySession.length === 0 && <tr><td colSpan="3" className="p-4 text-center">尚無完整行駛紀錄</td></tr>}
-                                    {view === 'session' && displaySession.map(item => (<tr key={item.id} className="border-b border-slate-700/50"><td className="p-2 text-white">{new Date(item.created_at).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td><td className="p-2 text-cyan-400 font-bold">{item.current_speed} km/h</td><td className="p-2 text-slate-400">{item.latitude ? `${item.latitude} km/h` : '無'}</td></tr>))}
-                                    {view === 'overspeed' && displayOverspeed.length === 0 && <tr><td colSpan="3" className="p-4 text-center">表現優良，本次無紀錄</td></tr>}
-                                    {view === 'overspeed' && displayOverspeed.map(item => (<tr key={item.id} className="border-b border-slate-700/50"><td className="p-2 text-white">{new Date(item.created_at).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td><td className="p-2 text-red-400 font-bold">{item.current_speed} km/h</td><td className="p-2 text-slate-500">{item.speed_limit} km/h</td></tr>))}
-                                    {view === 'tilt' && displayTilt.length === 0 && <tr><td colSpan="3" className="p-4 text-center">無危險傾角紀錄</td></tr>}
-                                    {view === 'tilt' && displayTilt.map(item => (<tr key={item.id} className="border-b border-slate-700/50"><td className="p-2 text-white">{new Date(item.created_at).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td><td className="p-2 text-orange-400 font-bold">{item.angle}°</td><td className="p-2 text-slate-500">40°</td></tr>))}
-                                    {view === 'brake' && displayBrake.length === 0 && <tr><td colSpan="3" className="p-4 text-center">無急煞紀錄</td></tr>}
-                                    {view === 'brake' && displayBrake.map(item => (<tr key={item.id} className="border-b border-slate-700/50"><td className="p-2 text-white">{new Date(item.created_at).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td><td className="p-2 text-yellow-400 font-bold">-{item.deceleration?.toFixed(1)} km/h/s</td><td className="p-2 text-slate-500">-10.0</td></tr>))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                );
-            };
+                    )}
+                </div>
+            );
+        };
+        // ======================================================================================================================================================================================================
+        // 月曆圖 結束 
+        // ======================================================================================================================================================================================================
 
 
         const App = () => {
             const [isBooting, setIsBooting] = useState(true);
             const [heading, setHeading] = useState(0); // Added Heading State
             const [currentUser, setCurrentUser] = useState(null);
-            const [activeTab, setActiveTab] = useState('login');// Default to login
-            const [statsViewMode, setStatsViewMode] = useState('real');
+            const [activeTab, setActiveTab] = useState('login'); // Default to login
             const [isMuted, setIsMuted] = useState(false);
             const [isEdgeMuted, setIsEdgeMuted] = useState(false); // 盲點警示靜音狀態
-
-
-            const [currentSessionId, setCurrentSessionId] = useState(null);
-            const [isRiding, setIsRiding] = useState(false);
-            const isRidingRef = useRef(false);
-            const rideStartTimeRef = useRef(0);
-            const realRideEventsRef = useRef({ overspeed: [], tilt: [], brake: [] }); // 擴充紀錄陣列
-            // 用於計算急煞與傾角的暫存變數
-            const lastSpeedRef = useRef(null);
-            const lastTimeRef = useRef(null);
-            const tiltEventActive = useRef(false);
-            const maxTiltRef = useRef(0);
-            const rideMaxSpeedRef = useRef(0);
-            const rideMaxCamSpeedRef = useRef(0);            
-            const enableSpeedCamRef = useRef(enableSpeedCam);
-            const cameraAlertRef = useRef(cameraAlert);
-            const currentSessionIdRef = useRef(currentSessionId);
-
-
             const [forceSpeeding, setForceSpeeding] = React.useState(true); // 控制騎乘模擬是否超速
             const currentRideDataRef = React.useRef([]); //分析專用的 Ref
             const [weeklyHistory, setWeeklyHistory] = React.useState([]); //放置分析歷史紀錄
 
-            const [realData, setRealData] = useState({
-                overspeed: [],
-                tilt: [],
-                brake: []
-            });
-
-            React.useEffect(() => {
-                const fetchRealData = async () => {
-                    if (!currentUser || activeTab !== 'stats') return;
-
-                    try {
-                        // 並行抓取三張表的前 10 筆最新紀錄
-                        const [osRes, tiltRes, brakeRes] = await Promise.all([
-                            _supabase.from('real_overspeed').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(10),
-                            _supabase.from('real_lean_angle').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(10),
-                            _supabase.from('real_hard_brake').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(10)
-                        ]);
-
-                        setRealData({
-                            overspeed: osRes.data || [],
-                            tilt: tiltRes.data || [],
-                            brake: brakeRes.data || []
-                        });
-                    } catch (err) {
-                        console.error("抓取真實數據失敗:", err);
-                    }
-                };
-                fetchRealData();
-            }, [activeTab, currentUser]);
-
             //檢查初始載入 讀取分析歷史紀錄
             React.useEffect(() => {
-                const fetchFreshHistory = async () => {
-                    if (!currentUser || activeTab !== 'stats') return;
-                    console.log("🔄 切換至分析介面，正在從雲端抓取最新紀錄...");
+                const savedHistory = localStorage.getItem('ride_history');
+                if (savedHistory) {
                     try {
-                        const { data, error } = await _supabase
-                            .from('ride_history')
-                            .select('*')
-                            .eq('user_id', currentUser.id)
-                            .order('time', { ascending: false });
-
-                        if (error) throw error;
-                        if (data) {
-                            const formattedData = data.map(item => ({
-                                ...item,
-                                overspeedCount: item.class === 'overspeed' ? item.count : 0,
-                                brakingCount: item.class === 'braking' ? item.count : 0,
-                                tiltCount: item.class === 'tilt' ? item.count : 0
-                            }));
-                            setWeeklyHistory(formattedData);
-                            localStorage.setItem('ride_history', JSON.stringify(formattedData));
-                        }
-                    } catch (err) {
-                        console.error("❌ 最新資料同步失敗:", err.message);
+                        setWeeklyHistory(JSON.parse(savedHistory));
+                    } catch (e) {
+                        console.error("載入紀錄失敗:", e);
                     }
-                };
-                fetchFreshHistory();
-            }, [activeTab, currentUser]); // 僅在頁面初次載入時執行
+                }
+            }, []); // 僅在頁面初次載入時執行
 
             // Parse Direction Helper
             const parseDirection = (dirText) => {
@@ -1631,8 +1393,6 @@
 
                     // 3. 登入成功
                     if (data.user) {
-                        setCurrentUser(data.user); // 確保狀態立即更新
-                        setActiveTab('home');      // 強制跳轉到監控分頁
                         logToScreen(`V.I.S.O.R. 系統登入：${authForm.username}`);
                     }
                 } catch (err) {
@@ -1747,95 +1507,7 @@
 
                 runBoot();
             }, []);
-            const [enableSpeedCam, setEnableSpeedCam] = useState(false);
-            
-            // 真實騎乘結束時的結算與資料庫總結寫入
-            const finalizeRealRide = async () => {
-                const events = realRideEventsRef.current;
-                const sid = currentSessionIdRef.current;
-                const uid = currentUser?.id;
-
-                // 1. 在超速表寫入一筆「完成一次行駛」的計數紀錄 (以 speed_limit: -1 作為標記)
-                await _supabase.from('real_overspeed').insert([{
-                    user_id: uid, session_id: sid, 
-                    current_speed: rideMaxSpeedRef.current, // 存入：全趟最高時速
-                    latitude: rideMaxCamSpeedRef.current,   // 借放：測速區最高時速
-                    speed_limit: -1, 
-                    
-                }]);
-
-                let tiltReport = "未連接硬體";
-                let brakeReport = "未連接硬體";
-
-                // 2. 透過硬體是否連線 (isConnected) 來決定是否寫入安全資料
-                if (isConnected) {
-                    // --- 處理傾角 ---
-                    if (events.tilt.length === 0) {
-                        // 寫入資料庫，代表硬體有連線且整趟安全
-                        await _supabase.from('real_lean_angle').insert([{ user_id: uid, session_id: sid, status: 'safe', angle: 0}]);
-                        tiltReport = "✅ 本次騎乘安全";
-                    } else {
-                        tiltReport = `⚠️ 不安全 (發生 ${events.tilt.length} 次危險傾角，最大 ${Math.max(...events.tilt)}°)`;
-                    }
-
-                    // --- 處理急煞 ---
-                    if (events.brake.length === 0) {
-                        // 寫入資料庫，代表硬體有連線且整趟安全
-                        await _supabase.from('real_hard_brake').insert([{ user_id: uid, session_id: sid, status: 'safe', deceleration: 0 }]);
-                        brakeReport = "✅ 本次騎乘安全";
-                    } else {
-                        brakeReport = `⚠️ 不安全 (發生 ${events.brake.length} 次急煞，最大 -${Math.max(...events.brake).toFixed(1)} km/h/s)`;
-                    }
-                }
-
-                // 3. 發送結算通知
-                addNotification(
-                    'success', 
-                    '騎乘紀錄已結算', 
-                    `[已計入 1 次行駛總數]\n【超速】共 ${events.overspeed.length} 處\n【傾角】${tiltReport}\n【急煞】${brakeReport}`
-                );
-
-                setActiveTab('stats');
-            };
-            const handleToggleDetection = () => {
-                const newState = !enableSpeedCam;
-                setEnableSpeedCam(newState);
-                enableSpeedCamRef.current = newState; // 👈 立即同步狀態給 GPS
-
-                if (newState) {
-                    // --- 1. 啟動監控 ---
-                    const newSessionId = crypto.randomUUID();
-                    setCurrentSessionId(newSessionId);
-                    currentSessionIdRef.current = newSessionId; // 👈 立即寫入 Session ID
-                    setIsRiding(true);
-                    isRidingRef.current = true; // 👈 立即同步騎乘狀態
-                    
-                    rideStartTimeRef.current = Date.now(); // 記錄開始時間
-                    lastSpeedRef.current = null; lastTimeRef.current = null; tiltEventActive.current = false; maxTiltRef.current = 0;
-                    rideMaxSpeedRef.current = 0; rideMaxCamSpeedRef.current = 0;
-                    realRideEventsRef.current = { overspeed: [] }; // 清空暫存，準備記錄這趟的新資料
-
-                    logToScreen(`V.I.S.O.R. 實際偵測啟動 (ID: ${newSessionId.substring(0, 8)})`);
-                    addNotification('success', '監控啟動', '已開始紀錄實際行駛數據');
-                } else {
-                    // --- 2. 停止監控 ---
-                    setIsRiding(false);
-                    setCurrentSessionId(null);
-
-                    const duration = Date.now() - rideStartTimeRef.current;
-
-                    // 防呆機制：判斷是否超過 3 秒 (3000 毫秒)
-                    if (duration > 3000) {
-                        logToScreen("V.I.S.O.R. 實際偵測已停止，產生報告...");
-                        addNotification('info', '監控結束', '騎乘紀錄已結算');
-                        finalizeRealRide(); // 呼叫結算報告
-                    } else {
-                        logToScreen("啟動時間過短 (< 3秒)，已取消紀錄");
-                        addNotification('warning', '偵測取消', '啟動時間不足 3 秒，視為誤觸不予紀錄');
-                    }
-                }
-            };
-
+            const [enableSpeedCam, setEnableSpeedCam] = useState(true);
             const [simulatedSpeed, setSimulatedSpeed] = useState(0);
             const [tiltAngle, setTiltAngle] = useState(0);
             const [hasGyroPermission, setHasGyroPermission] = useState(false);
@@ -1875,28 +1547,7 @@
             const socketRef = useRef(null);
 
             // Notification Helper
-            // Notification Helper (防洗版與消失動畫升級版)
             const addNotification = useCallback((type, title, message) => {
-<<<<<<< Updated upstream
-                const id = Date.now() + Math.random(); // 避免極短時間產生相同 ID
-                
-                setNotifications(prev => {
-                    // 防重複通知機制
-                    if (prev.some(n => n.title === title && n.message === message)) return prev;
-                    // 加入 isClosing 屬性，並限制最多保留 3 則
-                    return [...prev, { id, type, title, message, isClosing: false }].slice(-3);
-                });
-
-                // 4.6 秒後觸發退場壓縮動畫
-                setTimeout(() => {
-                    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isClosing: true } : n));
-                }, 3600); 
-
-                // 5 秒後徹底從 DOM 移除
-                setTimeout(() => {
-                    setNotifications(prev => prev.filter(n => n.id !== id));
-                }, 4000); 
-=======
                 const id = Date.now() + Math.random();
                 setNotifications(prev => {
                     if (prev.some(n => n.title === title && n.message === message)) return prev;
@@ -1908,7 +1559,6 @@
                 setTimeout(() => {
                     setNotifications(prev => prev.filter(n => n.id !== id));
                 }, 5000);
->>>>>>> Stashed changes
             }, []);
 
             const removeNotification = (id) => setNotifications(prev => prev.filter(n => n.id !== id));
@@ -1935,31 +1585,6 @@
                 }
                 addNotification('info', '模式切換', `哨兵模式已${newState ? '開啟' : '關閉'}`);
             };
-<<<<<<< Updated upstream
-            // 👇 新增：修復設定頁面黑畫面的陀螺儀授權函式
-            const requestGyroPermission = async () => {
-                if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                    try {
-                        const permission = await DeviceOrientationEvent.requestPermission();
-                        if (permission === 'granted') {
-                            setHasGyroPermission(true);
-                            window.addEventListener('deviceorientation', handleOrientation);
-                            addNotification('success', '權限已授權', '傾角偵測功能已啟用');
-                        } else {
-                            addNotification('danger', '權限被拒絕', '無法使用傾角偵測');
-                        }
-                    } catch (error) {
-                        console.error("Gyro permission error:", error);
-                    }
-                } else {
-                    // 非 iOS 13+ 裝置直接啟用
-                    setHasGyroPermission(true);
-                    window.addEventListener('deviceorientation', handleOrientation);
-                    addNotification('success', '感測器已啟用', '傾角偵測已就緒');
-                }
-            };
-=======
->>>>>>> Stashed changes
 
             // Refs
             const simRef = useRef(null);
@@ -2143,25 +1768,15 @@
                 }
             };
 
-<<<<<<< Updated upstream
-            //預留給開始騎乘紀錄按鈕================================================
-=======
             // 偵測開始騎乘/結束騎乘邏輯
             const [isRiding, setIsRiding] = React.useState(false);
             const isRidingRef = React.useRef(false);
             const rideStartTimeRef = useRef(0);
->>>>>>> Stashed changes
 
-            // 當 State 改變時，同步更新 Ref (確保底層 GPS 能讀取到最新狀態)
+
+            // 當 State 改變時，同步更新 Ref
             React.useEffect(() => {
                 isRidingRef.current = isRiding;
-<<<<<<< Updated upstream
-                enableSpeedCamRef.current = enableSpeedCam;
-                cameraAlertRef.current = cameraAlert;
-                currentSessionIdRef.current = currentSessionId;
-            }, [isRiding, enableSpeedCam, cameraAlert, currentSessionId]);
-            //=====================================================================
-=======
             }, [isRiding]);
 
             const handleToggleDetection = () => {
@@ -2198,7 +1813,6 @@
                     }
                 }
             };
->>>>>>> Stashed changes
 
             // 統一處理來自模擬跟實際的數據
             const handleIncomingData = (data) => {
@@ -2208,7 +1822,7 @@
                 // 2. 建立標準數據點 (確保不管來源是誰，存入的欄位名稱都統一)
                 const newPoint = {
                     rawTime: now.getTime(), // 用來做數學計算
-                    time: now.toISOString(), // 用來做分析
+                    time: now.toISOString(), // 用於上傳supabase
                     location: data.location, // 位置資訊
                     limit: data.limit, // 限速
                     speed: data.speed, // 時速
@@ -2229,9 +1843,9 @@
                 setRideData(prev => [...prev, newPoint]);
             };
 
-            //================================================
+            //===========================================================
             //                 事件判斷區 
-            //================================================
+            //===========================================================
 
             //判斷有幾次超速事件
             const analyzeOverspeed = (ridePoints) => {
@@ -2256,13 +1870,10 @@
                                 isSpeeding = true;
                                 count++; // 觸發次數+1
                                 currentEvent = {
-                                    time: point.time, // 紀錄起始時間
+                                    time: point.time, // 紀錄起始時間(字串)
+                                    rawTime: point.rawTime, // 紀錄起始時間(數字)
                                     maxSpeed: point.speed,
-<<<<<<< Updated upstream
-                                    lowSpeed: point.speed, // 初始化最低速為起點速
-=======
                                     lowSpeed: point.speed,
->>>>>>> Stashed changes
                                     limit: limit
                                 };
                             } else { // 持續超速中：更新最高、最低速
@@ -2275,13 +1886,11 @@
                             }
                         } else { // 超速結束
                             if (isSpeeding && currentEvent) {
-<<<<<<< Updated upstream
-=======
                                 const eventSeconds = (point.rawTime - currentEvent.rawTime) / 1000;
->>>>>>> Stashed changes
                                 events.push({
-                                    time: currentEvent.time,        // 開始時間
-                                    endtime: point.time,             // 結束時間
+                                    time: currentEvent.time,        // 開始時間(字串)
+                                    endtime: point.time,             // 結束時間(字串)
+                                    duration: eventSeconds, //紀錄超速幾秒
                                     maxspeed: Math.round(currentEvent.maxSpeed), // 這段區間的最高時速
                                     lowspeed: Math.round(currentEvent.lowSpeed), // 這段區間的最低時速
                                     limit: currentEvent.limit,
@@ -2300,10 +1909,7 @@
                     events.push({
                         time: currentEvent.time,
                         endtime: lastPoint.time,
-<<<<<<< Updated upstream
-=======
                         duration: (lastPoint.rawTime - currentEvent.rawTime) / 1000,
->>>>>>> Stashed changes
                         maxspeed: Math.round(currentEvent.maxSpeed),
                         lowspeed: Math.round(currentEvent.lowSpeed),
                         limit: currentEvent.limit,
@@ -2330,14 +1936,15 @@
                 let events = []; // 總結事件的細節
 
                 ridePoints.forEach((point) => {
-                    // 判定門檻：傾角 >= 40 度
+                    // 判定門檻：傾角 >= 40 度，論文定義危險壓彎計次區間 (30° ~ 45°)，為避免過於敏感，這裡設定在 40° 以上才算一次事件開始
                     if (point.tilt >= 40) {
                         if (!isTilting) {
                             // 進入危險傾角
                             isTilting = true;
                             count++;
                             currentEvent = {
-                                time: point.time,       // 開始傾斜時間
+                                time: point.time,       // 開始傾斜時間(字串)
+                                rawTime: point.rawTime,       // 開始傾斜時間(數字)
                                 maxTilt: point.tilt,    // 初始傾角
                                 maxSpeed: point.speed,  // 進入時的時速
                                 lowSpeed: point.speed,  // 初始化最低速
@@ -2356,9 +1963,11 @@
                         }
                     } else {
                         if (isTilting && currentEvent) { // 傾角恢復
+                            const eventSeconds = (point.rawTime - currentEvent.rawTime) / 1000;
                             events.push({
                                 time: currentEvent.time,        // 起始時間
                                 endtime: point.time,             // 結束時間
+                                duration: eventSeconds, // 傾斜持續幾秒
                                 maxspeed: Math.round(currentEvent.maxSpeed),
                                 lowspeed: Math.round(currentEvent.lowSpeed),
                                 tilt: Math.round(currentEvent.maxTilt), // 記錄這段區間最大的傾角
@@ -2375,6 +1984,7 @@
                     events.push({
                         time: currentEvent.time,
                         endtime: lastPoint.time,
+                        duration: (lastPoint.rawTime - currentEvent.rawTime) / 1000,
                         maxspeed: Math.round(currentEvent.maxSpeed),
                         lowspeed: Math.round(currentEvent.lowSpeed),
                         tilt: Math.round(currentEvent.maxTilt),
@@ -2466,9 +2076,9 @@
                 };
             };
 
-            //================================================
+            //=============================================================
             //                 事件判斷區 結束
-            //================================================
+            //=============================================================
 
             // 結算騎乘表現的邏輯
             const finalizeRide = async (camera = null) => {
@@ -2487,17 +2097,39 @@
                 const brakingRes = analyzeBraking(dataToAnalyze);
                 const tiltRes = analyzeTilt(dataToAnalyze);
 
-                // 3. 計算分數
-                const totalPenalty = (overspeedRes.count * 2) + (brakingRes.count * 3) + (tiltRes.count * 5);
+                // 計算分數
+                let overspeedPenalty = 0;
+                let tiltPenalty = 0;
+
+                // 超速扣分邏輯
+                overspeedRes.events.forEach(ev => {
+                    // n 代表過了幾個 5 秒 (0s=0, 5s=1, 10s=2)
+                    const n = Math.floor(ev.duration / 5);
+                    // 公式：2 的 (n+1) 次方
+                    // 0~4.9s  => 2^1 = 2分
+                    // 5~9.9s  => 2^2 = 4分
+                    // 10~14.9s => 2^3 = 8分
+                    overspeedPenalty += Math.pow(2, n + 1);
+                });
+
+                // 危險傾角扣分邏輯
+                tiltRes.events.forEach(ev => {
+                    const n = Math.floor(ev.duration / 5);
+                    tiltPenalty += Math.pow(5, n + 1);
+                });
+
+                // 急煞扣分邏輯
+                const brakingPenalty = (brakingRes.count || 0) * 3;
+
+                // 總結分數
+                const totalPenalty = overspeedPenalty + tiltPenalty + brakingPenalty;
                 const finalScore = Math.max(0, 100 - totalPenalty);
 
+                logToScreen(`扣分統計: 超速-${overspeedPenalty}, 傾角-${tiltPenalty}, 急煞-${brakingPenalty}`);
+
                 // 取得地點名稱，如果沒傳入就顯示 "未知路段"
-                const locationName = camera ? camera.address : "未知路段";
                 const firstPoint = dataToAnalyze[0]; // 行程開始點
                 const lastPoint = dataToAnalyze[dataToAnalyze.length - 1]; // 取得最後一個點的狀態
-<<<<<<< Updated upstream
-
-=======
                 // 優先順序：
                 // 1. 傳入的實體相機地址 
                 // 2. 數據點內的 location 欄位 
@@ -2505,7 +2137,6 @@
                 const locationName = (camera && camera.address) || (lastPoint && lastPoint.location) || "未知路段";
 
                 const rideId = Date.now().toString(); // 用來判斷是否為同一趟用
->>>>>>> Stashed changes
                 let recordsToUpload = []; // 準備要上傳的資料陣列
 
                 // 統一處理函數：
@@ -2517,18 +2148,16 @@
                             count: ev.count || 1,
                             time: ev.time,
                             endtime: ev.endtime,
+                            duration: ev.duration || 0,
                             location: locationName,
                             limit: lastPoint.limit,
                             maxspeed: ev.maxspeed,
                             lowspeed: ev.lowspeed,
-<<<<<<< Updated upstream
-                            overspeed: ev.maxoverspeed || 0,
-=======
                             overspeed: ev.overspeed || 0,
->>>>>>> Stashed changes
                             braking: ev.braking || 0,
                             tilt: ev.tilt || 0,
-                            score: finalScore
+                            score: finalScore,
+                            ride_id: rideId // 用來判斷是否為同一趟用
                         });
                     });
                 };
@@ -2545,6 +2174,7 @@
                         count: 0,
                         time: firstPoint.time,
                         endtime: lastPoint.time,
+                        duration: 0,
                         location: locationName,
                         limit: lastPoint.limit,
                         maxspeed: lastPoint.speed,
@@ -2552,7 +2182,8 @@
                         overspeed: 0,
                         braking: 0,
                         tilt: 0,
-                        score: 100
+                        score: 100,
+                        ride_id: rideId
                     });
                 }
 
@@ -2564,11 +2195,7 @@
                     // 執行 7 天過濾
                     const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
                     const now = new Date().getTime();
-                    updated = updated.filter(item => {
-                        const recordTime = item.timestamp || new Date(item.time).getTime();
-                        return !recordTime || (now - recordTime) < SEVEN_DAYS_MS;
-
-                    });
+                    updated = updated.filter(item => !item.timestamp || (now - item.timestamp) < SEVEN_DAYS_MS);
 
                     localStorage.setItem('ride_history', JSON.stringify(updated));
                     logToScreen(`歷史紀錄已更新，目前總筆數:${updated.length}`);
@@ -2580,13 +2207,13 @@
                     const { error } = await _supabase.from('ride_history').insert(recordsToUpload);
                     if (error) throw error;
                     logToScreen("✅ 成功同步至雲端資料庫");
-                } catch (err) {
-                    logToScreen.error("❌ 雲端同步失敗:", err.message);
+                } catch (error) {
+                    logToScreen(`❌ 雲端同步失敗:${error.message}`);
                 }
 
                 // 測試用的 alert
                 if (isSimulatingRef.current) {
-                    alert(`✅ 模擬結束：已通過 ${locationName} 並續行 100m，本次超速：${overspeedRes.overspeed} 次，急煞：${brakingRes.braking} 次，危險傾角：${tiltRes.tilt} 次，最終得分：${finalScore} 分`);
+                    alert(`✅ 模擬結束：已通過 ${locationName} 並續行 100m，本次超速：${overspeedRes.count} 次，急煞：${brakingRes.count} 次，危險傾角：${tiltRes.count} 次，最終得分：${finalScore} 分`);
                 }
 
                 // 7. 重置臨時數據
@@ -2691,27 +2318,18 @@
                         if (cameraAlert !== null) setCameraAlert(null);
                     }
 
-                    // 結束條件：通過後行駛超過 100 公尺
-                    if (passedTarget && dist > 100) {
-                        logToScreen("滿足結束條件，執行結算");
+                    // // 結束條件：通過後行駛超過 100 公尺
+                    // if (passedTarget && dist > 100) {
+                    //     logToScreen("滿足結束條件，執行結算"); 
 
-                        // 先停止計時器，防止重複觸發
-                        if (simRef.current) {
-                            clearInterval(simRef.current);
-                            simRef.current = null;
-                        }
+                    //     // 先停止計時器，防止重複觸發
+                    //     if (simRef.current) {
+                    //         clearInterval(simRef.current);
+                    //         simRef.current = null;
+                    //     }
 
-                        finalizeRide(targetCam); //呼叫結算騎乘表現的邏輯
+                    //     finalizeRide(targetCam); //呼叫結算騎乘表現的邏輯
 
-                        setIsRiding(false);
-                        setSimulationMode(false);
-                        isSimulatingRef.current = false;
-
-                        setSimulatedSpeed(0);
-                    }
-
-<<<<<<< Updated upstream
-=======
                     //     setIsRiding(false);
                     //     setSimulationMode(false);
                     //     isSimulatingRef.current = false;
@@ -2719,7 +2337,6 @@
                     //     setSimulatedSpeed(0);
                     // }
 
->>>>>>> Stashed changes
                     // --- 隨機觸發邊緣預警 ---
                     if (Math.random() > 0.96) {
                         const dirs = ['left', 'right', 'rear'];
@@ -2858,20 +2475,11 @@
                 return () => { document.removeEventListener('touchstart', unlockAudio); document.removeEventListener('click', unlockAudio); };
             }, []);
 
-// --- GPS 定位與實機數據寫入 ---
             useEffect(() => {
-<<<<<<< Updated upstream
-                let watchId;
-                
-                const startGPS = () => {
-                    if (navigator.geolocation) {
-                        watchId = navigator.geolocation.watchPosition(async (pos) => {
-=======
                 document.addEventListener("deviceready", () => {
                     setIsConnected(false);
                     if (navigator.geolocation) {
                         navigator.geolocation.watchPosition((pos) => {
->>>>>>> Stashed changes
                             const newLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                             setLocation(newLoc);
                             if (trackRef.current) trackRef.current.push([newLoc.lat, newLoc.lng]);
@@ -2879,136 +2487,19 @@
                             if (!isSimulatingRef.current) {
                                 const speedKmh = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
                                 setSimulatedSpeed(speedKmh);
-<<<<<<< Updated upstream
-                                // 隨時記錄最高時速
-                                if (enableSpeedCamRef.current && isRidingRef.current) {
-                                    if (speedKmh > rideMaxSpeedRef.current) rideMaxSpeedRef.current = speedKmh;
-                                    // 若當下有測速警示，則記錄測速區的最高時速
-                                    if (cameraAlertRef.current && speedKmh > rideMaxCamSpeedRef.current) {
-                                        rideMaxCamSpeedRef.current = speedKmh;
-                                    }
-                                }
-                                // --- 實機急煞偵測與寫入 ---
-                                const nowTime = Date.now();
-                                if (lastSpeedRef.current !== null && lastTimeRef.current !== null) {
-                                    const timeDiff = (nowTime - lastTimeRef.current) / 1000;
-                                    // 確保時間差合理，避免暫停過久導致運算錯誤
-                                    if (timeDiff > 0 && timeDiff < 5) { 
-                                        const decel = (lastSpeedRef.current - speedKmh) / timeDiff; // 計算減速度 km/h/s
-                                        // 減速度大於 10 且偵測啟動中
-                                        if (decel >= 10 && enableSpeedCamRef.current && isRidingRef.current) {
-                                            try {
-                                                _supabase.from('real_hard_brake').insert([{
-                                                    user_id: currentUser?.id,
-                                                    session_id: currentSessionIdRef.current,
-                                                    deceleration: decel,
-                                                    status: 'danger',
-                                                    
-                                                }]).then(({ error }) => {
-                                                    if (!error) {
-                                                        realRideEventsRef.current.brake.push(decel);
-                                                        logToScreen(`[REAL-TIME] 記錄實機急煞: -${decel.toFixed(1)} km/h/s`);
-                                                    }
-                                                });
-                                            } catch (err) { console.error(err); }
-                                        }
-                                    }
-                                }
-                                lastSpeedRef.current = speedKmh;
-                                lastTimeRef.current = nowTime;
-                                // --- 急煞偵測結束 ---
-
-                                // 實機超速寫入邏輯
-                                const currentCam = cameraAlertRef.current;
-                                if (enableSpeedCamRef.current && isRidingRef.current && currentCam) {
-                                    if (currentCam.distance < 100 && speedKmh > currentCam.limit) {
-                                        try {
-                                            const { error } = await _supabase
-                                                .from('real_overspeed')
-                                                .insert([{
-                                                    user_id: currentUser?.id,
-                                                    session_id: currentSessionIdRef.current,
-                                                    latitude: pos.coords.latitude,
-                                                    longitude: pos.coords.longitude,
-                                                    current_speed: speedKmh,
-                                                    speed_limit: currentCam.limit,
-                                                    
-                                                }]);
-
-                                            if (error) throw error;
-                                            logToScreen(`[REAL-TIME] 自動記錄真實超速: ${speedKmh}km/h`);
-                                            
-                                            realRideEventsRef.current.overspeed.push({
-                                                address: currentCam.address,
-                                                speed: speedKmh,
-                                                overspeedAmt: speedKmh - currentCam.limit
-                                            });
-                                        } catch (err) {
-                                            console.error("寫入 real_overspeed 失敗:", err.message);
-                                        }
-                                    }
-                                }
-
-=======
 
                                 // Update heading only if moving to avoid jitter
->>>>>>> Stashed changes
                                 if (speedKmh > 3 && pos.coords.heading !== null && !isNaN(pos.coords.heading)) {
                                     setHeading(pos.coords.heading);
                                 }
                             }
                         }, (err) => console.error("GPS Error:", err), { enableHighAccuracy: true });
                     }
-                };
-
-                // 相容 Cordova APP 與一般網頁瀏覽器
-                if (window.cordova) {
-                    document.addEventListener("deviceready", startGPS, false);
-                } else {
-                    startGPS(); 
-                }
-
-                return () => {
-                    if (navigator.geolocation && watchId) navigator.geolocation.clearWatch(watchId);
-                    if (window.cordova) document.removeEventListener("deviceready", startGPS);
-                };
-            }, [currentUser]);
-            // ... (保留下方原有的陀螺儀邏輯)
-
-
-            // --- 實機傾角監控與寫入 ---
-            useEffect(() => {
-                if (!isRiding || !enableSpeedCam || isSimulatingRef.current) return;
-
-                const absTilt = Math.abs(tiltAngle);
-
-                if (absTilt >= 40) {
-                    // 進入危險傾角範圍，開始紀錄最大值
-                    if (!tiltEventActive.current) tiltEventActive.current = true;
-                    if (absTilt > maxTiltRef.current) maxTiltRef.current = absTilt;
-                } else if (absTilt < 30 && tiltEventActive.current) {
-                    // 車身恢復直立，進行資料庫寫入 (只寫入該次事件的最大角度)
-                    const finalTilt = maxTiltRef.current;
-                    tiltEventActive.current = false;
-                    maxTiltRef.current = 0;
-
-                    (async () => {
-                        try {
-                            const { error } = await _supabase.from('real_lean_angle').insert([{
-                                user_id: currentUser?.id,
-                                session_id: currentSessionIdRef.current,
-                                angle: finalTilt,
-                                status: 'danger',
-                                
-                            }]);
-                            if (!error) {
-                                realRideEventsRef.current.tilt.push(finalTilt);
-                                logToScreen(`[REAL-TIME] 記錄危險傾角: ${finalTilt}°`);
-                            }
-                        } catch (err) { console.error("寫入傾角失敗:", err.message); }
-                    })();
-                }
-            }, [tiltAngle, isRiding, enableSpeedCam, currentUser]);
+                    if (window.bluetoothSerial) { window.bluetoothSerial.isEnabled(() => setIsConnected(true), () => console.log("Bluetooth not enabled")); }
+                }, false);
+                if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission !== 'function') { window.addEventListener('deviceorientation', handleOrientation); setHasGyroPermission(true); }
+                return () => { window.removeEventListener('deviceorientation', handleOrientation); };
+            }, []);
 
             useEffect(() => {
                 if (simulationMode || !enableSpeedCam) {
@@ -3225,28 +2716,17 @@
                                 <Icon name={enableSpeedCam ? "camera" : "camera-off"} size={24} className={enableSpeedCam ? 'text-green-400' : 'text-slate-400'} />
                                 <span className={`font-medium text-sm ${enableSpeedCam ? 'text-green-100' : 'text-slate-400'}`}>{enableSpeedCam ? '偵測啟動' : '未偵測'}</span>
                             </button>
-
                         </div>
 
                         <div className="flex flex-col gap-2 mb-4 p-3 bg-gray-800 rounded-xl border border-gray-700">
                             <p className="text-gray-400 text-xs font-bold uppercase tracking-wider">測試模式設定</p>
-
                             <div className="flex gap-2">
                                 {/* 安全模式按鈕 */}
-<<<<<<< Updated upstream
-
-                                <button
-                                    onClick={() => setForceSpeeding(false)}
-                                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all ${!forceSpeeding
-                                        ? 'bg-green-600 text-white shadow-lg ring-2 ring-green-400'
-                                        : 'bg-gray-700 text-gray-400 opacity-50'
-=======
                                 <button
                                     onClick={() => setForceSpeeding(false)}
                                     className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all ${!forceSpeeding
                                             ? 'bg-green-600 text-white shadow-lg ring-2 ring-green-400'
                                             : 'bg-gray-700 text-gray-400 opacity-50'
->>>>>>> Stashed changes
                                         }`}
                                 >
                                     🟢 安全行駛
@@ -3256,13 +2736,8 @@
                                 <button
                                     onClick={() => setForceSpeeding(true)}
                                     className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all ${forceSpeeding
-<<<<<<< Updated upstream
-                                        ? 'bg-red-600 text-white shadow-lg ring-2 ring-red-400'
-                                        : 'bg-gray-700 text-gray-400 opacity-50'
-=======
                                             ? 'bg-red-600 text-white shadow-lg ring-2 ring-red-400'
                                             : 'bg-gray-700 text-gray-400 opacity-50'
->>>>>>> Stashed changes
                                         }`}
                                 >
                                     🔴 危險駕駛
@@ -3299,21 +2774,6 @@
                     ))}
                 </div>
             );
-<<<<<<< Updated upstream
-
-            // 1. 處理並過濾真實的硬體數據 (排除標記用的 safe 與 -1)
-           // 把 renderStats 改成這樣 (加入 useState)
-// ==========================================
-            // 子組件定義區：熱力圖與真實數據表格
-            // ==========================================
-            const { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, AreaChart, Area } = Recharts;
-
-
-
-            // ==========================================
-            // 主要分析頁面渲染區
-            // ==========================================
-=======
             //=========================================================    
             // 切換到分析頁，讀取分析數據
             // 分析頁圖表與數據處理邏輯
@@ -3578,94 +3038,27 @@
             };
 
 
->>>>>>> Stashed changes
             const renderStats = () => {
-                
-                // 處理真實數據
-                const realOverspeed = realData.overspeed.filter(i => i.speed_limit !== -1);
-                const realTilt = realData.tilt.filter(i => i.status !== 'safe');
-                const realBrake = realData.brake.filter(i => i.status !== 'safe');
-                const realSessions = realData.overspeed.filter(i => i.speed_limit === -1);
-                const hasRealHistory = realSessions.length > 0 || realOverspeed.length > 0 || realTilt.length > 0 || realBrake.length > 0;
-
-                const combinedRealHistory = [
-                    ...realOverspeed.map(i => ({ time: i.created_at, overspeedCount: 1, brakingCount: 0, tiltCount: 0, location: `時速 ${Math.round(i.current_speed)}km/h` })),
-                    ...realBrake.map(i => ({ time: i.created_at, overspeedCount: 0, brakingCount: 1, tiltCount: 0, location: `減速 -${i.deceleration?.toFixed(1)}km/h/s` })),
-                    ...realTilt.map(i => ({ time: i.created_at, overspeedCount: 0, brakingCount: 0, tiltCount: 1, location: `傾角 ${Math.round(i.angle)}°` }))
-                ];
-
-                // 處理模擬數據
-                const safeHistory = Array.isArray(weeklyHistory) ? weeklyHistory : [];
-                const simWeeklyStats = safeHistory.reduce((acc, trip) => {
-                    return {
-                        totalScore: acc.totalScore + (trip.score || 0),
-                        overspeed: acc.overspeed + (trip.class === 'overspeed' ? (trip.count || 1) : 0),
-                        braking: acc.braking + (trip.class === 'braking' ? (trip.count || 1) : 0),
-                        tilt: acc.tilt + (trip.class === 'tilt' ? (trip.count || 1) : 0)
-                    };
-                }, { totalScore: 0, overspeed: 0, braking: 0, tilt: 0 });
-                const simAvgScore = safeHistory.length > 0 ? Math.round(simWeeklyStats.totalScore / safeHistory.length) : '---';
-
-                // 切換顯示邏輯
-                const displayHistory = statsViewMode === 'real' ? combinedRealHistory : safeHistory;
-                const displayStats = statsViewMode === 'real' ? { overspeed: realOverspeed.length, braking: realBrake.length, tilt: realTilt.length } : simWeeklyStats;
-                const displayScore = statsViewMode === 'real' ? (hasRealHistory ? Math.max(0, 100 - (displayStats.overspeed*2 + displayStats.braking*3 + displayStats.tilt*5)) : '---') : simAvgScore;
-
                 return (
                     <div className="space-y-6 animate-fadeIn pb-24">
-                        <div className="flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-white">騎乘分析</h2>
-                            <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-700">
-                                <button onClick={() => setStatsViewMode('real')} className={`px-3 py-1 rounded text-xs font-bold transition-all ${statsViewMode === 'real' ? 'bg-cyan-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}>實機</button>
-                                <button onClick={() => setStatsViewMode('sim')} className={`px-3 py-1 rounded text-xs font-bold transition-all ${statsViewMode === 'sim' ? 'bg-purple-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}>模擬</button>
-                            </div>
-                        </div>
-
-<<<<<<< Updated upstream
+                        {/* 記分板 */}
                         <div className="bg-gradient-to-br from-cyan-950 to-blue-950 p-6 rounded-2xl text-white flex justify-between items-center shadow-lg border border-cyan-500/20">
                             <div>
-                                <div className="text-cyan-200 text-xs uppercase tracking-wider font-semibold">過去 7 天安全評分</div>
-                                <div className="text-6xl font-black mt-2 bg-gradient-to-r from-white to-cyan-300 bg-clip-text text-transparent">{displayScore}<span className="text-lg text-cyan-200/50">/100</span></div>
+                                <div className="text-cyan-200 text-xs uppercase tracking-wider font-semibold">
+                                    {todayData ? "今日安全評分" : "尚無數據"}
+                                </div>
+                                <div className="text-6xl font-black mt-2 bg-gradient-to-r from-white to-cyan-300 bg-clip-text text-transparent">
+                                    {stats.averageScore}
+                                </div>
                             </div>
                             <div className="text-right space-y-2 border-l border-white/10 pl-6">
-                                <div className="text-xs text-blue-200 flex items-center justify-end gap-2">超速次數 <span className="font-bold text-white text-base">{displayStats.overspeed}</span>次</div>
-                                <div className="text-xs text-blue-200 flex items-center justify-end gap-2">急煞次數 <span className="font-bold text-white text-base">{displayStats.braking}</span>次</div>
-                                <div className="text-xs text-blue-200 flex items-center justify-end gap-2">危險傾角 <span className="font-bold text-white text-base">{displayStats.tilt}</span>次</div>
+                                <div className="text-xs text-blue-200">超速 <span className="font-bold text-white text-base">{stats.overspeed}</span> 次</div>
+                                <div className="text-xs text-blue-200">急煞 <span className="font-bold text-white text-base">{stats.braking}</span> 次</div>
+                                <div className="text-xs text-blue-200">傾角 <span className="font-bold text-white text-base">{stats.tilt}</span> 次</div>
+                                <div className="text-xs text-blue-200">騎乘次數 <span className="font-bold text-white text-base">{stats.trips}</span> 次</div>
                             </div>
                         </div>
 
-                        <div className="flex gap-2">
-                            <button
-                                className="flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all bg-red-500 hover:bg-red-600 text-white"
-                                onClick={async () => {
-                                    if(window.confirm("確定要刪除所有實機騎乘紀錄嗎？這將無法復原。")) {
-                                        try {
-                                            await _supabase.from('real_overspeed').delete().eq('user_id', currentUser.id);
-                                            await _supabase.from('real_lean_angle').delete().eq('user_id', currentUser.id);
-                                            await _supabase.from('real_hard_brake').delete().eq('user_id', currentUser.id);
-                                            await _supabase.from('ai_report').delete().eq('user_id', currentUser.id);
-                                            setRealData({ overspeed: [], tilt: [], brake: [] });
-                                            alert("✅ 雲端歷史紀錄已徹底清空");
-                                        } catch (err) { alert("清除失敗: " + err.message); }
-                                    }
-                                }}
-                            >
-                                🗑️ 清除所有歷史
-                            </button>
-                        </div>
-                        {statsViewMode === 'real' && (
-                            <RealDataDashboard data={realData} />
-                        )}
-
-                        
-
-                        <AIReportCard historyData={displayHistory} summary={displayStats} avgScore={displayScore} currentUser={currentUser} />
-
-                        <div className="space-y-4 px-4 pb-20">
-                            <EventHeatmapChart data={displayHistory} dataKey="overspeedCount" color="#ffff00" label="超速次數" />
-                            <EventHeatmapChart data={displayHistory} dataKey="brakingCount" color="#ffa500" label="急煞次數" />
-                            <EventHeatmapChart data={displayHistory} dataKey="tiltCount" color="#f87171" label="傾角次數" />
-=======
                         {/* AI 報告 */}
                         <RealDataDashboard data={rawRideHistory} />
                         <AIReportCard currentUser={currentUser} />
@@ -3700,11 +3093,13 @@
                                 label="危險傾角"
                                 currentUser={currentUser}
                             />
->>>>>>> Stashed changes
                         </div>
                     </div>
                 );
             };
+            //=========================================================
+            // 分析頁圖表與數據處理邏輯 結束
+            //=========================================================
 
             const renderHudPage = () => {
                 const options = [
@@ -3757,35 +3152,6 @@
                 <div className="space-y-6 animate-fadeIn pb-24">
 
                     <h2 className="text-xl font-bold text-white">設定</h2>
-<<<<<<< Updated upstream
-                    <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl p-4 border border-cyan-500/30 shadow-lg">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-cyan-900/40 rounded-full flex items-center justify-center border border-cyan-400/50">
-                                <Icon name="user" size={24} className="text-cyan-400" />
-                            </div>
-                            <div className="flex-1">
-                                <div className="text-[10px] text-cyan-500 font-mono tracking-widest uppercase">Current Operator</div>
-                                <div className="text-white font-black text-lg tracking-tight">
-                                    {/* 從 email 抓取原始帳號名稱 */}
-                                    {currentUser?.email ? currentUser.email.split('@')[0] : 'Unknown'}
-                                </div>
-                                <div className="text-[9px] text-slate-500 font-mono mt-0.5">
-                                    UID: {currentUser?.id?.substring(0, 18)}...
-                                </div>
-                            </div>
-                            <div className="bg-cyan-500/10 px-2 py-1 rounded border border-cyan-500/20">
-                                <span className="text-[10px] text-cyan-400 font-bold">ONLINE</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="space-y-4">
-
-                        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
-
-                            <h3 className="text-cyan-400 text-sm font-bold mb-4 flex items-center gap-2"><Icon name="volume-2" size={16} /> 系統音效</h3>
-
-=======
 
                     <div className="space-y-4">
 
@@ -3808,7 +3174,6 @@
 
                             <h3 className="text-cyan-400 text-sm font-bold mb-4 flex items-center gap-2"><Icon name="volume-2" size={16} /> 系統音效</h3>
 
->>>>>>> Stashed changes
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center">
                                     <span className="text-white text-sm">全域靜音 (所有預警音)</span>
@@ -3903,11 +3268,6 @@
                     <div className="w-full h-[100dvh] md:max-w-[420px] md:h-[90vh] md:max-h-[880px] bg-slate-950 md:rounded-[3rem] md:border-[8px] md:border-slate-800 overflow-hidden relative shadow-2xl flex flex-col md:ring-1 md:ring-white/10 transition-all duration-300">
                         <EdgeLightingOverlay direction={edgeWarning} />
                         <ToastNotification notifications={notifications} removeNotification={removeNotification} />
-<<<<<<< Updated upstream
-                            
-
-=======
->>>>>>> Stashed changes
 
                         <div className="bg-slate-950 px-6 pt-5 safe-top pb-2 flex justify-between items-center z-20 select-none shrink-0">
                             <div className="flex items-center gap-2"><Icon name="shield-check" size={18} className="text-cyan-400" /><h1 className="text-lg font-black text-white tracking-widest italic font-mono">V.I.S.O.R.</h1></div>
