@@ -937,7 +937,7 @@
                             </div>
                         )}
                     </div>
-                    <div className="pt-2 flex text-xs text-cyan-500 font-mono">上傳時間：{creattime}</div>
+                    <div className="pt-2 flex justify-end text-xs text-cyan-500 font-mono">上傳時間：{creattime}</div>
                 </div>
             );
         };
@@ -2974,7 +2974,13 @@
                         </div>
 
                         {/* 底部 */}
-                        <div className="mt-4 border-t border-slate-700/50 pt-3 flex justify-end gap-4 text-xs text-slate-500 font-mono">
+                        <div className="mt-4 border-t border-slate-700/50 pt-3 flex justify-between gap-4 text-xs text-slate-500 font-mono items-baseline">
+                            <div className="flex items-center gap-1">
+                                <span className="text-amber-500 bg-amber-500/10 rounded-full w-6 h-6 flex items-center justify-center border border-amber-500/50">
+                                    <span className="text-xs font-bold">!</span>
+                                </span>
+                                <span>：無資料</span>
+                            </div>
                             <span className={`${thirtyD[29].isToday ? 'text-cyan-500' : ''}`}>今日日期: {thirtyD[29].yearNum}/{thirtyD[29].monthNum}/{thirtyD[29].dayNum}</span>
                         </div>
                     </div>
