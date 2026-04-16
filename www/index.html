@@ -762,10 +762,21 @@
 
         const AIReportCard = ({ currentUser }) => {
             const [report, setReport] = useState("");
+            const [createdAt, setcreatedAt] = useState("");
             const [loading, setLoading] = useState(false);
             const [hasGenerated, setHasGenerated] = useState(false);
             const [isInitialLoading, setIsInitialLoading] = useState(true);
             const [isCollapsed, setIsCollapsed] = useState(false);
+
+            // 調整時間格式為台灣時間
+            const creattime = new Date(createdAt).toLocaleString('zh-TW', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
 
             // 1. 初始化：進頁面先抓最新的一筆，並填入 report
             React.useEffect(() => {
@@ -775,7 +786,7 @@
                     try {
                         const { data, error } = await _supabase
                             .from('ai_report')
-                            .select('report')
+                            .select('*')
                             .eq('user_id', currentUser.id)
                             .order('created_at', { ascending: false })
                             .limit(1)
@@ -792,6 +803,10 @@
                         } else {
                             logToScreen("📊 歷史分析報告載入狀態: 無資料");
                             setReport("歡迎使用 V.I.S.O.R.，目前尚無歷史分析結果");
+                            setcreatedAt(" ")
+                        }
+                        if (data && data.created_at) {
+                            setcreatedAt(data.created_at); 
                         }
                     } catch (err) {
                         logToScreen(`出現錯誤${err.message}`);
@@ -822,6 +837,7 @@
                     // 如果兩張表都沒資料，就停止並報錯
                     if (!dayStats || dayStats.length === 0) {
                         setReport("### ⚠️ 數據掃描失敗\n目前資料庫中尚無您的騎乘紀錄。V.I.S.O.R. 需要數據才能進行行為分析。");
+                        setcreatedAt(" ");
                         setLoading(false);
                         return;
                     }
@@ -921,6 +937,7 @@
                             </div>
                         )}
                     </div>
+                    <div className="pt-2 flex text-xs text-cyan-500 font-mono">上傳時間：{creattime}</div>
                 </div>
             );
         };
@@ -1083,7 +1100,7 @@
                             <h3 className="text-sm font-bold text-slate-200">近30天{label}資料 </h3>
                         </div>
                         <div className="text-[10px] text-slate-500 font-mono">
-                            <span className={`${thirtyD[29].isToday ? 'text-cyan-500 font-bold' : ''}`}>今日日期: {thirtyD[29].monthNum}/{thirtyD[29].dayNum}</span>
+                            <span className={`${thirtyD[29].isToday ? 'text-cyan-500' : ''}`}>今日日期: {thirtyD[29].monthNum}/{thirtyD[29].dayNum}</span>
                         </div>
                     </div>
                     {/* 月曆格區 */}
@@ -1806,6 +1823,7 @@
                         logToScreen("V.I.S.O.R.實際偵測已停止，產生報告...");
                         addNotification('info', '監控結束', '騎乘紀錄處理中');
                         finalizeRide(); //觸發結算邏輯
+                        setActiveTab('stats'); //自動切換到報告頁面
                     } else {
                         logToScreen("啟動時間過短 (< 3秒)，已取消紀錄");
                         addNotification('warning', '偵測取消', '啟動時間不足 3 秒，視為誤觸不予紀錄');
@@ -2957,7 +2975,7 @@
 
                         {/* 底部 */}
                         <div className="mt-4 border-t border-slate-700/50 pt-3 flex justify-end gap-4 text-xs text-slate-500 font-mono">
-                            <span className={`${thirtyD[29].isToday ? 'text-cyan-500 font-bold' : ''}`}>今日日期: {thirtyD[29].yearNum}/{thirtyD[29].monthNum}/{thirtyD[29].dayNum}</span>
+                            <span className={`${thirtyD[29].isToday ? 'text-cyan-500' : ''}`}>今日日期: {thirtyD[29].yearNum}/{thirtyD[29].monthNum}/{thirtyD[29].dayNum}</span>
                         </div>
                     </div>
                 );
