@@ -1040,16 +1040,12 @@
                 setIsLoading(true);
                 setRideDetails([]);
 
-                // 時間區間設定：為了對應台灣時區 (UTC+8)
-                const startTime = `${selectedDate}T00:00:00+08:00`;
-                const endTime = `${selectedDate}T23:59:59+08:00`;
-
                 const { data, error } = await _supabase
                     .from('ride_history')
                     .select('*')
                     .eq('user_id', currentUser.id)
-                    .gte('time', startTime)
-                    .lte('endtime', endTime)
+                    .filter('time', 'gte', `${selectedDate}T00:00:00Z`)
+                    .filter('time', 'lte', `${selectedDate}T23:59:59Z`) 
                     .order('time', { ascending: true }); // 按時間由早到晚排序
 
                 if (error) {
@@ -1078,7 +1074,8 @@
                     }, {});
 
                     const finalDisplay = Object.values(grouped).map(trip => {
-                        const targetEvents = trip.allEvents.filter(e => e.class === dataKey); // 找出符合當前月曆類型的事件
+                        const actualClass = dataKey.replace('total_', ''); // 把 total_tilt 變成 tilt ，以便匹配事件類型   
+                        const targetEvents = trip.allEvents.filter(e => e.class === actualClass); // 找出符合當前月曆類型的事件
                         return {
                             ...trip,
                             events: targetEvents.length > 0
@@ -1186,7 +1183,7 @@
                                 {/* 上方統計數據 */}
                                 <div className="flex items-center justify-between col-span-2 pb-2 border-b border-slate-700">
                                     <span className="text-xs text-slate-400">{label}</span>
-                                    <span className="text-xs font-black" style={{ color: color }}>{selectedDay[dataKey]} <span className="text-xs">次</span></span>
+                                    <span className="text-xs font-black" style={{ color: color }}>{selectedDay[dataKey] || '0'} <span className="text-xs">次</span></span>
                                     <span className="text-xs text-slate-400">總評分</span>
                                     <span className="text-xs font-black" style={{ color: color }}>{selectedDay.avg_score || '---'}  <span className="text-xs">分</span></span>
                                     <span className="text-xs text-slate-400">總騎乘次數</span>
@@ -1213,7 +1210,7 @@
                                                         const isNormal = event.class === 'normal';
 
                                                         return (
-                                                            <div key={eIdx} className={`p-3 rounded border-l-2 bg-slate-900/40 ${isNormal ? 'border-emerald-500' : 'border-rose-500'}`} style={!isNormal ? { borderColor: color } : {}}>
+                                                            <div key={eIdx} className={`p-3 rounded bg-slate-900/40 border-t ${isNormal ? 'border-emerald-500' : 'border-rose-500'}`} style={!isNormal ? { borderColor: color } : {}}>
                                                                 <div className="flex justify-between items-start mb-2">
                                                                     <span className={`text-[11px] font-bold ${isNormal ? 'text-emerald-400' : ''}`} style={!isNormal ? { color: color } : {}}>
                                                                         {isNormal ? '正常騎乘紀錄' : `${label}紀錄`}
