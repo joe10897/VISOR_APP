@@ -3150,8 +3150,8 @@
                                 </thead>
                                 <tbody className="divide-y divide-slate-700/50">
                                     {view === 'session' && displaySession.length === 0 && <tr><td colSpan="3" className="p-6 text-center text-slate-500">尚無完整行駛紀錄</td></tr>}
-                                    {view === 'session' && displaySession.map(item => (
-                                        <tr key={item.id || item.time} className="hover:bg-slate-800/50 transition-colors">
+                                    {view === 'session' && displaySession.map((item, index) => (
+                                        <tr key={`session-${item.id || item.time}-${index}`} className="hover:bg-slate-800/50 transition-colors">
                                             <td className="p-3 text-white">{new Date(item.time).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</td>
                                             <td className="p-3 text-cyan-400 font-bold">{item.rideMaxSpeed} km/h</td>
                                             <td className="p-3 text-slate-500">{item.limit ? `${item.limit} km/h` : '無'}</td>
@@ -3159,8 +3159,8 @@
                                     ))}
 
                                     {view === 'overspeed' && displayOverspeed.length === 0 && <tr><td colSpan="3" className="p-6 text-center text-slate-500">表現優良，本次無紀錄</td></tr>}
-                                    {view === 'overspeed' && displayOverspeed.map(item => (
-                                        <tr key={item.id || item.time} className="hover:bg-slate-800/50 transition-colors">
+                                    {view === 'overspeed' && displayOverspeed.map((item, index) => (
+                                        <tr key={`os-${item.id || item.time}-${index}`} className="hover:bg-slate-800/50 transition-colors">
                                             <td className="p-3 text-white">{new Date(item.time).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</td>
                                             <td className="p-3 text-red-400 font-bold">{item.maxspeed} km/h</td>
                                             <td className="p-3 text-slate-500">{item.limit} km/h</td>
@@ -3168,8 +3168,8 @@
                                     ))}
 
                                     {view === 'tilt' && displayTilt.length === 0 && <tr><td colSpan="3" className="p-6 text-center text-slate-500">無危險傾角紀錄</td></tr>}
-                                    {view === 'tilt' && displayTilt.map(item => (
-                                        <tr key={item.id || item.time} className="hover:bg-slate-800/50 transition-colors">
+                                    {view === 'tilt' && displayTilt.map((item, index) => (
+                                        <tr key={`tilt-${item.id || item.time}-${index}`} className="hover:bg-slate-800/50 transition-colors">
                                             <td className="p-3 text-white">{new Date(item.time).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</td>
                                             <td className="p-3 text-orange-400 font-bold">{item.tilt}°</td>
                                             <td className="p-3 text-slate-500">{'< 40°'}</td>
@@ -3177,8 +3177,8 @@
                                     ))}
 
                                     {view === 'brake' && displayBrake.length === 0 && <tr><td colSpan="3" className="p-6 text-center text-slate-500">無急煞紀錄</td></tr>}
-                                    {view === 'brake' && displayBrake.map(item => (
-                                        <tr key={item.id || item.time} className="hover:bg-slate-800/50 transition-colors">
+                                    {view === 'brake' && displayBrake.map((item, index) => (
+                                        <tr key={`brk-${item.id || item.time}-${index}`} className="hover:bg-slate-800/50 transition-colors">
                                             <td className="p-3 text-white">{new Date(item.time).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</td>
                                             <td className="p-3 text-yellow-400 font-bold">{item.braking} km/h/s</td>
                                             <td className="p-3 text-slate-500">{'< 10'}</td>
