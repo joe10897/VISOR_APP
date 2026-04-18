@@ -320,15 +320,11 @@
         });
 
         const logToScreen = (msg, isError = false) => {
-            const debugConsole = document.getElementById('debug-console');
-            if (debugConsole) {
-                const entry = document.createElement('div');
-                entry.className = isError ? 'text-red-400' : 'text-slate-300';
-                entry.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
-                debugConsole.appendChild(entry);
-            }
+            const entry = document.createElement('div');
+            entry.className = isError ? 'text-red-400' : 'text-cyan-400';
+            entry.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            debugConsole.appendChild(entry);
             console.log(msg);
-            window.dispatchEvent(new CustomEvent('visorLog', { detail: { msg, isError } }));
         };
 
         window.onerror = (msg, url, line) => {
@@ -1301,48 +1297,6 @@
         // ======================================================================================================================================================================================================
 
 
-        const TerminalConsole = ({ logs, isOpen, onClose }) => {
-            const scrollRef = React.useRef(null);
-            React.useEffect(() => {
-                if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-            }, [logs, isOpen]);
-
-            if (!isOpen) return null;
-
-            return (
-                <div className="absolute inset-x-0 bottom-24 z-[100] bg-slate-900/95 backdrop-blur-md border-t border-cyan-500/30 h-64 flex flex-col animate-slideUp">
-                    <div className="flex justify-between items-center px-4 py-2 bg-slate-800 border-b border-slate-700">
-                        <div className="flex items-center gap-2">
-                            <Icon name="terminal" size={14} className="text-cyan-400" />
-                            <span className="text-[10px] font-bold text-slate-300 tracking-widest uppercase">System Tactical Log</span>
-                        </div>
-                        <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">
-                            <Icon name="x" size={16} />
-                        </button>
-                    </div>
-                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 font-mono text-[9px] space-y-1.5 scrollbar-hide">
-                        {logs.length === 0 ? (
-                            <div className="text-slate-600 italic">Waiting for telemetry data...</div>
-                        ) : (
-                            logs.map((log) => (
-                                <div key={log.id} className="flex gap-2 leading-relaxed">
-                                    <span className="text-slate-600 shrink-0">[{log.time}]</span>
-                                    <span className={`break-all ${
-                                        log.level === 'danger' ? 'text-red-400 font-bold' : 
-                                        log.level === 'warning' ? 'text-orange-400' : 
-                                        log.level === 'ai' ? 'text-cyan-400' : 
-                                        log.level === 'success' ? 'text-green-400' : 'text-slate-300'
-                                    }`}>
-                                        {log.message}
-                                    </span>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </div>
-            );
-        };
-
         const App = () => {
             const [isBooting, setIsBooting] = useState(true);
             const [heading, setHeading] = useState(0); // Added Heading State
@@ -1602,29 +1556,9 @@
             };
 
             const [systemStatus, setSystemStatus] = useState({ pi5: false, piZero: false, cpu: 0, mem: 0 });
-            const [showConsole, setShowConsole] = useState(false);
-            const [systemLogs, setSystemLogs] = useState([]);
             const [notifications, setNotifications] = useState([]);
             const [hudConfig, setHudConfig] = useState({ speed: true, camera: true, nav: true, time: true, brightness: 80 });
             const socketRef = useRef(null);
-            const btRef = useRef(null); // Tracks active Bluetooth connection
-
-            useEffect(() => {
-                const handleLog = (e) => {
-                    const { msg, isError } = e.detail;
-                    setSystemLogs(prev => {
-                        const newLog = { 
-                            id: Date.now() + Math.random(), 
-                            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }), 
-                            level: isError ? 'danger' : 'info', 
-                            message: msg 
-                        };
-                        return [...prev.slice(-49), newLog];
-                    });
-                };
-                window.addEventListener('visorLog', handleLog);
-                return () => window.removeEventListener('visorLog', handleLog);
-            }, []);
 
             // Notification Helper
             const addNotification = useCallback((type, title, message) => {
@@ -1646,46 +1580,24 @@
             const updateHudConfig = (newConfig) => {
                 const updated = { ...hudConfig, ...newConfig };
                 setHudConfig(updated);
-                
-                const cmd = JSON.stringify({ action: "set_hud_config", config: updated });
-                const wsOk = socketRef.current && socketRef.current.readyState === WebSocket.OPEN;
-                const btOk = window.bluetoothSerial && btRef.current;
-                
-                if (wsOk) {
-                    socketRef.current.send(cmd);
-                } else if (btOk) {
-                    window.bluetoothSerial.write(cmd + '\n');
+                if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+                    socketRef.current.send(JSON.stringify({
+                        action: "set_hud_config",
+                        config: updated
+                    }));
                 }
             };
 
             const toggleSentry = () => {
                 const newState = !isSentryMode;
                 setIsSentryMode(newState);
-                
-                const cmd = JSON.stringify({ action: "set_sentry", enabled: newState });
-                const wsOk = socketRef.current && socketRef.current.readyState === WebSocket.OPEN;
-                const btOk = window.bluetoothSerial && btRef.current;
-                
-                if (wsOk) {
-                    socketRef.current.send(cmd);
-                } else if (btOk) {
-                    window.bluetoothSerial.write(cmd + '\n');
+                if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+                    socketRef.current.send(JSON.stringify({
+                        action: "set_sentry",
+                        enabled: newState
+                    }));
                 }
                 addNotification('info', '模式切換', `哨兵模式已${newState ? '開啟' : '關閉'}`);
-            };
-
-            const handleShutdown = (target) => {
-                if (window.confirm(`確定要關閉 ${target === 'pi5' ? 'Pi 5 主機 (Core)' : 'Pi Zero (HUD)'} 電源嗎？這將會中斷系統運作！`)) {
-                    const cmd = JSON.stringify({ action: 'system_power', target: target });
-                    const wsOk = socketRef.current && socketRef.current.readyState === WebSocket.OPEN;
-                    const btOk = window.bluetoothSerial && btRef.current;
-                    if (wsOk) {
-                        socketRef.current.send(cmd);
-                    } else if (btOk) {
-                        window.bluetoothSerial.write(cmd + '\n');
-                    }
-                    addNotification('warning', '電源管理', `向 ${target} 送出關機指令...`);
-                }
             };
 
             // Refs
@@ -2509,7 +2421,6 @@
                                 window.bluetoothSerial.connect(target.id, () => {
                                     logToScreen("BT Link SUCCESS!");
                                     btConnected = true;
-                                    btRef.current = window.bluetoothSerial;
                                     setIsConnected(true);
                                     setSystemStatus(prev => ({ ...prev, pi5: true }));
                                     window.bluetoothSerial.subscribe('\n', (data) => {
@@ -2770,31 +2681,10 @@
 
             // Render Functions
             const renderHome = () => (
-                <div className="space-y-4 animate-fadeIn pb-32 relative">
+                <div className="space-y-6 animate-fadeIn pb-32 relative">
 
 
                     <SpeedCameraAlert alert={cameraAlert} currentSpeed={simulatedSpeed} />
-
-                    {/* 兩顆鏡頭的預覽卡片 */}
-                    <div className="grid grid-cols-2 gap-2">
-                        <div className="bg-black/50 border border-slate-700 rounded-xl overflow-hidden relative aspect-video shadow-md">
-                            <div className="absolute top-1 left-2 z-10 bg-black/60 px-2 py-0.5 rounded text-[9px] font-bold text-slate-300">FRONT_CAM (Port: 8000)</div>
-                            <img src={`http://${window.location.hostname || '192.168.4.1'}:8000/stream.mjpg`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling.style.display = 'flex'; }} />
-                            <div className="absolute inset-0 flex-col items-center justify-center text-slate-600 hidden">
-                                <Icon name="video-off" size={24} />
-                                <span className="text-[10px] mt-1 text-center font-bold px-2 tracking-wider">OFFLINE<br/><span className="font-normal text-[8px]">硬體串流未啟動或 IP 錯誤</span></span>
-                            </div>
-                        </div>
-                        <div className="bg-black/50 border border-slate-700 rounded-xl overflow-hidden relative aspect-video shadow-md">
-                            <div className="absolute top-1 left-2 z-10 bg-black/60 px-2 py-0.5 rounded text-[9px] font-bold text-slate-300">REAR_CAM (Port: 8001)</div>
-                            <img src={`http://${window.location.hostname || '192.168.4.1'}:8001/stream.mjpg`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling.style.display = 'flex'; }} />
-                            <div className="absolute inset-0 flex-col items-center justify-center text-slate-600 hidden">
-                                <Icon name="video-off" size={24} />
-                                <span className="text-[10px] mt-1 text-center font-bold px-2 tracking-wider">OFFLINE<br/><span className="font-normal text-[8px]">硬體串流未啟動或 IP 錯誤</span></span>
-                            </div>
-                        </div>
-                    </div>
-
                     <div className={`bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-700 relative overflow-hidden min-h-[225px]`}>
                         <div className="absolute top-0 right-0 p-4 opacity-10"><Icon name="shield" size={120} className="text-cyan-400" /></div>
                         <div className="flex justify-between items-start mb-4 relative z-10">
@@ -3291,16 +3181,12 @@
                                         className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-cyan-500"
                                         min="0" max="255"
                                         value={hudConfig.brightness}
-                                        onChange={(e) => setHudConfig({...hudConfig, brightness: parseInt(e.target.value)})}
-                                        onMouseUp={(e) => updateHudConfig({ brightness: parseInt(e.target.value) })}
-                                        onTouchEnd={(e) => updateHudConfig({ brightness: parseInt(e.target.value) })}
+                                        onChange={(e) => updateHudConfig({ brightness: parseInt(e.target.value) })}
                                     />
                                     <Icon name="sun" size={24} className="text-white" />
                                 </div>
                             </div>
                         </div>
-
-
                     </div>
                 );
             };
@@ -3325,49 +3211,8 @@
                             </div>
                         </div>
 
-                        <div className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
-                            <div className="p-4 border-b border-slate-700">
-                                <h3 className="text-red-400 text-sm font-bold mb-4 uppercase tracking-wider flex items-center gap-2"><Icon name="power" size={16} /> 電源管理</h3>
-                                <div className="grid grid-cols-2 gap-3 mb-1">
-                                    <button 
-                                        onClick={() => handleShutdown('pi5')} 
-                                        disabled={!systemStatus.pi5}
-                                        className={`flex flex-col items-center justify-center gap-2 p-3 border rounded-xl transition-all text-white active:scale-95 group ${systemStatus.pi5 ? 'bg-red-900/30 border-red-500/50 hover:bg-red-800/80 cursor-pointer' : 'bg-slate-800 border-slate-600 opacity-50 cursor-not-allowed'}`}
-                                    >
-                                        <Icon name="cpu" size={24} className={systemStatus.pi5 ? "text-red-400 group-hover:text-white" : "text-slate-500"} />
-                                        <span className="text-[10px] font-bold tracking-wider">{systemStatus.pi5 ? '主機 (Pi 5)' : '主機斷線'}</span>
-                                    </button>
-                                    <button 
-                                        onClick={() => handleShutdown('pizero')} 
-                                        disabled={!systemStatus.piZero}
-                                        className={`flex flex-col items-center justify-center gap-2 p-3 border rounded-xl transition-all text-white active:scale-95 group ${systemStatus.piZero ? 'bg-orange-900/30 border-orange-500/50 hover:bg-orange-800/80 cursor-pointer' : 'bg-slate-800 border-slate-600 opacity-50 cursor-not-allowed'}`}
-                                    >
-                                        <Icon name="monitor" size={24} className={systemStatus.piZero ? "text-orange-400 group-hover:text-white" : "text-slate-500"} />
-                                        <span className="text-[10px] font-bold tracking-wider">{systemStatus.piZero ? '關閉 HUD (Pi 0)' : 'HUD 斷線'}</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
-                            <div className="flex justify-between items-center py-4 border-b border-slate-700">
-                                <div>
-                                    <h3 className="text-white text-sm">系統 Tactical 面板 (Terminal Console)</h3>
-                                    <p className="text-xs text-slate-500">顯示底層即時除錯日誌與通訊狀況</p>
-                                </div>
-                                <div
-                                    onClick={() => setShowConsole(!showConsole)}
-                                    className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors duration-300 ${showConsole ? 'bg-cyan-600' : 'bg-slate-600'}`}
-                                >
-                                    <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ${showConsole ? 'translate-x-6' : ''}`}></div>
-                                </div>
-                            </div>
 
-                            <button onClick={handleLogout} className="w-full bg-red-900/30 hover:bg-red-800/50 text-red-500 hover:text-red-400 py-3 rounded-xl border border-red-500/30 transition-colors flex items-center justify-center gap-2 mt-4">
-                                <Icon name="log-out" size={18} />
-                                <span>安全登出</span>
-                            </button>
-                        </div>
 
                         <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
 
@@ -3505,7 +3350,6 @@
                         )}
                         {currentUser && <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-1.5 bg-slate-600/50 rounded-full z-30 pointer-events-none safe-bottom mb-1"></div>}
                         <AIChatModal isOpen={showAIChat} onClose={() => setShowAIChat(false)} />
-                        {currentUser && <TerminalConsole logs={systemLogs} isOpen={showConsole} onClose={() => setShowConsole(false)} />}
                     </div>
                 </div>
             );
