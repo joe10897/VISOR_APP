@@ -21,7 +21,7 @@
     <script src="lib/js/react-is.min.js"></script>
     <script src="lib/js/recharts.min.js"></script>
     <script src="lib/js/babel.min.js"></script>
-    <script src="lib/js/lucide.min.js"></script>
+    <script src="lib/js/lucide.min.js"></script> <!--Icons在這邊查-->
     <script src="lib/js/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="lib/js/CryptoUtils.js"></script>
@@ -942,6 +942,7 @@
             );
         };
 
+        {/*
         const AIChatModal = ({ isOpen, onClose }) => {
             const [messages, setMessages] = useState([{ role: 'assistant', text: 'V.I.S.O.R. 核心已連線。騎士，有什麼我可以協助您的嗎？' }]);
             const [input, setInput] = useState("");
@@ -986,6 +987,7 @@
                 </div>
             );
         };
+        */}
 
         const HUDPreview = ({ config }) => {
             const isEnabled = (id) => config[id];
@@ -1526,7 +1528,7 @@
             const [tiltAngle, setTiltAngle] = useState(0);
             const [hasGyroPermission, setHasGyroPermission] = useState(false);
             const [isConnected, setIsConnected] = useState(false);
-            const [showAIChat, setShowAIChat] = useState(false);
+            // const [showAIChat, setShowAIChat] = useState(false);
             const [location, setLocation] = useState({ lat: 25.033964, lng: 121.564468 });
             const [cameras, setCameras] = useState(BUILT_IN_CAMERAS);
             const [dbInfo, setDbInfo] = useState({ count: BUILT_IN_CAMERAS.length, source: '內建' });
@@ -1560,6 +1562,18 @@
             const [hudConfig, setHudConfig] = useState({ speed: true, camera: true, nav: true, time: true, brightness: 80 });
             const socketRef = useRef(null);
 
+            //renderAichat
+            const [chatMessages, setChatMessages] = useState([
+                { role: 'assistant', text: 'V.I.S.O.R. 核心已連線。騎士，有什麼我可以協助您的嗎？' }
+            ]);
+            const [chatInput, setChatInput] = useState("");
+            const [chatLoading, setChatLoading] = useState(false);
+            const chatEndRef = useRef(null);
+
+            useEffect(() => {
+                chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }, [chatMessages]);
+
             // Notification Helper
             const addNotification = useCallback((type, title, message) => {
                 const id = Date.now() + Math.random();
@@ -1588,17 +1602,17 @@
                 }
             };
 
-            const toggleSentry = () => {
-                const newState = !isSentryMode;
-                setIsSentryMode(newState);
-                if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-                    socketRef.current.send(JSON.stringify({
-                        action: "set_sentry",
-                        enabled: newState
-                    }));
-                }
-                addNotification('info', '模式切換', `哨兵模式已${newState ? '開啟' : '關閉'}`);
-            };
+            // const toggleSentry = () => {
+            //     const newState = !isSentryMode;
+            //     setIsSentryMode(newState);
+            //     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+            //         socketRef.current.send(JSON.stringify({
+            //             action: "set_sentry",
+            //             enabled: newState
+            //         }));
+            //     }
+            //     addNotification('info', '模式切換', `哨兵模式已${newState ? '開啟' : '關閉'}`);
+            // };
 
             // Refs
             const simRef = useRef(null);
@@ -2724,12 +2738,12 @@
                     <div className="space-y-4">
                         <SOSButton currentLocation={location} onTrigger={triggerSOS} />
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <button onClick={toggleSentry} className={`p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all duration-300 border active:scale-95 ${isSentryMode ? 'bg-cyan-900/30 border-cyan-500/50' : 'bg-slate-800 border-slate-700'}`}><Icon name="eye" size={24} className={isSentryMode ? 'text-cyan-400' : 'text-slate-400'} /><span className={`font-medium text-sm ${isSentryMode ? 'text-cyan-100' : 'text-slate-400'}`}>{isSentryMode ? '哨兵模式' : '哨兵待機'}</span></button>
+                        <div className="grid grid-cols-1 gap-4">
+                            {/*<button onClick={toggleSentry} className={`p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all duration-300 border active:scale-95 ${isSentryMode ? 'bg-cyan-900/30 border-cyan-500/50' : 'bg-slate-800 border-slate-700'}`}><Icon name="eye" size={24} className={isSentryMode ? 'text-cyan-400' : 'text-slate-400'} /><span className={`font-medium text-sm ${isSentryMode ? 'text-cyan-100' : 'text-slate-400'}`}>{isSentryMode ? '哨兵模式' : '哨兵待機'}</span></button>*/}
 
-                            <button onClick={handleToggleDetection} className={`p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all duration-300 border active:scale-95 ${enableSpeedCam ? 'bg-green-900/30 border-green-500/50' : 'bg-slate-800 border-slate-700'}`}>
-                                <Icon name={enableSpeedCam ? "camera" : "camera-off"} size={24} className={enableSpeedCam ? 'text-green-400' : 'text-slate-400'} />
-                                <span className={`font-medium text-sm ${enableSpeedCam ? 'text-green-100' : 'text-slate-400'}`}>{enableSpeedCam ? '偵測啟動' : '未偵測'}</span>
+                            <button onClick={handleToggleDetection} className={`p-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 border active:scale-95 ${enableSpeedCam ? 'bg-green-900/30 border-green-500/50' : 'bg-slate-800 border-slate-700'}`}>
+                                <Icon name={enableSpeedCam ? "camera" : "camera-off"} size={30} className={enableSpeedCam ? 'text-green-400' : 'text-slate-400'} />
+                                <span className={`font-mono text-xl ${enableSpeedCam ? 'text-green-100' : 'text-slate-400'}`}>{enableSpeedCam ? '偵測啟動' : '未偵測'}</span>
                             </button>
                         </div>
 
@@ -2773,22 +2787,64 @@
                 </div>
             );
 
+            const renderAiChat = () => {
+            const handleSend = async () => {
+                if (!chatInput.trim()) return;
+                const userMsg = chatInput;
+                setChatMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+                setChatInput("");
+                setChatLoading(true);
+                const systemPrompt = "你是 V.I.S.O.R.，智慧頭盔AI助理。回答騎士關於維修、法規、天氣或導航的問題。回答簡潔。";
+                try {
+                    const response = await callAI(userMsg, systemPrompt);
+                    setChatMessages(prev => [...prev, { role: 'assistant', text: response }]);
+                } catch (err) {
+                    setChatMessages(prev => [...prev, { role: 'assistant', text: '⚠️ 連線異常，請稍後再試。' }]);
+                } finally {
+                    setChatLoading(false);
+                }
+            };
 
-
-
-
-
-            const renderEvents = () => (
-                <div className="space-y-4 animate-fadeIn pb-24">
-                    <h2 className="text-xl font-bold text-white mb-2">智慧事件簿</h2>
-                    {eventData.map((event) => (
-                        <div key={event.id} className="bg-slate-800 p-3 rounded-xl border border-slate-700 flex gap-4 hover:border-cyan-500/40 transition-colors">
-                            <div className="w-24 h-24 bg-slate-900 rounded-lg flex-shrink-0 flex items-center justify-center relative overflow-hidden group cursor-pointer border border-slate-700/50"><div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900"></div><Icon name="play-circle" size={32} className="text-white/80 z-10 group-hover:scale-110 group-hover:text-cyan-400 transition-all" /><span className="absolute bottom-1 right-1 text-[9px] bg-black/80 text-white px-1.5 py-0.5 rounded font-mono">{event.duration}</span></div>
-                            <div className="flex-1 flex flex-col justify-between py-1"><div><div className="flex justify-between items-start"><h3 className="text-white font-bold text-md leading-tight">{event.title}</h3>{event.type === 'danger' && <Icon name="alert-triangle" size={16} className="text-red-500 flex-shrink-0" />}</div><p className="text-slate-400 text-xs mt-1.5 flex items-center gap-1"><Icon name="map-pin" size={10} /> {event.loc}</p><p className="text-slate-500 text-[10px] mt-0.5">{event.time}</p></div><div className="flex gap-2 mt-2"><button className="flex-1 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-400 border border-cyan-500/30 text-xs py-1.5 rounded transition-colors font-medium">回放</button><button className="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-xs py-1.5 rounded transition-colors font-medium">下載</button></div></div>
-                        </div>
-                    ))}
+            return (
+                <div className="flex flex-col h-full rounded-2xl border border-cyan-500/30 bg-slate-900/50 p-4 animate-fadeIn">
+                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <Icon name="bot" size={20} className="text-cyan-400" /> V.I.S.O.R. Core
+                    </h2>
+                    <div className="flex-1 overflow-y-auto space-y-4 pb-4">
+                        {chatMessages.map((msg, idx) => (
+                            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-cyan-700 text-white rounded-tr-none' : 'bg-slate-800 text-slate-200 rounded-tl-none border border-slate-700'}`}>
+                                    <div dangerouslySetInnerHTML={{ __html: window.marked.parse(msg.text) }} />
+                                </div>
+                            </div>
+                        ))}
+                        {chatLoading && (
+                            <div className="flex justify-start">
+                                <div className="bg-slate-800 p-3 rounded-2xl rounded-tl-none border border-slate-700 flex gap-1">
+                                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"></div>
+                                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce delay-100"></div>
+                                </div>
+                            </div>
+                        )}
+                        <div ref={chatEndRef} />
+                    </div>
+                    <div className="flex gap-2 pt-3 border-t border-slate-700 bg-slate-900/50 pb-2">
+                        <input
+                            type="text"
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                            disabled={chatLoading}
+                            placeholder="輸入指令..."
+                            className="flex-1 bg-slate-900 border border-slate-700 rounded-full px-4 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 disabled:opacity-50"
+                        />
+                        <button onClick={handleSend} disabled={chatLoading} className="bg-cyan-600 hover:bg-cyan-500 text-white p-2 rounded-full disabled:opacity-50 transition-colors">
+                            <Icon name="send" size={18} />
+                        </button>
+                    </div>
                 </div>
             );
+        };
             //=========================================================    
             // 切換到分析頁，讀取分析數據
             // 分析頁圖表與數據處理邏輯
@@ -3332,24 +3388,24 @@
                             {activeTab === 'register' && renderRegister()}
                             {activeTab === 'home' && renderHome()}
                             {activeTab === 'settings' && renderSettings()}
-                            {activeTab === 'events' && renderEvents()}
+                            {activeTab === 'aichat' && renderAiChat()}
                             {activeTab === 'stats' && renderStats()}
                             {activeTab === 'hud' && renderHudPage()}
                         </div>
-                        {currentUser && <div className="absolute bottom-24 right-6 z-30"><button onClick={() => setShowAIChat(true)} className="w-14 h-14 rounded-full bg-cyan-600 hover:bg-cyan-500 shadow-lg shadow-cyan-500/30 flex items-center justify-center text-white transition-all hover:scale-110 active:scale-95 animate-ai-pulse"><Icon name="bot" size={28} /></button></div>}
+                        {/*{currentUser && <div className="absolute bottom-24 right-6 z-30"><button onClick={() => setShowAIChat(true)} className="w-14 h-14 rounded-full bg-cyan-600 hover:bg-cyan-500 shadow-lg shadow-cyan-500/30 flex items-center justify-center text-white transition-all hover:scale-110 active:scale-95 animate-ai-pulse"><Icon name="bot" size={28} /></button></div>}*/} 
                         {currentUser && (
                             <div className="bg-slate-900/90 backdrop-blur-xl p-2 pb-6 safe-bottom border-t border-white/5 absolute bottom-0 w-full z-20 md:rounded-t-3xl">
                                 <div className="flex justify-around items-end px-2">
                                     <NavButton iconName="activity" label="分析" isActive={activeTab === 'stats'} onClick={() => setActiveTab('stats')} />
                                     <NavButton iconName="monitor" label="HUD" isActive={activeTab === 'hud'} onClick={() => setActiveTab('hud')} />
                                     <NavButton iconName="shield" label="監控" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} isCenter={true} />
-                                    <NavButton iconName="video" label="事件" isActive={activeTab === 'events'} onClick={() => setActiveTab('events')} />
+                                    <NavButton iconName="bot-message-square" label="聊天" isActive={activeTab === 'aichat'} onClick={() => setActiveTab('aichat')} />
                                     <NavButton iconName="settings-2" label="設定" isActive={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
                                 </div>
                             </div>
                         )}
                         {currentUser && <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-1.5 bg-slate-600/50 rounded-full z-30 pointer-events-none safe-bottom mb-1"></div>}
-                        <AIChatModal isOpen={showAIChat} onClose={() => setShowAIChat(false)} />
+                        {/*<AIChatModal isOpen={showAIChat} onClose={() => setShowAIChat(false)} />*/}
                     </div>
                 </div>
             );
