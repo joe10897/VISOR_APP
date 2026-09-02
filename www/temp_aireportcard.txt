@@ -1,0 +1,182 @@
+        const AIReportCard = ({ currentUser }) => {
+            const [report, setReport] = useState("");
+            const [createdAt, setcreatedAt] = useState("");
+            const [loading, setLoading] = useState(false);
+            const [hasGenerated, setHasGenerated] = useState(false);
+            const [isInitialLoading, setIsInitialLoading] = useState(true);
+            const [isCollapsed, setIsCollapsed] = useState(false);
+
+            // èª¿æ•´?‚é??¼å??ºå°?????
+            const creattime = new Date(createdAt).toLocaleString('zh-TW', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+
+            // 1. ?å??–ï??²é??¢å??“æ??°ç?ä¸€ç­†ï?ä¸¦å¡«??report
+            React.useEffect(() => {
+                const fetchLatestReport = async () => {
+                    if (!currentUser) return;
+
+                    try {
+                        const { data, error } = await _supabase
+                            .from('ai_report')
+                            .select('*')
+                            .eq('user_id', currentUser.id)
+                            .order('created_at', { ascending: false })
+                            .limit(1)
+                            .maybeSingle();
+
+                        if (error) {
+                            logToScreen(`è³‡æ?åº«é€???€?? ${status} - ${error.message}`);
+                            return;
+                        }
+
+                        if (data && data.report) {
+                            setReport(data.report);
+                            logToScreen("??æ­·å²?†æ??±å?è¼‰å…¥?å?");
+                        } else {
+                            logToScreen("?? æ­·å²?†æ??±å?è¼‰å…¥?€?? ?¡è???);
+                            setReport("æ­¡è?ä½¿ç”¨ V.I.S.O.R.ï¼Œç›®?å??¡æ­·?²å??ç???);
+                            setcreatedAt(" ")
+                        }
+                        if (data && data.created_at) {
+                            setcreatedAt(data.created_at); 
+                        }
+                    } catch (err) {
+                        logToScreen(`?ºç¾?¯èª¤${err.message}`);
+                    } finally {
+                        setIsInitialLoading(false);
+                    }
+                };
+
+                fetchLatestReport();
+            }, [currentUser]);
+
+            const generateReport = async () => {
+                if (!currentUser) return;
+                setLoading(true);
+                try {
+                    // è¿?0å¤?
+                    const { data: dayStats, error: dayError } = await _supabase
+                        .from('day_ride')
+                        .select('*')
+                        .eq('user_id', currentUser.id)
+                        .limit(10);
+                    // æ­·å²?ˆçµ±è¨?
+                    const { data: monthStats, error: monthError } = await _supabase
+                        .from('month_ride')
+                        .select('*')
+                        .eq('user_id', currentUser.id)
+
+                    // å¦‚æ??©å¼µè¡¨éƒ½æ²’è??™ï?å°±å?æ­¢ä¸¦?±éŒ¯
+                    if (!dayStats || dayStats.length === 0) {
+                        setReport("### ? ï? ?¸æ??ƒæ?å¤±æ?\n?®å?è³‡æ?åº«ä¸­å°šç„¡?¨ç?é¨ä?ç´€?„ã€‚V.I.S.O.R. ?€è¦æ•¸?šæ??½é€²è?è¡Œç‚º?†æ???);
+                        setcreatedAt(" ");
+                        setLoading(false);
+                        return;
+                    }
+
+                    // 3. å°è?çµ?AI
+                    const airideData = {
+                        recent: dayStats,
+                        history: monthStats
+                    };
+
+                    const userPrompt = `
+                    ?V.I.S.O.R. æ·±åº¦è¡Œç‚º?†æ???
+                    ?†æ?å°è±¡ï¼?{currentUser.id}
+                    ?·æ?è¶¨å‹¢ (??: ${JSON.stringify(airideData.history)}
+                    è¿‘æ?ç´°ç? (??: ${JSON.stringify(airideData.recent)}
+                    `;
+
+                    const systemPrompt =
+                        `
+                    ç³»çµ±?ç¤º:ä½ ç¾?¨æ˜¯ V.I.S.O.R.ï¼Œé?å£«ç?å°ˆå±¬ AI å¤¥ä¼´?‚è??¹æ??™æ¸¬?¸æ??ä?ä¸€ä»½ã€Œå?æ¥­ã€ç?é¨ä??†æ???
+                    ?æ?æº–å?ï¼?
+                    1. èªæ°£ï¼šç™½è©±ã€è¦ª?‡ã€ç²¾ç°¡ã€?
+                    2. çµæ?(html?è¼¯)ï¼šæ???V.I.S.O.R.ï¼Œä??„å?å±¬é?ä¹?AI å¤¥ä¼´ï¼Œä»¥ä¸‹æ˜¯?†æ?çµæ?ï¼?br><b>===è¡Œç‚º?†æ?===</b><br>?§å®¹ï¼šæ ¹?šé•·?Ÿè¶¨?¢å?è¿‘æ?ç´°ç??„æ•¸?šï??†æ?é¨å£«?¨å??¨è??†ã€è??Ÿæ¬¡?¸ã€æ€¥ç?æ¬¡æ•¸?é?ä¹˜ç?????¹é¢?„è¡¨?¾ã€?br><b>===è¡Œç‚ºå»ºè­°===</b><br>?§å®¹ï¼šæ ¹?šå??å‡ºä¾†ç?çµæ?ï¼Œçµ¦äºˆé©?¶ç?å»ºè­°??br>=====================================<br>?§å®¹ï¼šä»¥é¼“å‹µ?„è?æ°??å°¾ï?æ¿€?µé?å£«æ?çºŒä??å??¨ç?é¨ä?ç¿’æ…£??
+                    3. ?¼å?ï¼šç?é«”ä¸­?‡ï?Markdown ?¼å???
+                    4. ?¿é??æ–¼?±æ??„è?èªï??¹ç”¨ä¸€?¬äºº?½å??‚ç?èªªæ???
+                    5. ?¿å??´æ¥æ¨™ç¤º?ºæ•¸?šç??·é??¸å€¼ã€?
+                    6. Temperature = 0.0??
+                    `;
+
+                    const result = await callAI(userPrompt, systemPrompt);
+                    setReport(result);
+                    setHasGenerated(true);
+
+                    // 5. å­˜å…¥ Supabase 
+                    const { error } = await _supabase
+                        .from('ai_report')
+                        .insert({
+                            user_id: currentUser.id,
+                            report: result,
+                            created_at: new Date().toISOString()
+                        });
+
+                    if (error) throw error;
+                    logToScreen("??V.I.S.O.R. ?†æ??±å?å·²é›²ç«¯å?ä»?);
+
+                } catch (error) {
+                    logToScreen(`?†æ??–å?æª”é?ç¨‹å‡º??${error.message}`);
+                    // ?ªæ??¨å??¨æ???report ?„æ?æ³ä??é¡¯ç¤ºéŒ¯èª¤è???
+                    if (!report) setReport("### ?”´ ç³»çµ±?…é?\n?†æ??¸å??¡æ??æ?ï¼Œè?æª¢æŸ¥?????);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className={`bg-slate-800 rounded-xl p-4 border border-slate-700 mt-4 relative overflow-hidden transition-all duration-500 flex flex-col ${isCollapsed ? 'max-h-[200px]' : 'max-h-[1000px]'}`}>
+
+                    {/* æ¨™é??—ï?? å…¥ shrink-0 ?²æ­¢è¢«æ?å£?*/}
+                    <div className="flex justify-between items-center mb-3 shrink-0">
+                        <h3 className="text-cyan-400 font-bold text-sm flex items-center gap-2">
+                            <Icon name="brain-circuit" size={16} />
+                            V.I.S.O.R. ?°è??†æ?
+                        </h3>
+
+                        <div className="flex items-center gap-2">
+                            {/* ?Ÿå??‰é?ï¼šä??å??¶å??Œéš±?ï??¹ç‚º?ªè??„æ??Ÿæ?å°±é¡¯ç¤?*/}
+                            {!hasGenerated && !loading && !isInitialLoading && (
+                                <button onClick={generateReport} className="bg-cyan-900/50 hover:bg-cyan-800 text-cyan-300 text-[10px] px-2 py-1 rounded-full border border-cyan-500/30 transition-all flex items-center gap-1">
+                                    <Icon name="sparkles" size={10} />?Ÿå??†æ?
+                                </button>
+                            )}
+
+                            {/* å®Œç?æ­??ç¸®æ”¾ç®­é ­ */}
+                            {!loading && !isInitialLoading && report && (
+                                <button
+                                    onClick={() => setIsCollapsed(!isCollapsed)}
+                                    className={`w-8 h-8 flex items-center justify-center shrink-0 rounded-full bg-slate-700/50 hover:bg-slate-600 text-cyan-400 transition-transform duration-300 ${isCollapsed ? '' : 'rotate-180'}`}
+                                >
+                                    <Icon name="chevron-down" size={16} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 2. ?§å®¹?€å¡Šï??åˆ¶æ©«å?æº¢å‡º?å?å¯¬å³?´ç??½è?æ»¾å?æ¢æ›´å¥½ç? */}
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar pr-2 w-full">
+                        {(loading || isInitialLoading) && (
+                            <div className="flex items-center justify-center py-4 space-x-2 text-cyan-400/70 animate-pulse">
+                                <Icon name="loader-2" size={20} className="animate-spin" />
+                                <span className="text-xs font-mono">UPLOADING...</span>
+                            </div>
+                        )}
+                        {!loading && !isInitialLoading && report && (
+                            <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 w-full">
+                                {/* å¥—ç”¨ markdown-body å¾¹å?è§?±ºæ©«å??ç ´?„å?é¡?*/}
+                                <div className="markdown-body text-xs text-slate-300 leading-relaxed font-mono typing-cursor" dangerouslySetInnerHTML={{ __html: window.marked.parse(report) }}></div>
+                            </div>
+                        )}
+                    </div>
+                    <div className="pt-2 flex justify-end text-xs text-cyan-500 font-mono">ä¸Šå‚³?‚é?ï¼š{creattime}</div>
+                </div>
+            );
+        };
+
