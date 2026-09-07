@@ -10,6 +10,7 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
+  console.log("--- 收到新的 SOS 請求 ---");
 
   try {
     const { user_id, location } = await req.json()
@@ -25,43 +26,46 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // 查詢該騎士已綁定的 LINE 緊急聯絡人
-    const { data: contact, error } = await supabase
+    // 查詢該騎士已綁定的「所有」LINE 緊急聯絡人 (移除 .single())
+    const { data: contacts, error } = await supabase
       .from('line_contact_person')
       .select('*')
       .eq('user_id', user_id)
       .eq('status', 'verified')
-      .single()
 
-    if (error || !contact || !contact.contact_user_id) {
-      return new Response(JSON.stringify({ error: "尚未綁定有效的緊急聯絡人" }), { 
+    if (error || !contacts || contacts.length === 0) {
+      return new Response(JSON.stringify({ error: "尚未綁定任何有效的緊急聯絡人" }), { 
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       })
     }
 
-    // 透過 LINE Push API 發送求救訊息
     const lineToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN');
     const googleMapsUrl = `https://www.google.com/maps?q=${location.lat},${location.lng}`;
     const messageText = `🚨【V.I.S.O.R. 緊急求救】\n騎士發生狀況！\nGPS 位置：\n${googleMapsUrl}`;
 
-    const lineRes = await fetch('https://api.line.me/v2/bot/message/push', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${lineToken}`,
-      },
-      body: JSON.stringify({
-        to: contact.contact_user_id,
-        messages: [{ type: 'text', text: messageText }],
-      }),
-    });
+    // 迴圈發送給所有已驗證的緊急聯絡人
+    for (const contact of contacts) {
+      if (!contact.contact_user_id) continue;
 
-    if (!lineRes.ok) {
-      const errText = await lineRes.text();
-      throw new Error(`LINE API 傳送失敗: ${errText}`);
+      const lineRes = await fetch('https://api.line.me/v2/bot/message/push', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${lineToken}`,
+        },
+        body: JSON.stringify({
+          to: contact.contact_user_id,
+          messages: [{ type: 'text', text: messageText }],
+        }),
+      });
+
+      if (!lineRes.ok) {
+        const errText = await lineRes.text();
+        console.error(`LINE API 傳送給 ${contact.contact_user_id} 失敗: ${errText}`);
+      }
     }
 
-    return new Response(JSON.stringify({ status: 'success' }), { 
+    return new Response(JSON.stringify({ status: 'success', sent_count: contacts.length }), { 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 
     })
 
