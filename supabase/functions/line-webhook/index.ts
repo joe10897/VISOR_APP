@@ -36,7 +36,6 @@ serve(async (req) => {
         const receivedText = event.message.text.trim()
         const senderUserId = event.source.userId
 
-        // 🔍 這裡必須對應正確的資料表名稱：line_contact_person
         const { data: binding, error } = await supabase
           .from('line_contact_person')
           .select('*')
@@ -45,30 +44,41 @@ serve(async (req) => {
           .single()
 
         if (binding && !error) {
-          // 🔍 這裡也必須對應正確的資料表名稱：line_contact_person
+          const { count, error: countError } = await supabase
+            .from('line_contact_person')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', binding.user_id)
+
+          if (countError) {
+            console.error('計算聯絡人數量失敗:', countError)
+          }
+
+          const nextIndex = (count || 0) + 1
+          const dynamicName = `緊急聯絡人${nextIndex}`
+
           await supabase
             .from('line_contact_person')
             .update({ 
               contact_user_id: senderUserId, 
-              contact_name: "緊急聯絡人",
+              contact_name: dynamicName, 
               status: 'verified' 
             })
-            .eq('id', binding.id);
+            .eq('id', binding.id)
+        }
 
-          const lineToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN');
-          if (lineToken) {
-            await fetch('https://api.line.me/v2/bot/message/reply', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${lineToken}`,
-              },
-              body: JSON.stringify({
-                replyToken: event.replyToken,
-                messages: [{ type: 'text', text: '✅ 成功！您已成為 V.I.S.O.R. 的指定緊急聯絡人。' }],
-              }),
-            });
-          }
+        const lineToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN')
+        if (lineToken) {
+          await fetch('https://api.line.me/v2/bot/message/reply', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${lineToken}`,
+            },
+            body: JSON.stringify({
+              replyToken: event.replyToken,
+              messages: [{ type: 'text', text: '✅ 成功！您已成為 V.I.S.O.R. 的指定緊急聯絡人。' }],
+            }),
+          })
         }
       }
     }
@@ -78,7 +88,7 @@ serve(async (req) => {
     })
 
   } catch (error) {
-    console.error("Webhook Error:", error.message);
+    console.error("Webhook Error:", error.message)
     return new Response(JSON.stringify({ error: error.message }), { 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 
     })

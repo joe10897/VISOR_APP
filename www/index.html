@@ -884,19 +884,16 @@
                 navigator.geolocation.getCurrentPosition(
                     async (position) => {
                         const payload = {
-                            user_id: currentUserId, // 👈 帶入使用者 ID
+                            user_id: currentUserId, 
                             location: {
                                 lat: position.coords.latitude,
                                 lng: position.coords.longitude
                             }
                         };
 
-                        console.log("準備發送的 user_id:", currentUserId);
-                        console.log("準備發送的 location:", { lat: position.coords.latitude, lng: position.coords.longitude });
-
                         try {
                             const { data, error } = await supabase.functions.invoke('send-sos', {
-                                body: payload, // 👈 傳送完整的 payload
+                                body: payload, 
                             });
 
                             if (error) {
@@ -921,7 +918,7 @@
                         resetButtonState();
                         if (onTrigger) onTrigger(false);
                     },
-                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 } //高精確、逾時、不使用快取
                 );
             };
 
@@ -1053,6 +1050,115 @@
             </div>
         );
         };
+
+        const EmergencyDashboard = ({ currentUserId }) => {
+        const [contacts, setContacts] = useState([]);
+        const [editingId, setEditingId] = useState(null);
+        const [editForm, setEditForm] = useState({ name: '', status: '' });
+        
+        useEffect(() => {
+            const fetchLineContacts = async () => {
+                const { data, error } = await supabase
+                    .from('line_contact_person')
+                    .select('*')
+                    .eq('user_id', currentUserId)
+                    .eq('status', 'verified');
+
+                if (error) {
+                    console.error('載入 LINE 聯絡人失敗:', error.message);
+                } else {
+                    const formattedContacts = (data || []).map(item => ({
+                        id: item.id, // 保留唯一識別碼供刪除修改用
+                        name: item.contact_name || 'LINE 緊急聯絡人',
+                        status: item.status || '已綁定'
+                    }));
+                    setContacts(formattedContacts);
+                    console.log('從 Supabase 實際抓到的資料:', data);
+                }
+            };
+
+            if (currentUserId) {
+                fetchLineContacts();
+            }
+        }, [currentUserId]);
+
+        const handleLineBindingVerified = (newContact) => {
+            setContacts(prev => [...prev, {
+                id: newContact.id || Date.now(),
+                name: newContact.name,
+                status: newContact.status || 'verified'
+            }]);
+            alert(`🎉 聯絡人 ${newContact.name} 已透過 LINE 驗證自動加入清單！`);
+        };
+
+        const handleDelete = (id) => {
+            setContacts(contacts.filter(contact => contact.id !== id));
+        };
+
+        const handleEditStart = (contact) => {
+            setEditingId(contact.id);
+            setEditForm({ name: contact.name, status: contact.status });
+        };
+
+        const handleEditSave = (id) => {
+            setContacts(contacts.map(contact => 
+                contact.id === id ? { ...contact, ...editForm } : contact
+            ));
+            setEditingId(null);
+        };
+
+        return (
+            <div className="max-w-md mx-auto p-4 space-y-6 bg-slate-900 text-white">
+                <div className="p-4 bg-slate-800 rounded-xl space-y-4">
+                    <h3 className="font-bold text-lg">緊急聯絡人清單</h3>
+                    
+                    <ul className="space-y-3">
+                        {contacts.map(contact => (
+                            <li key={contact.id} className="p-3 bg-slate-700/50 rounded-lg flex items-center justify-between">
+                                {editingId === contact.id ? (
+                                    <div className="flex gap-2 flex-1 mr-2">
+                                        <input
+                                            type="text"
+                                            value={editForm.name}
+                                            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                                            className="w-1/2 p-1 bg-slate-600 rounded text-sm text-white"
+                                            placeholder="姓名"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={editForm.status}
+                                            onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                                            className="w-1/2 p-1 bg-slate-600 rounded text-sm text-white"
+                                            placeholder="狀態"
+                                        />
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <div className="font-bold">{contact.name}</div>
+                                        <div className="text-xs text-slate-400">狀態：{contact.status}</div>
+                                    </div>
+                                )}
+
+                                <div className="flex gap-2">
+                                    {editingId === contact.id ? (
+                                        <>
+                                            <button onClick={() => handleEditSave(contact.id)} className="px-2 py-1 bg-green-600 text-xs rounded">儲存</button>
+                                            <button onClick={() => setEditingId(null)} className="px-2 py-1 bg-gray-600 text-xs rounded">取消</button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <button onClick={() => handleEditStart(contact)} className="px-2 py-1 bg-blue-600 text-xs rounded">修改</button>
+                                            <button onClick={() => handleDelete(contact.id)} className="px-2 py-1 bg-red-600 text-xs rounded">刪除</button>
+                                        </>
+                                    )}
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </div>
+        );
+    };
 
         const NavButton = ({ iconName, label, isActive, onClick, isCenter = false }) => (
             <button onClick={onClick} className={`flex flex-col items-center justify-center gap-1 transition-all duration-300 ${isCenter ? 'mb-4' : 'p-2 w-16 group'}`}>
@@ -4521,6 +4627,7 @@
                             </div>
                         </div>
                         <BindingManager currentUserId={currentUserId}/>
+                        <EmergencyDashboard currentUserId={currentUserId} />
                         {/* 深色/淺色模式切換 */}
                         <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 flex items-center justify-between">
                             <div className="flex items-center gap-3">
