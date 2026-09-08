@@ -13,7 +13,7 @@
   "author": "Apache Cordova Team",
   "license": "Apache-2.0",
   "devDependencies": {
-    "cordova-android": "^14.0.1",
+    "cordova-android": "^15.1.0",
     "cordova-plugin-bluetooth-serial": "^0.4.7",
     "cordova-plugin-geolocation": "^5.0.0",
     "cordova-plugin-network-information": "^3.0.0",

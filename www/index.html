@@ -976,189 +976,309 @@
             );
         };
 
-        const BindingManager = ({ currentUserId }) => {
-        const [code, setCode] = useState('');
-        const [status, setStatus] = useState('unlinked'); // unlinked, pending, verified
-        const [contactName, setContactName] = useState('');
+        const BindingManager = ({ currentUserId, onBindingVerified }) => {
+            const [code, setCode] = useState('');
+            const [status, setStatus] = useState('unlinked'); // unlinked, pending, verified
+            const [contactName, setContactName] = useState('');
+            const [timeLeft, setTimeLeft] = useState(180); 
 
-        // 1. 產生 6 位數驗證碼並寫入資料庫
-        const generateCode = async () => {
-            const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
-            
-            console.log("正在寫入資料庫，user_id 為：", currentUserId);
-
-            const { data, error } = await supabase
-            .from('line_contact_person')
-            .insert([{ user_id: currentUserId, verification_code: randomCode, status: 'pending' }]);
-
-            if (error) {
-                console.error("Supabase 寫入失敗詳細原因：", error.message);
-                alert("寫入失敗：" + error.message);
-                return;
-            }
-
-            setCode(randomCode);
-            setStatus('pending');
-        };
-
-        // 2. 使用 Supabase Realtime 監聽狀態變化
-        useEffect(() => {
-            if (!code) return;
-
-            const channel = supabase
-            .channel('schema-db-changes')
-            .on(
-                'postgres_changes',
-                { event: 'UPDATE', schema: 'public', table: 'line_contact_person', filter: `verification_code=eq.${code}` },
-                (payload) => {
-                if (payload.new.status === 'verified') {
-                    setStatus('verified');
-                    setContactName(payload.new.contact_name);
+            const generateCode = async () => {
+                if (!currentUserId) {
+                    alert("錯誤：沒有取得使用者 ID，無法產生驗證碼");
+                    return;
                 }
-                }
-            )
-            .subscribe();
 
-            return () => {
-            supabase.removeChannel(channel);
+                // 檢查上限
+                const { count } = await supabase
+                    .from('line_contact_person')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', currentUserId)
+                    .eq('status', 'verified');
+
+                if (count >= 3) {
+                    alert("已達到上限！最多只能新增 3 位緊急聯絡人。");
+                    return;
+                }
+
+                const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+                await supabase
+                    .from('line_contact_person')
+                    .delete()
+                    .eq('user_id', currentUserId)
+                    .eq('status', 'pending');
+
+                const { error: insertError } = await supabase
+                    .from('line_contact_person')
+                    .insert([{ 
+                        user_id: currentUserId, 
+                        verification_code: randomCode, 
+                        status: 'pending' 
+                    }]);
+
+                if (insertError) {
+                    alert("產生驗證碼失敗：" + insertError.message);
+                    return;
+                }
+
+                setCode(randomCode);
+                setStatus('pending');
+                setTimeLeft(180);
             };
-        }, [code]);
 
-        return (
-            <div className="p-4 bg-slate-800 rounded-xl space-y-4 text-white">
-            <h3 className="font-bold text-lg">緊急聯絡人 LINE 綁定</h3>
-            
-            {status === 'unlinked' && (
-                <button onClick={generateCode} className="w-full py-2 bg-red-600 rounded font-bold">
-                產生綁定驗證碼
-                </button>
-            )}
+            const handleTimeout = async () => {
+                setStatus('unlinked');
+                setCode('');
+                alert("驗證碼已過期，請重新產生。");
 
-            {status === 'pending' && (
-                <div className="space-y-2 text-center bg-slate-700/50 p-4 rounded-lg">
-                <p className="text-sm text-slate-300">請讓親友加入 LINE 機器人並傳送以下驗證碼：</p>
-                <div className="text-3xl font-mono font-bold tracking-widest text-red-400">{code}</div>
-                <p className="text-xs text-yellow-400 animate-pulse">⏳ 等待對方傳送訊息中...</p>
+                if (currentUserId) {
+                    await supabase
+                        .from('line_contact_person')
+                        .delete()
+                        .eq('user_id', currentUserId)
+                        .eq('status', 'pending');
+                }
+            };
+
+            useEffect(() => {
+                let timer;
+                if (status === 'pending' && timeLeft > 0) {
+                    timer = setTimeout(() => setTimeLeft(prev => prev - 1), 1000);
+                } else if (status === 'pending' && timeLeft === 0) {
+                    handleTimeout();
+                }
+                return () => clearTimeout(timer);
+            }, [status, timeLeft]);
+
+            // 即時監聽資料庫狀態
+            useEffect(() => {
+                if (!code) return;
+
+                const channel = supabase
+                    .channel('schema-db-changes')
+                    .on(
+                        'postgres_changes',
+                        { event: 'UPDATE', schema: 'public', table: 'line_contact_person', filter: `verification_code=eq.${code}` },
+                        (payload) => {
+                            if (payload.new.status === 'verified') {
+                                setStatus('verified');
+                                setContactName(payload.new.contact_name);
+                                
+                                // ⭐️ 觸發父元件的通知與清單更新
+                                if (onBindingVerified) {
+                                    onBindingVerified({
+                                        id: payload.new.id,
+                                        name: payload.new.contact_name,
+                                        status: payload.new.status
+                                    });
+                                }
+                            }
+                        }
+                    )
+                    .subscribe();
+
+                return () => {
+                    supabase.removeChannel(channel);
+                };
+            }, [code]);
+
+            const formatTime = (seconds) => {
+                const m = Math.floor(seconds / 60);
+                const s = seconds % 60;
+                return `${m}:${s.toString().padStart(2, '0')}`;
+            };
+
+            return (
+                <div className="p-4 bg-slate-800 rounded-xl space-y-4 text-white">
+                    <h3 className="font-bold text-lg">緊急聯絡人 LINE 綁定</h3>
+                    
+                    {status === 'unlinked' && (
+                        <button onClick={generateCode} className="w-full py-2 bg-red-600 rounded font-bold hover:bg-red-700 transition">
+                            產生綁定驗證碼
+                        </button>
+                    )}
+
+                    {status === 'pending' && (
+                        <div className="space-y-2 text-center bg-slate-700/50 p-4 rounded-lg relative overflow-hidden">
+                            <p className="text-sm text-slate-300">請讓親友加入 LINE 機器人並傳送以下驗證碼：</p>
+                            <div className="text-4xl font-mono font-bold tracking-widest text-red-400 py-2">{code}</div>
+                            
+                            <div className={`text-sm font-bold ${timeLeft <= 30 ? 'text-red-500 animate-pulse' : 'text-yellow-400'}`}>
+                                ⏳ 剩餘時間: {formatTime(timeLeft)}
+                            </div>
+                            
+                            <button 
+                                onClick={handleTimeout} 
+                                className="mt-3 text-xs text-slate-400 underline hover:text-white"
+                            >
+                                取消並重新產生
+                            </button>
+                        </div>
+                    )}
+
+                    {status === 'verified' && (
+                        <div className="p-4 bg-green-900/40 border border-green-500 rounded-lg text-center space-y-1">
+                            <span className="text-green-400 font-bold text-lg">✅ 已成功綁定緊急聯絡人！</span>
+                            {contactName && <div className="text-sm text-slate-300">名稱：{contactName}</div>}
+                        </div>
+                    )}
                 </div>
-            )}
-
-            {status === 'verified' && (
-                <div className="p-4 bg-green-900/40 border border-green-500 rounded-lg text-center">
-                <span className="text-green-400 font-bold text-lg">✅ 已成功綁定緊急聯絡人！</span>
-                </div>
-            )}
-            </div>
-        );
+            );
         };
 
-        const EmergencyDashboard = ({ currentUserId }) => {
-        const [contacts, setContacts] = useState([]);
-        const [editingId, setEditingId] = useState(null);
-        const [editForm, setEditForm] = useState({ name: '', status: '' });
-        
-        useEffect(() => {
+        const EmergencyPage = ({ currentUserId }) => {
+            const [contacts, setContacts] = useState([]);
+            const [editingId, setEditingId] = useState(null);
+            const [editForm, setEditForm] = useState({ name: '' });
+            const [isLoading, setIsLoading] = useState(false);
+            
             const fetchLineContacts = async () => {
+                if (!currentUserId) return;
+                setIsLoading(true);
+                
                 const { data, error } = await supabase
                     .from('line_contact_person')
                     .select('*')
                     .eq('user_id', currentUserId)
-                    .eq('status', 'verified');
+                    .eq('status', 'verified')
+                    .order('created_at', { ascending: true });
 
                 if (error) {
                     console.error('載入 LINE 聯絡人失敗:', error.message);
                 } else {
                     const formattedContacts = (data || []).map(item => ({
-                        id: item.id, // 保留唯一識別碼供刪除修改用
+                        id: item.id,
                         name: item.contact_name || 'LINE 緊急聯絡人',
                         status: item.status || '已綁定'
                     }));
                     setContacts(formattedContacts);
-                    console.log('從 Supabase 實際抓到的資料:', data);
+                }
+                setIsLoading(false);
+            };
+
+            useEffect(() => {
+                fetchLineContacts();
+            }, [currentUserId]);
+
+            // ⭐️ 這裡就是前端的即時通知與清單自動更新
+            const handleBindingVerified = (newContact) => {
+                alert(`🎉 成功！新聯絡人「${newContact.name}」已透過 LINE 完成綁定！`);
+                fetchLineContacts(); // 重新向資料庫抓取最新清單，確保編號與順序完全正確
+            };
+
+            const handleDelete = async (id) => {
+                const isConfirmed = window.confirm("確定要刪除這位緊急聯絡人嗎？");
+                if (!isConfirmed) return;
+
+                const { error } = await supabase
+                    .from('line_contact_person')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) {
+                    alert("刪除失敗：" + error.message);
+                } else {
+                    setContacts(contacts.filter(contact => contact.id !== id));
                 }
             };
 
-            if (currentUserId) {
-                fetchLineContacts();
-            }
-        }, [currentUserId]);
+            const handleEditStart = (contact) => {
+                setEditingId(contact.id);
+                setEditForm({ name: contact.name }); 
+            };
 
-        const handleLineBindingVerified = (newContact) => {
-            setContacts(prev => [...prev, {
-                id: newContact.id || Date.now(),
-                name: newContact.name,
-                status: newContact.status || 'verified'
-            }]);
-            alert(`🎉 聯絡人 ${newContact.name} 已透過 LINE 驗證自動加入清單！`);
-        };
+            const handleEditSave = async (id) => {
+                if (!editForm.name.trim()) {
+                    alert("聯絡人姓名不能為空白！");
+                    return;
+                }
 
-        const handleDelete = (id) => {
-            setContacts(contacts.filter(contact => contact.id !== id));
-        };
+                const { error } = await supabase
+                    .from('line_contact_person')
+                    .update({ contact_name: editForm.name })
+                    .eq('id', id);
 
-        const handleEditStart = (contact) => {
-            setEditingId(contact.id);
-            setEditForm({ name: contact.name, status: contact.status });
-        };
+                if (error) {
+                    alert("更新名稱失敗：" + error.message);
+                } else {
+                    setContacts(contacts.map(contact => 
+                        contact.id === id ? { ...contact, name: editForm.name } : contact
+                    ));
+                    setEditingId(null);
+                }
+            };
 
-        const handleEditSave = (id) => {
-            setContacts(contacts.map(contact => 
-                contact.id === id ? { ...contact, ...editForm } : contact
-            ));
-            setEditingId(null);
-        };
-
-        return (
-            <div className="max-w-md mx-auto p-4 space-y-6 bg-slate-900 text-white">
-                <div className="p-4 bg-slate-800 rounded-xl space-y-4">
-                    <h3 className="font-bold text-lg">緊急聯絡人清單</h3>
-                    
-                    <ul className="space-y-3">
-                        {contacts.map(contact => (
-                            <li key={contact.id} className="p-3 bg-slate-700/50 rounded-lg flex items-center justify-between">
-                                {editingId === contact.id ? (
-                                    <div className="flex gap-2 flex-1 mr-2">
-                                        <input
-                                            type="text"
-                                            value={editForm.name}
-                                            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                                            className="w-1/2 p-1 bg-slate-600 rounded text-sm text-white"
-                                            placeholder="姓名"
-                                        />
-                                        <input
-                                            type="text"
-                                            value={editForm.status}
-                                            onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                                            className="w-1/2 p-1 bg-slate-600 rounded text-sm text-white"
-                                            placeholder="狀態"
-                                        />
-                                    </div>
-                                ) : (
-                                    <div>
-                                        <div className="font-bold">{contact.name}</div>
-                                        <div className="text-xs text-slate-400">狀態：{contact.status}</div>
-                                    </div>
-                                )}
-
-                                <div className="flex gap-2">
+            return (
+                <div className="max-w-md mx-auto p-4 space-y-6 bg-slate-900 text-white">
+                    {/* 緊急聯絡人清單元件 */}
+                    <div className="p-4 bg-slate-800 rounded-xl space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="font-bold text-lg">緊急聯絡人清單 (上限 3 名)</h3>
+                            <button 
+                                onClick={fetchLineContacts}
+                                disabled={isLoading}
+                                className="p-2 bg-slate-700 hover:bg-slate-600 rounded-full transition disabled:opacity-50"
+                                title="重新整理清單"
+                            >
+                                <svg 
+                                    className={`w-4 h-4 text-slate-300 ${isLoading ? 'animate-spin' : ''}`} 
+                                    fill="none" 
+                                    stroke="currentColor" 
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <ul className="space-y-3">
+                            {contacts.length === 0 && (
+                                <p className="text-sm text-slate-400 text-center py-4">目前尚無聯絡人，請使用上方產生驗證碼來綁定。</p>
+                            )}
+                            {contacts.map(contact => (
+                                <li key={contact.id} className="p-3 bg-slate-700/50 rounded-lg flex items-center justify-between">
                                     {editingId === contact.id ? (
-                                        <>
-                                            <button onClick={() => handleEditSave(contact.id)} className="px-2 py-1 bg-green-600 text-xs rounded">儲存</button>
-                                            <button onClick={() => setEditingId(null)} className="px-2 py-1 bg-gray-600 text-xs rounded">取消</button>
-                                        </>
+                                        <div className="flex gap-2 flex-1 mr-2 items-center">
+                                            <input
+                                                type="text"
+                                                value={editForm.name}
+                                                onChange={(e) => setEditForm({ name: e.target.value })}
+                                                className="w-[60%] p-1 bg-slate-600 rounded text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                placeholder="請輸入姓名"
+                                            />
+                                            <span className="w-[40%] text-xs text-slate-400 truncate">
+                                                狀態：{contact.status === 'verified' ? '已綁定' : contact.status}
+                                            </span>
+                                        </div>
                                     ) : (
-                                        <>
-                                            <button onClick={() => handleEditStart(contact)} className="px-2 py-1 bg-blue-600 text-xs rounded">修改</button>
-                                            <button onClick={() => handleDelete(contact.id)} className="px-2 py-1 bg-red-600 text-xs rounded">刪除</button>
-                                        </>
+                                        <div>
+                                            <div className="font-bold">{contact.name}</div>
+                                            <div className="text-xs text-slate-400">
+                                                狀態：{contact.status === 'verified' ? '已綁定' : contact.status}
+                                            </div>
+                                        </div>
                                     )}
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
+
+                                    <div className="flex gap-2 ml-2">
+                                        {editingId === contact.id ? (
+                                            <>
+                                                <button onClick={() => handleEditSave(contact.id)} className="px-2 py-1 bg-green-600 hover:bg-green-500 text-xs rounded transition">儲存</button>
+                                                <button onClick={() => setEditingId(null)} className="px-2 py-1 bg-gray-600 hover:bg-gray-500 text-xs rounded transition">取消</button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <button onClick={() => handleEditStart(contact)} className="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-xs rounded transition">修改</button>
+                                                <button onClick={() => handleDelete(contact.id)} className="px-2 py-1 bg-red-600 hover:bg-red-500 text-xs rounded transition">刪除</button>
+                                            </>
+                                        )}
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
                 </div>
-            </div>
-        );
-    };
+            );
+        };
 
         const NavButton = ({ iconName, label, isActive, onClick, isCenter = false }) => (
             <button onClick={onClick} className={`flex flex-col items-center justify-center gap-1 transition-all duration-300 ${isCenter ? 'mb-4' : 'p-2 w-16 group'}`}>
@@ -4627,7 +4747,7 @@
                             </div>
                         </div>
                         <BindingManager currentUserId={currentUserId}/>
-                        <EmergencyDashboard currentUserId={currentUserId} />
+                        <EmergencyPage currentUserId={currentUserId} />
                         {/* 深色/淺色模式切換 */}
                         <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 flex items-center justify-between">
                             <div className="flex items-center gap-3">
