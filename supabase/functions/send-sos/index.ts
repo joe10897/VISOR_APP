@@ -10,7 +10,6 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
-  console.log("--- 收到新的 SOS 請求 ---");
 
   try {
     const { user_id, location } = await req.json()
@@ -26,7 +25,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // 查詢該騎士已綁定的「所有」LINE 緊急聯絡人 (移除 .single())
+    // 查詢該騎士已綁定的 LINE 緊急聯絡人
     const { data: contacts, error } = await supabase
       .from('line_contact_person')
       .select('*')
@@ -34,16 +33,16 @@ serve(async (req) => {
       .eq('status', 'verified')
 
     if (error || !contacts || contacts.length === 0) {
-      return new Response(JSON.stringify({ error: "尚未綁定任何有效的緊急聯絡人" }), { 
+      return new Response(JSON.stringify({ error: "尚未綁定任何緊急聯絡人" }), { 
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       })
     }
 
-    const lineToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN');
+    const lineToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN'); //預先設定於supabase的環境變數中
     const googleMapsUrl = `https://www.google.com/maps?q=${location.lat},${location.lng}`;
     const messageText = `🚨【V.I.S.O.R. 緊急求救】\n騎士發生狀況！\nGPS 位置：\n${googleMapsUrl}`;
 
-    // 迴圈發送給所有已驗證的緊急聯絡人
+    // 發送給所有已驗證的緊急聯絡人
     for (const contact of contacts) {
       if (!contact.contact_user_id) continue;
 

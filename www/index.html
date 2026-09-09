@@ -864,7 +864,7 @@
         const SOSButton = ({ currentUserId, onTrigger }) => { 
             const [activating, setActivating] = useState(false);
             const [countdown, setCountdown] = useState(3);
-            const [sending, setSending] = useState(false);
+            const [sending, setSending] = useState(false); //決定按鈕是否可點擊，避免重複觸發
 
             // 處理長按倒數
             useEffect(() => {
@@ -980,7 +980,7 @@
             const [code, setCode] = useState('');
             const [status, setStatus] = useState('unlinked'); // unlinked, pending, verified
             const [contactName, setContactName] = useState('');
-            const [timeLeft, setTimeLeft] = useState(180); 
+            const [timeLeft, setTimeLeft] = useState(15); 
 
             const generateCode = async () => {
                 if (!currentUserId) {
@@ -1022,7 +1022,7 @@
 
                 setCode(randomCode);
                 setStatus('pending');
-                setTimeLeft(180);
+                setTimeLeft(15);
             };
 
             const handleTimeout = async () => {

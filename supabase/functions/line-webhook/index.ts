@@ -32,12 +32,13 @@ serve(async (req) => {
     )
 
     for (const event of events) {
+      //訊息?、純文字?
       if (event.type === 'message' && event.message.type === 'text') {
-        const receivedText = event.message.text.trim();
+        const receivedText = event.message.text.trim(); // LINE 傳進來的字
         const senderUserId = event.source.userId;
-        const lineToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN'); 
+        const lineToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN');  
 
-        // 1. 檢查是否為純數字且剛好 6 位數
+        // 檢查是否為純數字且剛好 6 位數
         const isSixDigits = /^\d{6}$/.test(receivedText);
         
         if (!isSixDigits) {
@@ -54,7 +55,7 @@ serve(async (req) => {
           continue; 
         }
 
-        // 2. 去資料庫查詢這組 6 位數驗證碼
+        // 去資料庫查詢這組 6 位數驗證碼
         const { data: binding, error } = await supabase
           .from('line_contact_person')
           .select('*')
@@ -62,7 +63,7 @@ serve(async (req) => {
           .eq('status', 'pending')
           .single();
 
-        // 3. 找不到資料 (驗證碼錯誤或不存在)
+        // 找不到資料 (驗證碼錯誤或不存在)
         if (!binding || error) {
           if (lineToken) {
             await fetch('https://api.line.me/v2/bot/message/reply', {
@@ -77,26 +78,26 @@ serve(async (req) => {
           continue; 
         }
 
-        // 4. 【後端雙重檢查】判斷這筆驗證碼是否建立超過 3 分鐘
-        const createdAt = new Date(binding.created_at).getTime();
-        const now = new Date().getTime();
-        const diffMinutes = (now - createdAt) / (1000 * 60);
+        // // 判斷這筆驗證碼是否建立超過 3 分鐘
+        // const createdAt = new Date(binding.created_at).getTime();
+        // const now = new Date().getTime();
+        // const diffMinutes = (now - createdAt) / (1000 * 60);
 
-        if (diffMinutes > 3) {
-          await supabase.from('line_contact_person').delete().eq('id', binding.id);
+        // if (diffMinutes > 3) {
+        //   await supabase.from('line_contact_person').delete().eq('id', binding.id);
           
-          if (lineToken) {
-            await fetch('https://api.line.me/v2/bot/message/reply', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${lineToken}` },
-              body: JSON.stringify({
-                replyToken: event.replyToken,
-                messages: [{ type: 'text', text: '❌ 綁定失敗：此驗證碼已過期（超過 3 分鐘），請在 APP 重新產生。' }],
-              }),
-            });
-          }
-          continue; 
-        }
+        //   if (lineToken) {
+        //     await fetch('https://api.line.me/v2/bot/message/reply', {
+        //       method: 'POST',
+        //       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${lineToken}` },
+        //       body: JSON.stringify({
+        //         replyToken: event.replyToken,
+        //         messages: [{ type: 'text', text: '❌ 綁定失敗：此驗證碼已過期（超過 3 分鐘），請在 APP 重新產生。' }],
+        //       }),
+        //     });
+        //   }
+        //   continue; 
+        // }
 
         // 5. 檢查是否已經是該使用者的緊急聯絡人 (防重複綁定 + 偵錯 Log)
         console.log('--- 開始檢查重複綁定 ---');
