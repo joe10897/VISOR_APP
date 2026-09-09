@@ -902,7 +902,7 @@
                                 if (onTrigger) onTrigger(false);
                             } else {
                                 console.log('成功回應:', data);
-                                alert('✅ SOS 警報已透過 Supabase 成功發送給緊急聯絡人！');
+                                alert('警報已成功發送給緊急聯絡人！');
                                 if (onTrigger) onTrigger(true);
                             }
                         } catch (err) {
@@ -966,7 +966,7 @@
                         </span>
                         <span className="text-xs text-red-300/80 font-mono">
                             {sending 
-                                ? '📡 警報發送中...' 
+                                ? '警報發送中...' 
                                 : activating 
                                     ? `釋放以取消 (${countdown})` 
                                     : '長按 3 秒發送求救訊號'}
@@ -988,7 +988,6 @@
                     return;
                 }
 
-                // 檢查上限
                 const { count } = await supabase
                     .from('line_contact_person')
                     .select('*', { count: 'exact', head: true })
@@ -1058,19 +1057,36 @@
                     .channel('schema-db-changes')
                     .on(
                         'postgres_changes',
-                        { event: 'UPDATE', schema: 'public', table: 'line_contact_person', filter: `verification_code=eq.${code}` },
-                        (payload) => {
-                            if (payload.new.status === 'verified') {
-                                setStatus('verified');
-                                setContactName(payload.new.contact_name);
-                                
-                                // ⭐️ 觸發父元件的通知與清單更新
-                                if (onBindingVerified) {
-                                    onBindingVerified({
-                                        id: payload.new.id,
-                                        name: payload.new.contact_name,
-                                        status: payload.new.status
-                                    });
+                        { event: '*', schema: 'public', table: 'line_contact_person' },
+                        async (payload) => {
+                            // 1. 如果是更新且符合我們的驗證碼
+                            if (payload.eventType === 'UPDATE' && payload.new.verification_code === code) {
+                                if (payload.new.status === 'verified') {
+                                    setStatus('verified');
+                                    setContactName(payload.new.contact_name);
+                                    
+                                    if (onBindingVerified) {
+                                        onBindingVerified({
+                                            id: payload.new.id,
+                                            name: payload.new.contact_name,
+                                            status: payload.new.status
+                                        });
+                                    }
+                                }
+                            }
+                            
+                            // 2. 檢查這組驗證碼是否已經從資料庫消失（被後端因為重複或過期刪除）
+                            if (status === 'pending' && code) {
+                                const { data, error } = await supabase
+                                    .from('line_contact_person')
+                                    .select('*')
+                                    .eq('verification_code', code)
+                                    .maybeSingle();
+
+                                // 如果資料庫已經找不到這組 code，代表它被刪除了！
+                                if (!data || error) {
+                                    setStatus('unlinked');
+                                    setCode('');
                                 }
                             }
                         }
@@ -1080,7 +1096,7 @@
                 return () => {
                     supabase.removeChannel(channel);
                 };
-            }, [code]);
+            }, [code, status]);
 
             const formatTime = (seconds) => {
                 const m = Math.floor(seconds / 60);
