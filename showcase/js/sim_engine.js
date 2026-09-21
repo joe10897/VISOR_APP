@@ -1,8 +1,11 @@
 /**
- * V.I.S.O.R. Interactive Simulation & Autonomous Cinematic Engine (v2.0)
+ * V.I.S.O.R. Interactive Simulation & Autonomous Cinematic Engine (v2.1)
  * - Automatic Continuous Scenario Loop (Cruising -> Twisting -> Blindspot -> Emergency -> Loop)
- * - Real-time Physics Kinematics & Web Audio Synthesizer
- * - Dual CSI Camera Procedural Bounding Box Tracking & 24GHz Radar Polar Plotting
+ * - 8D Spatial Audio Panning (Left/Right Ear Directional Hazard Acoustics)
+ * - Collimated Helmet Visor AR Holographic Overlay Mode
+ * - Exhibition / Kiosk Presentation Fullscreen Mode
+ * - 3D Wireframe Cyber-Bike & Dynamic Lean Arc & Tire Grip Gauge
+ * - Flight Recorder / Real-world Bei-Yi Mountain Pass Log Replay
  */
 
 class VisorSimEngine {
@@ -26,17 +29,21 @@ class VisorSimEngine {
     this.rightBsd = false;
     this.ttc = 3.8;             // Time to collision in seconds
 
-    // Hardware Bridge States
+    // Hardware Bridge & Advanced Modes
     this.cameraMode = 'front';  // 'front' | 'rear'
     this.hudFlipV = true;       // Optical flip vertical
     this.hudMirrorH = true;     // Optical mirror horizontal
     this.radarSweepAngle = 0;   // Radians
+    this.arVisorMode = true;    // Collimated AR Visor overlay mode
+    this.kioskMode = false;     // Kiosk presentation mode
 
-    // Audio SFX state
+    // Audio SFX state (Spatial 8D Synthesizer)
     this.audioCtx = null;
     this.audioEnabled = false;
     this.engineOsc = null;
     this.engineGain = null;
+    this.turboOsc = null;
+    this.turboGain = null;
 
     // Continuous Autonomous Sequence Director
     this.autoLoopEnabled = true;
@@ -44,6 +51,23 @@ class VisorSimEngine {
     this.autoLoopTime = 0.0;      // current elapsed in cycle
     this.currentScenario = 'cruise';
     this.userOverrideTimer = null;
+
+    // Flight Recorder / Real Log Replay Mode
+    this.flightLogActive = false;
+    this.flightLogIndex = 0;
+    this.flightLogTimer = 0.0;
+    this.flightLogData = [
+      { t: 0, speed: 68, tilt: 0, ttc: 4.8, threat: 'safe', bsdL: false, bsdR: false, lat: 24.8912, lng: 121.7241, note: '坪林段 巡航出發' },
+      { t: 2, speed: 74, tilt: -14, ttc: 4.2, threat: 'safe', bsdL: false, bsdR: false, lat: 24.8918, lng: 121.7250, note: '左盲彎 入彎前傾角 -14°' },
+      { t: 4, speed: 81, tilt: -31, ttc: 3.6, threat: 'safe', bsdL: false, bsdR: false, lat: 24.8925, lng: 121.7262, note: '北宜九彎十八拐 極限壓角 -31°' },
+      { t: 6, speed: 76, tilt: 8, ttc: 3.9, threat: 'safe', bsdL: false, bsdR: false, lat: 24.8931, lng: 121.7275, note: '連續S彎 車身快速回正' },
+      { t: 8, speed: 84, tilt: 26, ttc: 3.5, threat: 'safe', bsdL: false, bsdR: false, lat: 24.8940, lng: 121.7290, note: '右側大彎 傾角 +26°' },
+      { t: 10, speed: 70, tilt: 0, ttc: 2.1, threat: 'caution', bsdL: true, bsdR: false, lat: 24.8958, lng: 121.7320, note: '左後盲區大車高速超車 雷達鎖定' },
+      { t: 12, speed: 64, tilt: 0, ttc: 1.4, threat: 'danger', bsdL: true, bsdR: false, lat: 24.8966, lng: 121.7334, note: '左聲道 8D 空間定向聲響警報' },
+      { t: 14, speed: 48, tilt: 0, ttc: 0.7, threat: 'danger', bsdL: false, bsdR: false, lat: 24.8974, lng: 121.7348, note: '前方工程車突入 FCW 全螢幕制動' },
+      { t: 16, speed: 18, tilt: 0, ttc: 0.4, threat: 'danger', bsdL: false, bsdR: false, lat: 24.8981, lng: 121.7360, note: 'ABS 雙迴路緊急煞停' },
+      { t: 18, speed: 0, tilt: 0, ttc: 9.9, threat: 'safe', bsdL: false, bsdR: false, lat: 24.8988, lng: 121.7371, note: '路測日誌完成 數據封裝' }
+    ];
 
     // Internal timing
     this.lastTime = performance.now();
@@ -60,6 +84,7 @@ class VisorSimEngine {
   init() {
     this.initCanvases();
     this.bindControls();
+    this.bindKeyboardShortcuts();
     this.loop = this.loop.bind(this);
     requestAnimationFrame(this.loop);
 
@@ -72,9 +97,38 @@ class VisorSimEngine {
   }
 
   /* ==========================================================================
-     Autonomous Cinematic Loop Director (自動循環演繹核心)
+     Keyboard Shortcuts & Quick Controls
+     ========================================================================== */
+  bindKeyboardShortcuts() {
+    window.addEventListener('keydown', (e) => {
+      // Avoid hotkeys when typing in input
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      const key = e.key.toLowerCase();
+      if (key === 'k') {
+        this.toggleKioskMode();
+      } else if (key === 'v') {
+        this.toggleArVisor();
+      } else if (key === 'l') {
+        this.toggleFlightLog();
+      } else if (key === 'a') {
+        this.toggleAudio();
+        document.querySelectorAll('[data-action="toggle-sound"]').forEach(btn => btn.classList.toggle('active', this.audioEnabled));
+      } else if (key === 'c') {
+        this.toggleCameraMode();
+      }
+    });
+  }
+
+  /* ==========================================================================
+     Autonomous Cinematic Loop Director
      ========================================================================== */
   updateAutoSequence(dt) {
+    if (this.flightLogActive) {
+      this.updateFlightLog(dt);
+      return;
+    }
+
     if (!this.autoLoopEnabled) return;
 
     this.autoLoopTime = (this.autoLoopTime + dt) % this.autoLoopDuration;
@@ -149,6 +203,31 @@ class VisorSimEngine {
     }
   }
 
+  updateFlightLog(dt) {
+    this.flightLogTimer += dt;
+    if (this.flightLogTimer >= 2.0) {
+      this.flightLogTimer = 0;
+      this.flightLogIndex = (this.flightLogIndex + 1) % this.flightLogData.length;
+      const step = this.flightLogData[this.flightLogIndex];
+      this.targetSpeed = step.speed;
+      this.targetTilt = step.tilt;
+      this.ttc = step.ttc;
+      this.fcwThreat = step.threat;
+      this.leftBsd = step.bsdL;
+      this.rightBsd = step.bsdR;
+      
+      document.querySelectorAll('.log-replay-note').forEach(el => {
+        el.textContent = `[${step.t}s] ${step.note}`;
+      });
+
+      if (step.bsdL) {
+        this.playSpatialAlert('left', 'blindspot');
+      } else if (step.threat === 'danger') {
+        this.playSpatialAlert('center', 'emergency');
+      }
+    }
+  }
+
   applyScenario(name) {
     this.currentScenario = name;
     document.querySelectorAll('[data-scenario]').forEach(btn => {
@@ -165,8 +244,10 @@ class VisorSimEngine {
       el.textContent = scenarioNames[name] || name.toUpperCase();
     });
 
-    if (name === 'blindspot' || name === 'emergency') {
-      this.playHazardAlarm();
+    if (name === 'blindspot') {
+      this.playSpatialAlert('left', 'blindspot');
+    } else if (name === 'emergency') {
+      this.playSpatialAlert('center', 'emergency');
     } else {
       this.playBeep(880, 0.06);
     }
@@ -174,6 +255,7 @@ class VisorSimEngine {
 
   toggleAutoLoop() {
     this.autoLoopEnabled = !this.autoLoopEnabled;
+    this.flightLogActive = false;
     document.querySelectorAll('[data-action="toggle-auto"]').forEach(btn => {
       btn.classList.toggle('active', this.autoLoopEnabled);
       const text = btn.querySelector('.auto-text');
@@ -182,8 +264,42 @@ class VisorSimEngine {
     this.playBeep(1200, 0.06);
   }
 
+  toggleKioskMode() {
+    this.kioskMode = !this.kioskMode;
+    document.body.classList.toggle('kiosk-mode', this.kioskMode);
+    document.querySelectorAll('[data-action="toggle-kiosk"]').forEach(btn => {
+      btn.classList.toggle('active', this.kioskMode);
+    });
+    this.playBeep(1400, 0.08);
+  }
+
+  toggleArVisor() {
+    this.arVisorMode = !this.arVisorMode;
+    document.querySelectorAll('[data-action="toggle-ar"]').forEach(btn => {
+      btn.classList.toggle('active', this.arVisorMode);
+    });
+    this.playBeep(1100, 0.05);
+  }
+
+  toggleFlightLog() {
+    this.flightLogActive = !this.flightLogActive;
+    if (this.flightLogActive) {
+      this.flightLogIndex = 0;
+      this.flightLogTimer = 0;
+      this.autoLoopEnabled = false;
+      document.querySelectorAll('.log-replay-status').forEach(el => el.textContent = '回放中: 北宜台9線實測');
+    } else {
+      this.autoLoopEnabled = true;
+      document.querySelectorAll('.log-replay-status').forEach(el => el.textContent = '即時推論模式');
+    }
+    document.querySelectorAll('[data-action="toggle-log"]').forEach(btn => {
+      btn.classList.toggle('active', this.flightLogActive);
+    });
+    this.playBeep(950, 0.06);
+  }
+
   /* ==========================================================================
-     Web Audio API Synthesizer
+     8D Spatial Audio API Synthesizer (雙耳空間定向聲學核心)
      ========================================================================== */
   initAudio() {
     if (this.audioCtx) return;
@@ -191,20 +307,33 @@ class VisorSimEngine {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       this.audioCtx = new AudioContext();
 
+      // 1. Low rumble exhaust engine oscillator
       this.engineOsc = this.audioCtx.createOscillator();
       this.engineGain = this.audioCtx.createGain();
       this.engineOsc.type = 'sawtooth';
-      this.engineOsc.frequency.setValueAtTime(45, this.audioCtx.currentTime);
+      this.engineOsc.frequency.setValueAtTime(36, this.audioCtx.currentTime);
       this.engineGain.gain.setValueAtTime(0.001, this.audioCtx.currentTime);
 
       const filter = this.audioCtx.createBiquadFilter();
       filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(180, this.audioCtx.currentTime);
+      filter.frequency.setValueAtTime(160, this.audioCtx.currentTime);
 
       this.engineOsc.connect(filter);
       filter.connect(this.engineGain);
       this.engineGain.connect(this.audioCtx.destination);
       this.engineOsc.start();
+
+      // 2. High turbo/electric whine oscillator
+      this.turboOsc = this.audioCtx.createOscillator();
+      this.turboGain = this.audioCtx.createGain();
+      this.turboOsc.type = 'sine';
+      this.turboOsc.frequency.setValueAtTime(1400, this.audioCtx.currentTime);
+      this.turboGain.gain.setValueAtTime(0.0001, this.audioCtx.currentTime);
+
+      this.turboOsc.connect(this.turboGain);
+      this.turboGain.connect(this.audioCtx.destination);
+      this.turboOsc.start();
+
       this.audioEnabled = true;
     } catch (e) {
       console.warn('Web Audio API not supported:', e);
@@ -229,8 +358,74 @@ class VisorSimEngine {
   }
 
   audioGainSilence() {
-    if (this.engineGain && this.audioCtx) {
-      this.engineGain.gain.setTargetAtTime(0, this.audioCtx.currentTime, 0.05);
+    if (this.audioCtx) {
+      const now = this.audioCtx.currentTime;
+      if (this.engineGain) this.engineGain.gain.setTargetAtTime(0, now, 0.05);
+      if (this.turboGain) this.turboGain.gain.setTargetAtTime(0, now, 0.05);
+    }
+  }
+
+  playSpatialAlert(side = 'center', type = 'blindspot') {
+    if (!this.audioEnabled || !this.audioCtx) return;
+    try {
+      const now = this.audioCtx.currentTime;
+      let panner = null;
+      if (this.audioCtx.createStereoPanner) {
+        panner = this.audioCtx.createStereoPanner();
+        const panVal = side === 'left' ? -0.88 : side === 'right' ? 0.88 : 0.0;
+        panner.pan.setValueAtTime(panVal, now);
+      }
+
+      if (type === 'blindspot') {
+        // High-low proximity chirps directed to specified ear channel
+        [0, 0.13, 0.26].forEach((delay, idx) => {
+          const osc = this.audioCtx.createOscillator();
+          const gain = this.audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(1350 + idx * 140, now + delay);
+          gain.gain.setValueAtTime(0.08, now + delay);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + 0.08);
+
+          if (panner) {
+            osc.connect(gain);
+            gain.connect(panner);
+            panner.connect(this.audioCtx.destination);
+          } else {
+            osc.connect(gain);
+            gain.connect(this.audioCtx.destination);
+          }
+          osc.start(now + delay);
+          osc.stop(now + delay + 0.08);
+        });
+      } else if (type === 'emergency') {
+        // Dual emergency horn (Center stereo)
+        [0, 0.15].forEach((delay) => {
+          const osc1 = this.audioCtx.createOscillator();
+          const osc2 = this.audioCtx.createOscillator();
+          const gain = this.audioCtx.createGain();
+          osc1.type = 'sawtooth';
+          osc2.type = 'square';
+          osc1.frequency.setValueAtTime(1820, now + delay);
+          osc2.frequency.setValueAtTime(1220, now + delay);
+          gain.gain.setValueAtTime(0.12, now + delay);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + 0.14);
+
+          osc1.connect(gain);
+          osc2.connect(gain);
+          if (panner) {
+            gain.connect(panner);
+            panner.connect(this.audioCtx.destination);
+          } else {
+            gain.connect(this.audioCtx.destination);
+          }
+          osc1.start(now + delay);
+          osc2.start(now + delay);
+          osc1.stop(now + delay + 0.14);
+          osc2.stop(now + delay + 0.14);
+        });
+      }
+    } catch (err) {
+      console.warn('Spatial Audio Error:', err);
     }
   }
 
@@ -250,20 +445,21 @@ class VisorSimEngine {
     } catch (err) {}
   }
 
-  playHazardAlarm() {
-    if (!this.audioEnabled || !this.audioCtx) return;
-    try {
-      this.playBeep(1760, 0.12, 'square');
-      setTimeout(() => this.playBeep(1320, 0.14, 'square'), 120);
-    } catch (err) {}
-  }
-
   updateEnginePitch() {
-    if (!this.audioEnabled || !this.engineOsc || !this.audioCtx) return;
-    const targetFreq = 38 + (this.speed * 1.5);
-    this.engineOsc.frequency.setTargetAtTime(targetFreq, this.audioCtx.currentTime, 0.1);
-    const targetVolume = Math.min(0.035, 0.003 + (this.speed / 160) * 0.03);
-    this.engineGain.gain.setTargetAtTime(targetVolume, this.audioCtx.currentTime, 0.1);
+    if (!this.audioEnabled || !this.audioCtx) return;
+    const now = this.audioCtx.currentTime;
+    if (this.engineOsc && this.engineGain) {
+      const targetFreq = 34 + (this.speed * 1.4);
+      this.engineOsc.frequency.setTargetAtTime(targetFreq, now, 0.1);
+      const targetVol = Math.min(0.038, 0.003 + (this.speed / 160) * 0.032);
+      this.engineGain.gain.setTargetAtTime(targetVol, now, 0.1);
+    }
+    if (this.turboOsc && this.turboGain) {
+      const turboFreq = 1200 + (this.speed * 12);
+      this.turboOsc.frequency.setTargetAtTime(turboFreq, now, 0.15);
+      const turboVol = Math.min(0.008, (this.speed / 160) * 0.007);
+      this.turboGain.gain.setTargetAtTime(turboVol, now, 0.15);
+    }
   }
 
   /* ==========================================================================
@@ -271,6 +467,7 @@ class VisorSimEngine {
      ========================================================================== */
   pauseAutoForManual() {
     this.autoLoopEnabled = false;
+    this.flightLogActive = false;
     document.querySelectorAll('[data-action="toggle-auto"]').forEach(btn => {
       btn.classList.remove('active');
       const text = btn.querySelector('.auto-text');
@@ -352,6 +549,21 @@ class VisorSimEngine {
     // Auto Loop Toggle Button
     document.querySelectorAll('[data-action="toggle-auto"]').forEach(btn => {
       btn.addEventListener('click', () => this.toggleAutoLoop());
+    });
+
+    // Kiosk Mode Toggle
+    document.querySelectorAll('[data-action="toggle-kiosk"]').forEach(btn => {
+      btn.addEventListener('click', () => this.toggleKioskMode());
+    });
+
+    // AR Visor Mode Toggle
+    document.querySelectorAll('[data-action="toggle-ar"]').forEach(btn => {
+      btn.addEventListener('click', () => this.toggleArVisor());
+    });
+
+    // Flight Log Replay Toggle
+    document.querySelectorAll('[data-action="toggle-log"]').forEach(btn => {
+      btn.addEventListener('click', () => this.toggleFlightLog());
     });
 
     // Throttle & Brake
@@ -462,6 +674,7 @@ class VisorSimEngine {
   renderTelemetryUI() {
     const speedInt = Math.round(this.speed);
     const tiltDeg = Math.round(this.tilt);
+    const tiltAbs = Math.abs(tiltDeg);
 
     // Speed numbers
     document.querySelectorAll('.val-speed').forEach(el => el.textContent = speedInt);
@@ -473,10 +686,20 @@ class VisorSimEngine {
     const speedPct = Math.min(100, (this.speed / 160) * 100);
     document.querySelectorAll('.speed-bar-fill').forEach(el => el.style.width = `${speedPct}%`);
 
-    // Bike roll visualizer
+    // 3D Cyber-Bike Roll Visualizer
     document.querySelectorAll('.bike-lean-graphic').forEach(el => {
       el.style.transform = `rotate(${tiltDeg}deg)`;
     });
+
+    // Dynamic Tire Grip / Slip Gauge
+    const gripPct = Math.max(42, Math.round(100 - (tiltAbs / 45) * 48));
+    document.querySelectorAll('.grip-fill').forEach(el => {
+      el.style.width = `${gripPct}%`;
+      const gripColor = tiltAbs > 34 ? 'var(--crimson-core)' : tiltAbs > 24 ? 'var(--amber-core)' : 'var(--emerald-core)';
+      el.style.background = gripColor;
+      el.style.boxShadow = `0 0 8px ${gripColor}`;
+    });
+    document.querySelectorAll('.val-grip-pct').forEach(el => el.textContent = `${gripPct}%`);
 
     // Threat Badges
     document.querySelectorAll('.fcw-status-badge').forEach(el => {
@@ -510,7 +733,7 @@ class VisorSimEngine {
   }
 
   /* ==========================================================================
-     Synthesized YOLO Camera Stream (60 FPS Procedural Canvas)
+     Synthesized YOLO Camera Stream (60 FPS Procedural Canvas) + AR Visor Overlay
      ========================================================================== */
   renderCameraStreams() {
     this.camCanvases.forEach(canvas => {
@@ -592,6 +815,85 @@ class VisorSimEngine {
           this.drawYoloBox(ctx, boxX, boxY, boxW, boxH, label, color);
         }
       });
+
+      // 4. Collimated Visor AR Holographic Overlay (First-Person Helmet View)
+      if (this.arVisorMode && this.cameraMode === 'front') {
+        ctx.save();
+        // Optical Tint Vignette
+        const gradVisor = ctx.createRadialGradient(w/2, h/2, h*0.2, w/2, h/2, w*0.6);
+        gradVisor.addColorStop(0, 'rgba(0, 255, 157, 0.0)');
+        gradVisor.addColorStop(0.7, 'rgba(0, 20, 15, 0.12)');
+        gradVisor.addColorStop(1, 'rgba(0, 10, 8, 0.45)');
+        ctx.fillStyle = gradVisor;
+        ctx.fillRect(0, 0, w, h);
+
+        // Collimated Green Phosphor Color & Glow
+        ctx.strokeStyle = '#00ff9d';
+        ctx.fillStyle = '#00ff9d';
+        ctx.shadowColor = '#00ff9d';
+        ctx.shadowBlur = 8;
+        ctx.lineWidth = 1.5;
+
+        // Artificial Horizon Roll Line (Tilted by lean angle)
+        const rollRad = (this.tilt * Math.PI) / 180;
+        const hx = w * 0.5;
+        const hy = horizonY;
+        ctx.beginPath();
+        ctx.moveTo(hx - 55 * Math.cos(rollRad), hy - 55 * Math.sin(rollRad));
+        ctx.lineTo(hx - 18 * Math.cos(rollRad), hy - 18 * Math.sin(rollRad));
+        ctx.moveTo(hx + 18 * Math.cos(rollRad), hy + 18 * Math.sin(rollRad));
+        ctx.lineTo(hx + 55 * Math.cos(rollRad), hy + 55 * Math.sin(rollRad));
+        ctx.stroke();
+
+        // Central Pitch Reticle Crosshair
+        ctx.beginPath();
+        ctx.arc(hx, hy, 4, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Floating HUD Speed at optical infinity
+        ctx.font = 'bold 24px "Orbitron", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(Math.round(this.speed).toString(), hx, hy - 20);
+        ctx.font = '8px "Orbitron", monospace';
+        ctx.fillText('KM/H // VISOR AR', hx, hy - 8);
+
+        // Turn & Lean Arc Indication
+        if (Math.abs(this.tilt) > 4) {
+          ctx.font = 'bold 11px "Orbitron", monospace';
+          const dirSymbol = this.tilt > 0 ? '►' : '◄';
+          ctx.fillText(`${dirSymbol} ${Math.abs(Math.round(this.tilt))}° LEAN ${dirSymbol}`, hx, hy + 24);
+        } else {
+          ctx.font = '9px "Orbitron", monospace';
+          ctx.fillText('▲ STRAIGHT 400M', hx, hy + 24);
+        }
+
+        // Emergency FCW Floating Target Banner
+        if (this.fcwThreat === 'danger') {
+          ctx.save();
+          ctx.strokeStyle = '#ff0055';
+          ctx.fillStyle = '#ff0055';
+          ctx.shadowColor = '#ff0055';
+          ctx.shadowBlur = 14;
+          ctx.font = 'bold 11px "Orbitron", monospace';
+          ctx.strokeRect(hx - 75, hy - 55, 150, 22);
+          ctx.fillText('! COLLISION HAZARD !', hx, hy - 40);
+          ctx.restore();
+        }
+
+        // Blindspot threat arrows on HUD edge
+        if (this.leftBsd) {
+          ctx.save();
+          ctx.fillStyle = '#ff0055';
+          ctx.shadowColor = '#ff0055';
+          ctx.shadowBlur = 12;
+          ctx.font = 'bold 12px "Orbitron", monospace';
+          ctx.textAlign = 'left';
+          ctx.fillText('◄◄ BLINDSPOT', 16, hy);
+          ctx.restore();
+        }
+
+        ctx.restore();
+      }
 
       // Camera HUD Watermark
       ctx.fillStyle = 'rgba(0, 240, 255, 0.8)';

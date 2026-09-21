@@ -943,3 +943,205 @@ html, body {
     padding: 0.5rem 0.8rem;
   }
 }
+
+/* ==========================================================================
+   Showcase v2.1 Advanced Enhancements
+   - Kiosk / Exhibition Fullscreen Mode
+   - Visor AR Collimated Floating Overlay
+   - 3D Wireframe Cyber-Bike & Lean Arc Gauge
+   - Spatial 8D Audio Indicator
+   - Blackbox Flight Log Replay Ribbon
+   ========================================================================== */
+
+/* 1. Kiosk / Exhibition Mode */
+body.kiosk-mode .sim-toolbar {
+  opacity: 0.15;
+  transform: translateX(-50%) translateY(70%);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body.kiosk-mode .sim-toolbar:hover {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.kiosk-banner {
+  display: none;
+}
+
+body.kiosk-mode .kiosk-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 12px;
+  background: rgba(255, 0, 85, 0.15);
+  border: 1px solid var(--crimson-core);
+  color: #ff3377;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(255, 0, 85, 0.35);
+  animation: pulseHazard 1.5s infinite;
+}
+
+/* 2. AR Visor Collimated Optical Overlay */
+.ar-visor-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.85rem;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  background: radial-gradient(circle at center, transparent 45%, rgba(0, 20, 15, 0.45) 85%, rgba(0, 5, 10, 0.75) 100%);
+}
+
+.ar-visor-overlay.active {
+  opacity: 1;
+}
+
+.ar-visor-frame {
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(0, 255, 157, 0.35);
+  border-radius: 8px;
+  box-shadow: inset 0 0 25px rgba(0, 255, 157, 0.12);
+  pointer-events: none;
+}
+
+.ar-hud-crosshair {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 140px;
+  height: 90px;
+  pointer-events: none;
+}
+
+.ar-collimated-text {
+  font-family: var(--font-hud);
+  color: #00ff9d;
+  text-shadow: 0 0 8px #00ff9d, 0 0 20px rgba(0, 255, 157, 0.8);
+}
+
+.ar-threat-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  background: rgba(255, 0, 85, 0.25);
+  border: 1px solid var(--crimson-core);
+  border-radius: 6px;
+  color: #fff;
+  font-family: var(--font-hud);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  box-shadow: 0 0 15px var(--crimson-core);
+}
+
+/* 3. 3D Wireframe Cyber-Bike & Arc Gauge */
+.wireframe-bike-container {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.bike-arc-gauge {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bike-arc-gauge svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.lean-arc-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 3;
+}
+
+.lean-arc-active {
+  fill: none;
+  stroke: var(--cyan-core);
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 6px var(--cyan-core));
+  transition: stroke-dashoffset 0.1s linear;
+}
+
+.lean-tire-grip {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--emerald-core);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+}
+
+.grip-bar {
+  width: 50px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.grip-fill {
+  width: 92%;
+  height: 100%;
+  background: var(--emerald-core);
+  box-shadow: 0 0 8px var(--emerald-core);
+  transition: width 0.2s ease, background 0.2s ease;
+}
+
+/* 4. Spatial 8D Audio Waves */
+.audio-waves {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+  margin-left: 2px;
+}
+
+.audio-bar {
+  width: 2.5px;
+  background: var(--emerald-core);
+  border-radius: 1px;
+  height: 3px;
+  transition: height 0.15s ease;
+}
+
+.tool-btn.active .audio-bar:nth-child(1) { animation: wave 0.8s ease-in-out infinite alternate; }
+.tool-btn.active .audio-bar:nth-child(2) { animation: wave 0.6s ease-in-out 0.2s infinite alternate; }
+.tool-btn.active .audio-bar:nth-child(3) { animation: wave 0.9s ease-in-out 0.4s infinite alternate; }
+
+@keyframes wave {
+  from { height: 3px; }
+  to { height: 14px; }
+}
+
+/* 5. Telemetry Log Replay Control */
+.log-replay-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0.65rem;
+  background: rgba(6, 11, 25, 0.7);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  margin-top: 0.65rem;
+}
