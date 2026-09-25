@@ -877,49 +877,18 @@
                 return () => clearTimeout(timer);
             }, [activating, countdown, sending]);
 
-            // 取得 GPS 並透過 Supabase 發送
+            // 觸發 SOS 發送
             const handleSendSos = async () => {
                 setSending(true);
-
-                navigator.geolocation.getCurrentPosition(
-                    async (position) => {
-                        const payload = {
-                            user_id: currentUserId, 
-                            location: {
-                                lat: position.coords.latitude,
-                                lng: position.coords.longitude
-                            }
-                        };
-
-                        try {
-                            const { data, error } = await supabase.functions.invoke('send-sos', {
-                                body: payload, 
-                            });
-
-                            if (error) {
-                                console.error('Supabase 呼叫失敗:', error);
-                                alert('SOS 發送失敗！');
-                                if (onTrigger) onTrigger(false);
-                            } else {
-                                console.log('成功回應:', data);
-                                alert('警報已成功發送給緊急聯絡人！');
-                                if (onTrigger) onTrigger(true);
-                            }
-                        } catch (err) {
-                            console.error('意外錯誤:', err);
-                            alert('發生未知的連線錯誤');
-                            if (onTrigger) onTrigger(false);
-                        } finally {
-                            resetButtonState();
-                        }
-                    },
-                    (error) => {
-                        alert('無法取得 GPS 定位，請確認權限是否開啟。');
-                        resetButtonState();
-                        if (onTrigger) onTrigger(false);
-                    },
-                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 } //高精確、逾時、不使用快取
-                );
+                try {
+                    if (onTrigger) {
+                        await onTrigger(false);
+                    }
+                } catch (err) {
+                    console.error('SOS 發送意外錯誤:', err);
+                } finally {
+                    resetButtonState();
+                }
             };
 
             const resetButtonState = () => {
@@ -980,7 +949,7 @@
             const [code, setCode] = useState('');
             const [status, setStatus] = useState('unlinked'); // unlinked, pending, verified
             const [contactName, setContactName] = useState('');
-            const [timeLeft, setTimeLeft] = useState(15); 
+            const [timeLeft, setTimeLeft] = useState(60); 
 
             const generateCode = async () => {
                 if (!currentUserId) {
@@ -1022,13 +991,13 @@
 
                 setCode(randomCode);
                 setStatus('pending');
-                setTimeLeft(15);
+                setTimeLeft(60);
             };
 
             const handleTimeout = async () => {
                 setStatus('unlinked');
                 setCode('');
-                alert("驗證碼已過期，請重新產生。");
+                alert("請重新產生驗證碼。");
 
                 if (currentUserId) {
                     await supabase
@@ -1987,6 +1956,7 @@
             const [isBooting, setIsBooting] = useState(true);
             const [heading, setHeading] = useState(0); // Added Heading State
             const [currentUser, setCurrentUser] = useState(null);
+            const [currentUserId, setCurrentUserId] = useState(null);// 放登入者 ID 的狀態
             const [activeTab, setActiveTab] = useState('login'); // Default to login
             const [isMuted, setIsMuted] = useState(false);
             const [isEdgeMuted, setIsEdgeMuted] = useState(false);
@@ -2059,10 +2029,12 @@
                     if (session && session.user) {
                         // 登入成功：存入使用者資訊，跳轉到首頁
                         setCurrentUser(session.user);
+                        setCurrentUserId(session.user.id);
                         setActiveTab('home');
                     } else {
                         // 未登入或登出：清空資訊，跳轉到登入頁
                         setCurrentUser(null);
+                        setCurrentUserId(null);
                         setActiveTab('login');
                     }
                 });
@@ -2073,8 +2045,6 @@
                 };
             }, []);
 
-            
-            const [currentUserId, setCurrentUserId] = useState(null);// 放登入者 ID 的狀態
             const handleLogin = async (e) => {
                 e.preventDefault();
                 setLoading(true);
@@ -2415,15 +2385,51 @@
             const hasCrashedRef = useRef(false);
 
             // SOS Trigger Handler
-            const triggerSOS = useCallback((isAuto = false) => {
+            const triggerSOS = useCallback(async (isAuto = false) => {
                 const emergencyNumber = "0912345678";
-                const lat = location.lat.toFixed(6);
-                const lng = location.lng.toFixed(6);
+                const latStr = (location?.lat || 25.033964).toFixed(6);
+                const lngStr = (location?.lng || 121.564468).toFixed(6);
                 const prefix = isAuto ? "[自動偵測: 嚴重傾倒] " : "";
-                const message = `${prefix}我現在出車禍了，位置在 ${lat}, ${lng} (V.I.S.O.R. 緊急通報)`;
+                const message = `${prefix}我現在出車禍了，位置在 ${latStr}, ${lngStr} (V.I.S.O.R. 緊急通報)`;
+                const googleMapsUrl = `https://www.google.com/maps?q=${latStr},${lngStr}`;
+                const lineCustomMessage = `🚨【V.I.S.O.R. 緊急求救】\n${isAuto ? '⚠️ [自動偵測: 嚴重傾倒]\n' : ''}騎士發生狀況！\nGPS 位置：\n${googleMapsUrl}`;
 
                 console.log("Triggering SOS:", message);
 
+                // 1. 發送 LINE 緊急聯絡人通知 (透過 Supabase Edge Function: send-sos)
+                const activeUserId = currentUserId || (currentUser && currentUser.id);
+                if (activeUserId) {
+                    try {
+                        const { data, error } = await supabase.functions.invoke('send-sos', {
+                            body: {
+                                user_id: activeUserId,
+                                location: {
+                                    lat: parseFloat(latStr),
+                                    lng: parseFloat(lngStr)
+                                },
+                                message: lineCustomMessage
+                            }
+                        });
+
+                        if (error) {
+                            console.error('LINE SOS 呼叫失敗:', error);
+                            if (typeof addNotification === 'function') {
+                                addNotification('danger', 'LINE 緊急聯絡人', '發送失敗：' + (error.message || '請確認是否綁定聯絡人'));
+                            }
+                        } else {
+                            console.log('LINE SOS 發送成功:', data);
+                            if (typeof addNotification === 'function') {
+                                addNotification('danger', 'LINE 緊急聯絡人', isAuto ? '自動傾倒警報已成功發送給 LINE 緊急聯絡人！' : '求救警報已成功發送給 LINE 緊急聯絡人！');
+                            }
+                        }
+                    } catch (err) {
+                        console.error('LINE SOS 發送意外錯誤:', err);
+                    }
+                } else {
+                    console.warn("未取得登入使用者 ID，無法發送 LINE 緊急聯絡人通知");
+                }
+
+                // 2. 發送 SMS 簡訊 / 簡訊模擬
                 if (window.sms && window.cordova && cordova.plugins && cordova.plugins.permissions) {
                     const permissions = cordova.plugins.permissions;
                     const sendRealSMS = () => {
@@ -2448,10 +2454,10 @@
                     }, () => sendRealSMS());
 
                 } else {
-                    alert(`⚠️ [E-SOS 模擬發送]\n對象: ${emergencyNumber}\n內容: ${message}`);
+                    alert(`⚠️ [E-SOS ${isAuto ? '自動傾倒' : '手動'}發送]\n已觸發 LINE 通知與簡訊通報\n對象: ${emergencyNumber}\n內容: ${message}`);
                     playWarningSound('danger', 3);
                 }
-            }, [location]);
+            }, [location, currentUserId, currentUser]);
 
             const triggerEdgeWarning = (direction) => {
                 setEdgeWarning(direction);

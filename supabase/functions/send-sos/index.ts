@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { user_id, location } = await req.json()
+    const { user_id, location, message: customMessage } = await req.json()
 
     if (!user_id || !location) {
       return new Response(JSON.stringify({ error: "缺少 user_id 或 location 參數" }), { 
@@ -40,7 +40,7 @@ serve(async (req) => {
 
     const lineToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN'); //預先設定於supabase的環境變數中
     const googleMapsUrl = `https://www.google.com/maps?q=${location.lat},${location.lng}`;
-    const messageText = `🚨【V.I.S.O.R. 緊急求救】\n騎士發生狀況！\nGPS 位置：\n${googleMapsUrl}`;
+    const messageText = customMessage || `🚨【V.I.S.O.R. 緊急求救】\n騎士發生狀況！\nGPS 位置：\n${googleMapsUrl}`;
 
     // 發送給所有已驗證的緊急聯絡人
     for (const contact of contacts) {
