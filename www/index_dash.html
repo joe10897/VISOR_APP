@@ -8,7 +8,7 @@
         content="default-src 'self' data: gap: cdvfile: https://ssl.gstatic.com 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' ; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>V.I.S.O.R. MK-XXV | 技術展示</title>
+    <title>V.I.S.O.R. MK-XXV | ?�術�?�?/title>
 
     <script src="lib/js/tailwindcss.js"></script>
     <script src="lib/js/react.min.js"></script>
@@ -22,7 +22,7 @@
             letter-spacing: 1px;
         }
 
-        /* ============ 循環動畫核心區 ============ */
+        /* ============ 循環?�畫?��??� ============ */
         @keyframes an-spin {
             to {
                 transform: rotate(360deg);
@@ -304,6 +304,9 @@
             }
         }
     </style>
+
+    <!-- scrollbar-hide injected -->
+    <style>*, *::before, *::after{scrollbar-width:none;-ms-overflow-style:none}*::-webkit-scrollbar{display:none}</style>
 </head>
 
 <body class="bg-black text-white font-sans selection:bg-cyan-500 selection:text-black overflow-x-hidden">
@@ -313,7 +316,7 @@
         <div class="text-red-500 font-bold mb-1 underline">SYSTEM LOG:</div>
     </div>
 
-    <!-- 開機畫面 -->
+    <!-- ?��??�面 -->
     <div id="visor-boot-screen"
         class="fixed inset-0 z-[999] bg-black flex flex-col items-center justify-center transition-opacity duration-1000">
         <div class="relative w-64 h-64 flex items-center justify-center">
@@ -370,7 +373,7 @@
         const { useState, useEffect, useRef, useCallback } = React;
 
         // ================================================================
-        // 共用元件
+        // ?�用?�件
         // ================================================================
         const toPascalCase = (str) => str.replace(/(^\w|-\w)/g, (text) => text.replace(/-/, '').toUpperCase());
         const Icon = ({ name, size = 24, className = "", strokeWidth = 2 }) => {
@@ -421,28 +424,27 @@
         );
 
         // ================================================================
-        // 示範數據循環 (模擬騎士行車情境)
+        // 示�??��?循環 (模擬騎士行�??��?)
         // ================================================================
         const DEMO_CYCLE = [
-            { name: '巡航中', speed: 64, tilt: 14, braking: 3, score: 93, fps: 21, latency: 42 },
-            { name: '加速中', speed: 84, tilt: 25, braking: 2, score: 89, fps: 22, latency: 44 },
-            { name: '超速事件', speed: 108, tilt: 12, braking: 4, score: 77, fps: 20, latency: 48 },
-            { name: '急煞事件', speed: 92, tilt: 18, braking: 14, score: 64, fps: 19, latency: 47 },
-            { name: '危險傾角', speed: 76, tilt: 44, braking: 5, score: 51, fps: 18, latency: 50 },
+            { name: '巡航�?, speed: 64, tilt: 14, braking: 3, score: 93, fps: 21, latency: 42 },
+            { name: '?�速中', speed: 84, tilt: 25, braking: 2, score: 89, fps: 22, latency: 44 },
+            { name: '超速�?�?, speed: 108, tilt: 12, braking: 4, score: 77, fps: 20, latency: 48 },
+            { name: '?��?事件', speed: 92, tilt: 18, braking: 14, score: 64, fps: 19, latency: 47 },
+            { name: '?�險?��?', speed: 76, tilt: 44, braking: 5, score: 51, fps: 18, latency: 50 },
         ];
         const LIMIT = 60;
 
         // ================================================================
-        // Hero：軌道核心
-        // ================================================================
+        // Hero：�??�核�?        // ================================================================
         const HeroSection = ({ demo }) => {
             const isOver = demo.speed > LIMIT;
             const statusColor = isOver ? 'text-red-400' : 'text-cyan-400';
-            const statusText = isOver ? `⚠ ${demo.name} (超速 ${demo.speed - LIMIT} km/h)` : `${demo.name} · 時速正常`;
+            const statusText = isOver ? `??${demo.name} (超�?${demo.speed - LIMIT} km/h)` : `${demo.name} · ?�速正常`;
             const stats = [
-                { icon: 'gauge', label: 'YOLOv26n 推論', value: demo.fps, unit: 'FPS', color: 'text-cyan-400' },
-                { icon: 'zap', label: '端到端延遲', value: demo.latency, unit: 'ms', color: 'text-yellow-300' },
-                { icon: 'cpu', label: '模型參數', value: '2.6', unit: 'M', color: 'text-emerald-400' },
+                { icon: 'gauge', label: 'YOLOv26n ?��?', value: demo.fps, unit: 'FPS', color: 'text-cyan-400' },
+                { icon: 'zap', label: '端到端延??, value: demo.latency, unit: 'ms', color: 'text-yellow-300' },
+                { icon: 'cpu', label: '模�??�數', value: '2.6', unit: 'M', color: 'text-emerald-400' },
                 { icon: 'target', label: 'mAP@50', value: '.349', unit: '', color: 'text-fuchsia-400' },
             ];
             return (
@@ -466,12 +468,12 @@
                         <div className="absolute inset-0 flex items-center justify-center">
                             <div className="text-center">
                                 <div className="text-3xl md:text-4xl font-black italic tracking-tighter text-cyan-400 drop-shadow-[0_0_14px_rgba(34,211,238,0.6)]">V.I.S.O.R.</div>
-                                <div className="text-[9px] text-cyan-600 font-mono uppercase tracking-[0.35em] mt-1.5">MK-XXV 技術展示</div>
+                                <div className="text-[9px] text-cyan-600 font-mono uppercase tracking-[0.35em] mt-1.5">MK-XXV ?�術�?�?/div>
                             </div>
                         </div>
                     </div>
 
-                    <h1 className="mt-8 text-2xl md:text-4xl font-black tracking-wide">智慧安全帽 騎士輔助系統</h1>
+                    <h1 className="mt-8 text-2xl md:text-4xl font-black tracking-wide">?�慧安全�?騎士輔助系統</h1>
                     <p className="text-slate-400 text-xs md:text-sm mt-2 font-mono">ARAS · ADVANCED RIDER ASSISTANCE SYSTEM · EDGE AI</p>
 
                     <div className={`inline-flex items-center gap-2 mt-4 px-4 py-1.5 rounded-full border font-mono text-[11px] transition-colors ${isOver ? 'border-red-500/50 bg-red-900/30 text-red-300' : 'border-cyan-500/30 bg-cyan-900/20 text-cyan-300'}`}>
@@ -497,19 +499,19 @@
         };
 
         // ================================================================
-        // AI 視覺核心
+        // AI 視覺?��?
         // ================================================================
         const YoloCompareCard = () => {
             const rows = [
                 { name: 'YOLOv8n', tag: 'Base', res: '640px', precision: .421, recall: .285, f1: .340, map: .298, params: '3.2M', size: '6.2MB', fps: 8, best: false },
-                { name: 'YOLOv8n', tag: '優化', res: '320px', precision: .543, recall: .326, f1: .407, map: .336, params: '3.2M', size: '6.2MB', fps: 18, best: false },
+                { name: 'YOLOv8n', tag: '?��?', res: '320px', precision: .543, recall: .326, f1: .407, map: .336, params: '3.2M', size: '6.2MB', fps: 18, best: false },
                 { name: 'YOLOv26n', tag: 'OURS', res: '320px', precision: .561, recall: .338, f1: .422, map: .349, params: '2.6M', size: '5.3MB', fps: 22, best: true },
             ];
             const maxFps = 25;
             const maxMap = 0.4;
             return (
                 <div className="card card-glow p-5 flex flex-col">
-                    <CardHeader icon="scan-search" zh="YOLO 版本對比" en="Object Detection Benchmark" live />
+                    <CardHeader icon="scan-search" zh="YOLO ?�本對�?" en="Object Detection Benchmark" live />
                     <div className="space-y-3">
                         {rows.map((r, i) => (
                             <div key={i} className={`p-3 rounded-xl border transition-colors ${r.best ? 'border-cyan-500/50 bg-cyan-950/30' : 'border-slate-700/60 bg-slate-900/40'}`}>
@@ -542,33 +544,31 @@
                                     <span className={`w-8 text-right text-[10px] font-black font-mono ${r.best ? 'text-fuchsia-300' : 'text-slate-300'}`}>{r.map}</span>
                                 </div>
                                 <div className="flex gap-3 mt-1.5 text-[9px] font-mono text-slate-500">
-                                    <span>參數 <b className="text-slate-300">{r.params}</b></span>
-                                    <span>檔案 <b className="text-slate-300">{r.size}</b></span>
-                                    {r.best && <span className="text-cyan-400 font-bold">← 結構更輕、精度更高</span>}
+                                    <span>?�數 <b className="text-slate-300">{r.params}</b></span>
+                                    <span>檔�? <b className="text-slate-300">{r.size}</b></span>
+                                    {r.best && <span className="text-cyan-400 font-bold">??結�??��??�精度更�?/span>}
                                 </div>
                             </div>
                         ))}
                     </div>
                     <div className="mt-4 pt-3 border-t border-slate-700/60 text-[10px] text-slate-400 font-mono leading-relaxed">
-                        實測環境：CPU-only x86 → 保守 ×3 推估 Pi 5 (Cortex-A76)。YOLOv26n 以 <b className="text-cyan-300">2.6M 參數</b> 在
-                        <b className="text-cyan-300"> 320px</b> 輸入下達成 <b className="text-cyan-300">20-25 FPS</b>，適合邊緣部署。
-                    </div>
+                        實測?��?：CPU-only x86 ??保�? ?3 ?�估 Pi 5 (Cortex-A76)?�YOLOv26n �?<b className="text-cyan-300">2.6M ?�數</b> ??                        <b className="text-cyan-300"> 320px</b> 輸入下�???<b className="text-cyan-300">20-25 FPS</b>，適?��?�?��署�?                    </div>
                 </div>
             );
         };
 
         const TrainingPipelineCard = () => {
             const steps = [
-                { icon: 'database', name: 'BDD100K 資料集', sub: '10 萬張 · 多元場景', color: 'text-blue-400' },
-                { icon: 'video', name: '實拍抽幀 1fps', sub: '實際道路行車影像', color: 'text-emerald-400' },
-                { icon: 'sparkles', name: 'Stable Diffusion', sub: 'Img2Img 風格轉換', color: 'text-fuchsia-400' },
-                { icon: 'wand-2', name: 'cv2 環境模擬', sub: '相機雜訊 · 動態模糊', color: 'text-amber-400' },
-                { icon: 'brain-circuit', name: 'YOLOv8n 二次訓練', sub: '6 類台灣交通標註', color: 'text-cyan-400' },
-                { icon: 'box', name: '量化 / ONNX 部署', sub: 'FP16 · INT8 → Pi 5', color: 'text-orange-400' },
+                { icon: 'database', name: 'BDD100K 資�???, sub: '10 ?�張 · 多�??�景', color: 'text-blue-400' },
+                { icon: 'video', name: '實�??��? 1fps', sub: '實�??�路行�?影�?', color: 'text-emerald-400' },
+                { icon: 'sparkles', name: 'Stable Diffusion', sub: 'Img2Img 風格轉�?', color: 'text-fuchsia-400' },
+                { icon: 'wand-2', name: 'cv2 ?��?模擬', sub: '?��??��? · ?��?模�?', color: 'text-amber-400' },
+                { icon: 'brain-circuit', name: 'YOLOv8n 二次訓練', sub: '6 類台??��?��?�?, color: 'text-cyan-400' },
+                { icon: 'box', name: '?��? / ONNX ?�署', sub: 'FP16 · INT8 ??Pi 5', color: 'text-orange-400' },
             ];
             return (
                 <div className="card card-glow p-5 flex flex-col">
-                    <CardHeader icon="workflow" zh="Dataset 訓練流水線" en="Data → Augmentation → Train" live />
+                    <CardHeader icon="workflow" zh="Dataset 訓練流水�? en="Data ??Augmentation ??Train" live />
                     <div className="flex-1">
                         {steps.map((s, i) => (
                             <div key={s.name} className="relative flex items-center gap-3 pb-4">
@@ -592,9 +592,9 @@
                         ))}
                     </div>
                     <div className="mt-3 pt-3 border-t border-slate-700/60 flex flex-wrap gap-2 text-[9px] font-mono">
-                        <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">6 偵測類別</span>
-                        <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">YOLO 標註格式</span>
-                        <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">跨域泛化增強</span>
+                        <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">6 ?�測類別</span>
+                        <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">YOLO 標註?��?</span>
+                        <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">跨�?泛�?增強</span>
                     </div>
                 </div>
             );
@@ -602,14 +602,14 @@
 
         const ThreatRadarCard = () => {
             const threats = [
-                { dir: 'front', icon: 'arrow-up', label: '前車 TTC', value: '1.2s', cls: 'top-0 left-1/2 -translate-x-1/2', color: 'text-amber-400', border: 'border-amber-500/40', delay: '0s' },
-                { dir: 'rear', icon: 'arrow-down', label: '後方逼車', value: '0.9s', cls: 'bottom-0 left-1/2 -translate-x-1/2', color: 'text-red-400', border: 'border-red-500/50', delay: '0.8s' },
-                { dir: 'left', icon: 'arrow-left', label: '左側車流', value: '3.4m', cls: 'top-1/2 left-0 -translate-y-1/2', color: 'text-yellow-300', border: 'border-yellow-500/40', delay: '1.6s' },
-                { dir: 'right', icon: 'arrow-right', label: '右側車流', value: '2.8m', cls: 'top-1/2 right-0 -translate-y-1/2', color: 'text-yellow-300', border: 'border-yellow-500/40', delay: '2.4s' },
+                { dir: 'front', icon: 'arrow-up', label: '?��? TTC', value: '1.2s', cls: 'top-0 left-1/2 -translate-x-1/2', color: 'text-amber-400', border: 'border-amber-500/40', delay: '0s' },
+                { dir: 'rear', icon: 'arrow-down', label: '後方?��?', value: '0.9s', cls: 'bottom-0 left-1/2 -translate-x-1/2', color: 'text-red-400', border: 'border-red-500/50', delay: '0.8s' },
+                { dir: 'left', icon: 'arrow-left', label: '左側車�?', value: '3.4m', cls: 'top-1/2 left-0 -translate-y-1/2', color: 'text-yellow-300', border: 'border-yellow-500/40', delay: '1.6s' },
+                { dir: 'right', icon: 'arrow-right', label: '?�側車�?', value: '2.8m', cls: 'top-1/2 right-0 -translate-y-1/2', color: 'text-yellow-300', border: 'border-yellow-500/40', delay: '2.4s' },
             ];
             return (
                 <div className="card card-glow p-5 flex flex-col">
-                    <CardHeader icon="radar" zh="四方向威脅偵測" en="Threat Priority Triage" live />
+                    <CardHeader icon="radar" zh="?�方?��??�偵�? en="Threat Priority Triage" live />
                     <div className="relative h-48 bg-slate-900/50 rounded-xl border border-slate-800 overflow-hidden mb-4">
                         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, #22d3ee 1px, transparent 1px)', backgroundSize: '22px 22px' }}></div>
                         <div className="absolute inset-0 flex items-center justify-center">
@@ -637,17 +637,17 @@
                         <div className="flex items-center justify-between">
                             <span>後方 REAR</span>
                             <span className="text-red-400 font-bold">&gt; FRONT &gt; L / R</span>
-                            <span className="text-slate-500">優先級分流</span>
+                            <span className="text-slate-500">?��?級�?�?/span>
                         </div>
                         {[['critical', '<1.0s', '<2m', 'text-red-400'], ['warning', '<1.5s', '<4m', 'text-orange-400'], ['caution', '<2.5s', '<8m', 'text-yellow-300']].map(([lv, ttc, cap, color]) => (
                             <div key={lv} className="flex items-center gap-2">
                                 <span className={`w-1.5 h-1.5 rounded-full bg-current ${color}`}></span>
                                 <span className={`${color} uppercase`}>{lv}</span>
                                 <span className="text-slate-500">TTC {ttc}</span>
-                                <span className="text-slate-600">距離上限 {cap}</span>
+                                <span className="text-slate-600">距離上�? {cap}</span>
                             </div>
                         ))}
-                        <div className="text-[9px] text-slate-500 pt-1 border-t border-slate-700/50 mt-1">Kalman EMA 相對速度估測 · 車道內 0.25-0.75 濾波</div>
+                        <div className="text-[9px] text-slate-500 pt-1 border-t border-slate-700/50 mt-1">Kalman EMA ?��??�度估測 · 車�???0.25-0.75 濾波</div>
                     </div>
                 </div>
             );
@@ -655,10 +655,10 @@
 
         const QuantizationCard = () => {
             const pipe = [
-                { icon: 'file-code', name: '訓練完成', sub: 'PyTorch .pt', size: '5.3MB', color: 'text-cyan-400' },
-                { icon: 'box', name: 'ONNX 匯出', sub: 'ONNX Runtime 1.26', size: '5.3MB', color: 'text-blue-400' },
-                { icon: 'layers', name: 'FP16 量化', sub: 'onnxconverter', size: '2.7MB', color: 'text-fuchsia-400' },
-                { icon: 'cpu', name: '邊緣部署', sub: 'Raspberry Pi 5', size: '20-25 FPS', color: 'text-orange-400' },
+                { icon: 'file-code', name: '訓練完�?', sub: 'PyTorch .pt', size: '5.3MB', color: 'text-cyan-400' },
+                { icon: 'box', name: 'ONNX ?�出', sub: 'ONNX Runtime 1.26', size: '5.3MB', color: 'text-blue-400' },
+                { icon: 'layers', name: 'FP16 ?��?', sub: 'onnxconverter', size: '2.7MB', color: 'text-fuchsia-400' },
+                { icon: 'cpu', name: '?�緣?�署', sub: 'Raspberry Pi 5', size: '20-25 FPS', color: 'text-orange-400' },
             ];
             const latencyBars = [
                 { name: 'UFLD FP32', ms: 150, color: 'bg-slate-600', text: 'text-slate-300' },
@@ -667,7 +667,7 @@
             ];
             return (
                 <div className="card card-glow p-5 flex flex-col">
-                    <CardHeader icon="layers" zh="模型量化 / ONNX 流程" en="Quantization Pipeline" live />
+                    <CardHeader icon="layers" zh="模�??��? / ONNX 流�?" en="Quantization Pipeline" live />
                     <div className="flex items-center justify-between mb-4">
                         {pipe.map((p, i) => (
                             <div key={p.name} className="flex-1 flex flex-col items-center relative">
@@ -686,7 +686,7 @@
                         ))}
                     </div>
                     <div className="bg-slate-900/50 rounded-xl p-3 border border-slate-800 mb-3">
-                        <div className="text-[10px] text-slate-300 font-bold mb-2 flex items-center gap-2"><Icon name="zap" size={12} className="text-yellow-300" /> 邊緣優化成果 (實測)</div>
+                        <div className="text-[10px] text-slate-300 font-bold mb-2 flex items-center gap-2"><Icon name="zap" size={12} className="text-yellow-300" /> ?�緣?��??��? (實測)</div>
                         {latencyBars.map((b) => (
                             <div key={b.name} className="flex items-center gap-2 mb-1.5">
                                 <span className={`w-20 text-[9px] font-mono ${b.text}`}>{b.name}</span>
@@ -698,16 +698,15 @@
                         ))}
                     </div>
                     <div className="flex flex-wrap gap-2 text-[9px] font-mono">
-                        <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">FP32 368MB → FP16 183MB (-50%)</span>
-                        <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">INT8 量化規劃中 ~20-25 FPS</span>
+                        <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">FP32 368MB ??FP16 183MB (-50%)</span>
+                        <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">INT8 ?��?規�?�?~20-25 FPS</span>
                     </div>
                 </div>
             );
         };
 
         // ================================================================
-        // 騎乘行為演算法
-        // ================================================================
+        // 騎�?行為演�?�?        // ================================================================
         const AlgorithmCard = ({ children, icon, zh, en, note }) => (
             <div className="card card-glow p-4 flex flex-col">
                 <CardHeader icon={icon} zh={zh} en={en} live />
@@ -722,7 +721,7 @@
             const isOver = demo.speed > LIMIT;
             const angle = -90 + frac * 180;
             return (
-                <AlgorithmCard icon="gauge" zh="超速偵測" en="Overspeed Detection" note={`演算法：逐秒比對 車速 vs 路段限速，連續超速以 2^(n+1) 加權扣分。`}>
+                <AlgorithmCard icon="gauge" zh="超速偵�? en="Overspeed Detection" note={`演�?法�??��?比�? 車�?vs 路段?�速�????超速以 2^(n+1) ?��?????�`}>
                     <div className="relative mx-auto" style={{ width: 170, height: 100 }}>
                         <svg viewBox="0 0 200 110" style={{ width: 170, height: 100 }}>
                             <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1e293b" strokeWidth="12" strokeLinecap="round" />
@@ -747,12 +746,12 @@
                         </div>
                     </div>
                     <div className="mt-2 flex items-center justify-center gap-2">
-                        <span className="text-[9px] font-mono text-slate-500">限速</span>
+                        <span className="text-[9px] font-mono text-slate-500">?��?/span>
                         <span className="text-[10px] font-black font-mono text-white bg-slate-700 rounded px-1.5 py-0.5 border border-slate-600">{LIMIT}</span>
                         {isOver ? (
-                            <span className="text-[10px] font-black text-red-400 bg-red-900/40 border border-red-500/50 rounded-full px-2 py-0.5 an-blink">超速 {demo.speed - LIMIT}!</span>
+                            <span className="text-[10px] font-black text-red-400 bg-red-900/40 border border-red-500/50 rounded-full px-2 py-0.5 an-blink">超�?{demo.speed - LIMIT}!</span>
                         ) : (
-                            <span className="text-[10px] font-bold text-emerald-400">安全範圍</span>
+                            <span className="text-[10px] font-bold text-emerald-400">安全範�?</span>
                         )}
                     </div>
                 </AlgorithmCard>
@@ -774,10 +773,10 @@
             }, []);
             const events = samples.filter(s => s >= 10).length;
             return (
-                <AlgorithmCard icon="activity" zh="急煞偵測" en="Braking Detection" note={`演算法：Δspeed / Δt ≥ 10 km/h/s 觸發一次急煞事件，每次扣 3 分。`}>
+                <AlgorithmCard icon="activity" zh="?��??�測" en="Braking Detection" note={`演�?法�??speed / ?t ??10 km/h/s 觸發一次急�?事件，�?次扣 3 ?�。`}>
                     <div className="relative h-32 bg-slate-900/60 rounded-xl border border-slate-800 overflow-hidden px-2 pt-4 pb-1">
                         <div className="absolute left-0 right-0 top-[68%] border-t border-dashed border-red-500/50">
-                            <span className="absolute -top-2.5 right-1 text-[8px] font-mono text-red-400">THRESHOLD ≥10</span>
+                            <span className="absolute -top-2.5 right-1 text-[8px] font-mono text-red-400">THRESHOLD ??0</span>
                         </div>
                         <div className="flex items-end justify-between gap-1 h-full">
                             {samples.map((v, i) => (
@@ -790,9 +789,9 @@
                         </div>
                     </div>
                     <div className="mt-2.5 flex items-center justify-between text-[10px] font-mono">
-                        <span className="text-slate-500">即時減速度 <b className="text-slate-300">{samples[samples.length - 1].toFixed(1)}</b> km/h/s</span>
+                        <span className="text-slate-500">?��?減速度 <b className="text-slate-300">{samples[samples.length - 1].toFixed(1)}</b> km/h/s</span>
                         <span className={`px-2 py-0.5 rounded-full border ${events > 0 ? 'bg-red-900/40 border-red-500/50 text-red-300 an-blink' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
-                            急煞事件 ×{events}
+                            ?��?事件 ?{events}
                         </span>
                     </div>
                 </AlgorithmCard>
@@ -803,7 +802,7 @@
             const abs = Math.abs(demo.tilt);
             const zone = abs > 45 ? 'crash' : abs > 35 ? 'danger' : 'ok';
             return (
-                <AlgorithmCard icon="rotate-3d" zh="危險傾角偵測" en="Tilt & Crash Detection" note={`演算法：傾角 ≥40° 計一次事件（5^(n+1) 扣分）；>45° 持續 15s 自動觸發 E-SOS。`}>
+                <AlgorithmCard icon="rotate-3d" zh="?�險?��??�測" en="Tilt & Crash Detection" note={`演�?法�??��? ??0° 計�?次�?件�?5^(n+1) ???）�?>45° ?��? 15s ?��?觸發 E-SOS?�`}>
                     <div className="relative mx-auto mb-3" style={{ width: 180, height: 60 }}>
                         <div className="absolute inset-0 rounded-full overflow-hidden border border-slate-700 bg-slate-900/60"
                             style={{ clipPath: 'polygon(0 100%, 100% 100%, 100% 50%, 0 50%)' }}>
@@ -818,13 +817,13 @@
                     </div>
                     <div className="flex items-center justify-center gap-2 mb-2">
                         <span className={`text-3xl font-black font-mono ${zone === 'danger' ? 'text-orange-400' : zone === 'crash' ? 'text-red-500' : 'text-cyan-300'}`}>{demo.tilt}°</span>
-                        {zone === 'danger' && <span className="text-[10px] font-black text-orange-400 bg-orange-900/40 border border-orange-500/50 rounded-full px-2 py-0.5 an-blink">危險傾角</span>}
-                        {zone === 'crash' && <span className="text-[10px] font-black text-red-300 bg-red-900/60 border border-red-500 rounded-full px-2 py-0.5 an-danger">車禍偵測 → E-SOS</span>}
+                        {zone === 'danger' && <span className="text-[10px] font-black text-orange-400 bg-orange-900/40 border border-orange-500/50 rounded-full px-2 py-0.5 an-blink">?�險?��?</span>}
+                        {zone === 'crash' && <span className="text-[10px] font-black text-red-300 bg-red-900/60 border border-red-500 rounded-full px-2 py-0.5 an-danger">車�??�測 ??E-SOS</span>}
                     </div>
                     <div className="flex justify-center gap-1.5 text-[8px] font-mono">
-                        <span className="px-1.5 py-0.5 rounded bg-cyan-900/30 border border-cyan-500/30 text-cyan-300">0-35° 正常</span>
-                        <span className="px-1.5 py-0.5 rounded bg-orange-900/30 border border-orange-500/30 text-orange-300">35-45° 危險</span>
-                        <span className="px-1.5 py-0.5 rounded bg-red-900/40 border border-red-500/40 text-red-300">&gt;45° 車禍</span>
+                        <span className="px-1.5 py-0.5 rounded bg-cyan-900/30 border border-cyan-500/30 text-cyan-300">0-35° �?��</span>
+                        <span className="px-1.5 py-0.5 rounded bg-orange-900/30 border border-orange-500/30 text-orange-300">35-45° ?�險</span>
+                        <span className="px-1.5 py-0.5 rounded bg-red-900/40 border border-red-500/40 text-red-300">&gt;45° 車�?</span>
                     </div>
                 </AlgorithmCard>
             );
@@ -849,12 +848,12 @@
             const frac = Math.max(demo.score / 100, 0.03);
             const color = demo.score >= 85 ? '#34d399' : demo.score >= 70 ? '#22d3ee' : demo.score >= 55 ? '#fbbf24' : '#f87171';
             const penalties = [
-                { label: '超速', val: demo.speed > LIMIT ? 12 : 4 },
-                { label: '急煞', val: demo.braking >= 10 ? 9 : 0 },
-                { label: '傾角', val: Math.abs(demo.tilt) > 35 ? 25 : 5 },
+                { label: '超�?, val: demo.speed > LIMIT ? 12 : 4 },
+                { label: '?��?', val: demo.braking >= 10 ? 9 : 0 },
+                { label: '?��?', val: Math.abs(demo.tilt) > 35 ? 25 : 5 },
             ];
             return (
-                <AlgorithmCard icon="target" zh="安全評分系統" en="Safety Scoring" note={`公式：100 − Σ2^(n+1) − Σ5^(n+1) − 3×急煞次數，最低 0 分。`}>
+                <AlgorithmCard icon="target" zh="安全評�?系統" en="Safety Scoring" note={`?��?�?00 ??Σ2^(n+1) ??Σ5^(n+1) ??3??��?次數，�?�?0 ?�。`}>
                     <div className="relative mx-auto mb-2" style={{ width: 130, height: 130 }}>
                         <svg viewBox="0 0 120 120" style={{ width: 130, height: 130 }}>
                             <circle cx="60" cy="60" r="52" fill="none" stroke="#1e293b" strokeWidth="9" />
@@ -879,7 +878,7 @@
         };
 
         // ================================================================
-        // AI 深度分析
+        // AI 深度?��?
         // ================================================================
         const TypeWriter = ({ phrases }) => {
             const [text, setText] = useState('');
@@ -908,13 +907,13 @@
                 [40, 80, 120],
             ];
             const phrases = [
-                'V.I.S.O.R. 分析完成：本趟超速 2 次、急煞 1 次，最終評分 77 分。',
-                '建議：接近測速點前請確實減速，並保持安全車距。',
-                '長期趨勢：近 7 日評分穩定上升，騎士表現持續進步！',
+                'V.I.S.O.R. ?��?完�?：本趟�???2 次、急�? 1 次�??�終�???77 ?��?,
+                '建議：接近測?��??��?確實減速�?並�??��??��?距�?,
+                '?��?趨勢：�? 7 ?��??�穩定�??��?騎士表現?��??�步�?,
             ];
             return (
                 <div className="card card-glow p-5">
-                    <CardHeader icon="brain-circuit" zh="AI 深度行為分析" en="Gemini / DeepSeek Report" live />
+                    <CardHeader icon="brain-circuit" zh="AI 深度行為?��?" en="Gemini / DeepSeek Report" live />
                     <div className="grid md:grid-cols-2 gap-5">
                         <div className="relative h-52 bg-slate-900/60 rounded-xl border border-slate-800 overflow-hidden">
                             <div className="absolute inset-0 opacity-15" style={{ backgroundImage: 'linear-gradient(#22d3ee 1px, transparent 1px), linear-gradient(90deg, #22d3ee 1px, transparent 1px)', backgroundSize: '28px 28px' }}></div>
@@ -934,7 +933,7 @@
                                         style={{ animation: `an-node 2.1s ease-out ${ni * 0.4}s infinite` }} />
                                 ))}
                             </svg>
-                            <div className="absolute bottom-2 left-2 text-[8px] font-mono text-slate-500">INPUT×4 · HIDDEN×6 · OUTPUT×3 · TEMP 0.0</div>
+                            <div className="absolute bottom-2 left-2 text-[8px] font-mono text-slate-500">INPUT?4 · HIDDEN?6 · OUTPUT?3 · TEMP 0.0</div>
                         </div>
                         <div className="flex flex-col">
                             <div className="flex gap-2 mb-3">
@@ -951,7 +950,7 @@
                             </div>
                             <div className="mt-3 flex items-center gap-2 text-[9px] font-mono text-slate-500">
                                 <Icon name="database" size={11} className="text-cyan-400" />
-                                讀取 day_ride / month_ride → 封裝遙測 → LLM 生成報告 → 雲端備份
+                                讀??day_ride / month_ride ??封�??�測 ??LLM ?��??��? ???�端?�份
                             </div>
                         </div>
                     </div>
@@ -960,16 +959,15 @@
         };
 
         // ================================================================
-        // 通訊與顯示
-        // ================================================================
+        // ?��??�顯�?        // ================================================================
         const CommsCard = () => {
             const [log, setLog] = useState(0);
             const logs = [
                 '[NET] ws://192.168.4.1:8765 PING 12ms',
-                '[BT] 已連線 PI-5 · HUD 通道就緒',
-                '[WS] TX 48B → /api/telemetry',
+                '[BT] 已�?? PI-5 · HUD ?��?就�?',
+                '[WS] TX 48B ??/api/telemetry',
                 '[BT] RX 128B JSON · speed=84',
-                '[NET] 鏡頭串流 MJPEG 8000/8001',
+                '[NET] ?�頭串�? MJPEG 8000/8001',
                 '[BT] TX set_hud_config {brightness:80}',
             ];
             useEffect(() => {
@@ -978,7 +976,7 @@
             }, []);
             return (
                 <div className="card card-glow p-5 flex flex-col">
-                    <CardHeader icon="wifi" zh="雙通道通訊協定" en="WebSocket + Bluetooth" live />
+                    <CardHeader icon="wifi" zh="?�通�??��??��?" en="WebSocket + Bluetooth" live />
                     <div className="flex items-center justify-between px-2 py-4">
                         <div className="flex flex-col items-center gap-1.5">
                             <div className="w-12 h-12 rounded-xl bg-slate-900 border border-cyan-500/40 flex items-center justify-center relative">
@@ -1004,13 +1002,13 @@
                                 <Icon name="smartphone" size={22} className="text-cyan-400" />
                                 <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                             </div>
-                            <span className="text-[8px] font-mono text-slate-500">APP 端</span>
+                            <span className="text-[8px] font-mono text-slate-500">APP �?/span>
                         </div>
                     </div>
                     <div className="bg-black/50 rounded-lg border border-slate-800 p-2.5 font-mono text-[9px] leading-relaxed min-h-[4.5rem]">
                         {logs.map((l, i) => (
                             <div key={i} className={`flex gap-2 ${i === log ? 'text-cyan-300' : 'text-slate-600'}`}>
-                                <span className="text-slate-700">{l.startsWith('[NET]') ? '◉' : '◈'}</span>
+                                <span className="text-slate-700">{l.startsWith('[NET]') ? '?? : '??}</span>
                                 <span>{l}</span>
                             </div>
                         ))}
@@ -1022,7 +1020,7 @@
         const HudCard = () => {
             return (
                 <div className="card card-glow p-5 flex flex-col">
-                    <CardHeader icon="monitor" zh="HUD 顯示技術" en="128×64 OLED" live />
+                    <CardHeader icon="monitor" zh="HUD 顯示?��? en="128?64 OLED" live />
                     <div className="bg-black border-2 border-slate-700 rounded-lg p-2 relative overflow-hidden">
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-slate-800 text-[7px] px-2 rounded-b text-slate-400 font-mono">HUD PREVIEW</div>
                         <div className="aspect-[2/1] bg-black font-pixel p-2 relative overflow-hidden">
@@ -1034,7 +1032,7 @@
                                 <span className="text-3xl font-bold text-white leading-none drop-shadow-[0_0_4px_rgba(34,211,238,0.9)]">84</span>
                                 <div className="flex flex-col items-end gap-1">
                                     <span className="bg-red-900 text-white px-1 border border-red-500 text-[8px] font-mono an-blink">CAM 350m</span>
-                                    <span className="text-yellow-400 text-[9px] font-mono">➤ 200m</span>
+                                    <span className="text-yellow-400 text-[9px] font-mono">??200m</span>
                                 </div>
                             </div>
                             <div className="absolute bottom-0 left-0 right-0 h-0.5 an-scan" style={{ background: 'linear-gradient(to bottom, transparent, rgba(34,211,238,0.7))', height: '2px', top: 'auto' }}></div>
@@ -1050,8 +1048,8 @@
                             <span className="text-slate-300">80/255</span>
                         </div>
                         <div className="flex flex-wrap gap-1.5 text-[8px] font-mono">
-                            {['時速', '測速提醒', '導航', '時間'].map((t) => (
-                                <span key={t} className="px-1.5 py-0.5 rounded bg-cyan-900/30 border border-cyan-500/30 text-cyan-300">● {t}</span>
+                            {['?��?, '測速�???, '導航', '?��?'].map((t) => (
+                                <span key={t} className="px-1.5 py-0.5 rounded bg-cyan-900/30 border border-cyan-500/30 text-cyan-300">??{t}</span>
                             ))}
                         </div>
                     </div>
@@ -1066,7 +1064,7 @@
             ];
             return (
                 <div className="card card-glow p-5 flex flex-col">
-                    <CardHeader icon="camera" zh="影像串流" en="Dual MJPEG" live />
+                    <CardHeader icon="camera" zh="影�?串�?" en="Dual MJPEG" live />
                     <div className="space-y-3 flex-1">
                         {cams.map((c) => (
                             <div key={c.name} className="relative aspect-video bg-black rounded-lg border border-slate-800 overflow-hidden">
@@ -1084,7 +1082,7 @@
                         ))}
                     </div>
                     <div className="mt-3 pt-2.5 border-t border-slate-700/60 text-[9px] font-mono text-slate-500">
-                        CSI 硬體編碼 · 320px 輸入 · YOLOv26n 推理 19ms 共行
+                        CSI 硬�?編碼 · 320px 輸入 · YOLOv26n ?��? 19ms ?��?
                     </div>
                 </div>
             );
@@ -1096,7 +1094,7 @@
         const CameraDbCard = () => {
             return (
                 <div className="card card-glow p-5 flex flex-col">
-                    <CardHeader icon="database" zh="測速照相資料庫" en="Speed Camera DB" live />
+                    <CardHeader icon="database" zh="測速照?��??�庫" en="Speed Camera DB" live />
                     <div className="grid grid-cols-5 gap-3 items-center flex-1">
                         <div className="relative w-full aspect-square col-span-2 rounded-full border border-cyan-500/20 bg-slate-900/40 overflow-hidden">
                             <div className="absolute inset-0 rounded-full border-2 border-cyan-500/15"></div>
@@ -1110,9 +1108,9 @@
                         </div>
                         <div className="col-span-3 space-y-2">
                             {[
-                                ['政府 API', '內政部警政署', '自動同步'],
-                                ['本機 CSV', '自訂匯入', '手動更新'],
-                                ['內建點位', '4 筆', '雪山隧道等'],
+                                ['?��? API', '?�政?�警?�署', '?��??�步'],
+                                ['?��? CSV', '?��??�入', '?��??�新'],
+                                ['?�建點�?', '4 �?, '?�山?��?�?],
                             ].map(([k, v, s]) => (
                                 <div key={k} className="flex items-center justify-between bg-slate-900/50 rounded-lg border border-slate-800 px-2.5 py-1.5">
                                     <span className="text-[9px] font-bold text-slate-200">{k}</span>
@@ -1122,7 +1120,7 @@
                             ))}
                             <div className="flex items-center gap-1.5 text-[9px] font-mono text-slate-500">
                                 <Icon name="map-pin" size={11} className="text-cyan-400" />
-                                動態警示範圍：300m / 500m / 800m（依車速）
+                                ?��?警示範�?�?00m / 500m / 800m（�?車速�?
                             </div>
                         </div>
                     </div>
@@ -1133,14 +1131,14 @@
         const SosCard = () => {
             return (
                 <div className="card card-glow p-5 flex flex-col">
-                    <CardHeader icon="shield-check" zh="E-SOS / 哨兵模式" en="Emergency & Sentry" live />
+                    <CardHeader icon="shield-check" zh="E-SOS / ?�兵模�?" en="Emergency & Sentry" live />
                     <div className="flex items-center justify-center gap-6 flex-1 py-3">
                         <div className="relative w-24 h-24 flex items-center justify-center">
                             <div className="absolute inset-0 rounded-full border-2 border-red-500/60 an-ring"></div>
                             <div className="absolute inset-0 rounded-full border border-red-500/40 an-ring" style={{ animationDelay: '0.6s' }}></div>
                             <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center flex-col shadow-[0_0_25px_rgba(239,68,68,0.5)]">
                                 <span className="text-[9px] font-black text-white tracking-widest">E-SOS</span>
-                                <span className="text-[6px] font-mono text-red-200">長按 3 秒</span>
+                                <span className="text-[6px] font-mono text-red-200">?��? 3 �?/span>
                             </div>
                         </div>
                         <div className="space-y-2.5 text-[10px] font-mono">
@@ -1150,20 +1148,20 @@
                             </div>
                             <div className="flex items-center gap-2">
                                 <Icon name="rotate-3d" size={14} className="text-orange-400" />
-                                <span className="text-slate-300">傾角 &gt;45° 15s 自動觸發</span>
+                                <span className="text-slate-300">?��? &gt;45° 15s ?��?觸發</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <Icon name="eye" size={14} className="text-cyan-400" />
-                                <span className="text-slate-300">哨兵模式 <span className="text-emerald-400">監控中</span></span>
+                                <span className="text-slate-300">?�兵模�? <span className="text-emerald-400">??���?/span></span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <Icon name="navigation" size={14} className="text-cyan-400" />
-                                <span className="text-slate-300">GPS 座標嵌入訊息</span>
+                                <span className="text-slate-300">GPS 座�?嵌入訊息</span>
                             </div>
                         </div>
                     </div>
                     <div className="mt-2 pt-2.5 border-t border-slate-700/60 flex items-center justify-between text-[9px] font-mono text-slate-500">
-                        <span>SMS 原生外掛 · 訊息: 「我現在出車禍了…」</span>
+                        <span>SMS ?��?外�? · 訊息: ?��??�在?��?禍�??��?/span>
                         <span className="text-cyan-400 an-blink">STANDBY</span>
                     </div>
                 </div>
@@ -1183,8 +1181,8 @@
                         ))}
                     </div>
                     <p className="text-center text-[10px] font-mono text-slate-600 leading-relaxed">
-                        V.I.S.O.R. MK-XXV · ARAS 智慧騎士輔助系統 · 技術展示頁<br />
-                        開發中演算法 / 核心技術視覺化展示 — 所有數據為循環模擬
+                        V.I.S.O.R. MK-XXV · ARAS ?�慧騎士輔助系統 · ?�術�?示�?<br />
+                        ?�發中�?算�? / ?��??�術�?覺�?展示 ???�?�數?�為循環模擬
                     </p>
                 </div>
             );
@@ -1241,7 +1239,7 @@
                     <div className="max-w-6xl mx-auto px-4 md:px-8 pb-10">
                         <HeroSection demo={demo} />
 
-                        <SectionTitle zh="AI 視覺核心" en="Computer Vision Core" icon="scan-search" />
+                        <SectionTitle zh="AI 視覺?��?" en="Computer Vision Core" icon="scan-search" />
                         <div className="grid lg:grid-cols-2 gap-4">
                             <YoloCompareCard />
                             <TrainingPipelineCard />
@@ -1251,7 +1249,7 @@
                             <QuantizationCard />
                         </div>
 
-                        <SectionTitle zh="騎乘行為演算法" en="Rider Behavior Algorithms" icon="activity" />
+                        <SectionTitle zh="騎�?行為演�?�? en="Rider Behavior Algorithms" icon="activity" />
                         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                             <SpeedCard demo={demo} />
                             <BrakingCard />
@@ -1259,10 +1257,10 @@
                             <ScoreCard demo={demo} />
                         </div>
 
-                        <SectionTitle zh="AI 深度分析" en="Deep Behavior Analysis" icon="brain-circuit" />
+                        <SectionTitle zh="AI 深度?��?" en="Deep Behavior Analysis" icon="brain-circuit" />
                         <AINetworkCard />
 
-                        <SectionTitle zh="通訊與顯示" en="Communication & Display" icon="wifi" />
+                        <SectionTitle zh="?��??�顯�? en="Communication & Display" icon="wifi" />
                         <div className="grid md:grid-cols-3 gap-4">
                             <CommsCard />
                             <HudCard />

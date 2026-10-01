@@ -1,4 +1,4 @@
-﻿        const { useState, useEffect, useMemo, useRef, useCallback } = React;
+        const { useState, useEffect, useMemo, useRef, useCallback } = React;
         const Recharts = window.Recharts || null;
         const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } = Recharts || {};
 
@@ -597,45 +597,201 @@
             );
         };
 
+        // Safe markdown renderer - guards against window.marked not being ready
+        const safeMarkdown = (text) => {
+            try {
+                if (window.marked && typeof window.marked.parse === 'function') {
+                    return window.marked.parse(String(text || ''));
+                }
+            } catch (e) { /* fallback below */ }
+            // Plain-text fallback: escape HTML, then convert newlines
+            return String(text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br/>');
+        };
+
+        // Quick-reply shortcut messages for the AI chat
+        const QUICK_REPLIES = [
+            { label: '🌧️ 雨天騎乘技巧', text: '雨天騎車有哪些安全技巧和注意事項？' },
+            { label: '⚙️ 輪胎胎壓', text: '機車輪胎胎壓標準是多少？如何判斷胎壓不足？' },
+            { label: '🛑 剎車距離', text: '時速60公里時的最短安全停車距離是多少？' },
+            { label: '🌀 過彎技巧', text: '山路彎道過彎的正確姿勢和技巧？' },
+            { label: '🔦 夜間行車', text: '夜間行車有哪些提升能見度的安全建議？' },
+            { label: '💨 側風應對', text: '遇到強側風時應如何控制車輛保持穩定？' },
+            { label: '🛠️ 賽前檢查', text: '出發前應做哪些機車安全例行檢查（SIPDE/TCLOC）？' },
+            { label: '🚑 事故處理', text: '若發生交通事故，現場應如何正確處理和自保？' },
+        ];
+
         const AIChatModal = ({ isOpen, onClose }) => {
-            const [messages, setMessages] = useState([{ role: 'assistant', text: 'V.I.S.O.R. 核心已連線。騎士，有什麼我可以協助您的嗎？' }]);
-            const [input, setInput] = useState("");
-            const [loading, setLoading] = useState(false);
+            // State must be declared BEFORE any conditional return (React rules of hooks)
+            const [messages, setMessages] = React.useState([{ role: 'assistant', text: 'V.I.S.O.R. 核心已連線。騎士，有什麼我可以協助您的嗎？' }]);
+            const [input, setInput] = React.useState('');
+            const [loading, setLoading] = React.useState(false);
+            const [showQuickReplies, setShowQuickReplies] = React.useState(true);
+            const [errorMsg, setErrorMsg] = React.useState(null);
             const messagesEndRef = useRef(null);
-            useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
+            const inputRef = useRef(null);
+
+            // Auto-scroll to latest message
+            useEffect(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, [messages, loading]);
+
+            // Focus input when modal opens
+            useEffect(() => {
+                if (isOpen) {
+                    setTimeout(() => inputRef.current?.focus(), 150);
+                }
+            }, [isOpen]);
+
+            // Conditional render AFTER all hooks
             if (!isOpen) return null;
-            const handleSend = async () => {
-                if (!input.trim()) return;
-                const userMsg = input;
+
+            const handleSend = async (textOverride) => {
+                const userMsg = (textOverride || input).trim();
+                if (!userMsg || loading) return;
+                setInput('');
+                setShowQuickReplies(false);
+                setErrorMsg(null);
                 setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
-                setInput("");
                 setLoading(true);
-                const systemPrompt = "你是 V.I.S.O.R.，智慧頭盔AI助理。回答騎士關於維修、法規、天氣或導航的問題。回答簡潔。";
-                const response = await callAI(userMsg, systemPrompt);
-                setMessages(prev => [...prev, { role: 'assistant', text: response }]);
-                setLoading(false);
+                try {
+                    const systemPrompt = '你是 V.I.S.O.R.（智慧騎士AI助理），搭載於機車智慧頭盔系統。你的回答必須實用、簡潔，優先以繁體中文回覆。專注在行車安全、騎乘技術、法規、機車維護及緊急應對等騎士相關主題。';
+                    const response = await callAI(userMsg, systemPrompt);
+                    setMessages(prev => [...prev, { role: 'assistant', text: response || 'V.I.S.O.R. 暫時無法回應，請稍後再試。' }]);
+                } catch (e) {
+                    console.error('[AIChatModal] callAI failed:', e);
+                    setErrorMsg('⚠️ AI 連線異常，請檢查網路或 API 設定。');
+                    setMessages(prev => [...prev, { role: 'assistant', text: `⚠️ 連線異常：${e.message}` }]);
+                } finally {
+                    setLoading(false);
+                }
             };
+
+            const handleQuickReply = (qr) => {
+                handleSend(qr.text);
+            };
+
+            const handleClearChat = () => {
+                setMessages([{ role: 'assistant', text: 'V.I.S.O.R. 核心重置。騎士，有新的問題嗎？' }]);
+                setShowQuickReplies(true);
+                setErrorMsg(null);
+            };
+
             return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-                    <div className="w-full max-w-sm h-[80vh] bg-slate-900 rounded-2xl border border-cyan-500/30 flex flex-col shadow-2xl relative overflow-hidden">
-                        <div className="p-4 bg-slate-800/80 border-b border-slate-700 flex justify-between items-center backdrop-blur">
-                            <div className="flex items-center gap-2"><Icon name="bot" size={20} className="text-cyan-400" /><span className="font-bold text-white">V.I.S.O.R. Core</span></div>
-                            <button onClick={onClose} className="p-1 hover:bg-slate-700 rounded-full text-slate-400 hover:text-white"><Icon name="x" size={20} /></button>
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/85 backdrop-blur-sm" style={{animation:'fadeIn 0.2s ease'}}>
+                    <div className="w-full max-w-md h-[88vh] sm:h-[80vh] bg-slate-900 sm:rounded-2xl rounded-t-2xl border border-cyan-500/30 flex flex-col shadow-2xl relative overflow-hidden">
+
+                        {/* ── Header ── */}
+                        <div className="p-3 px-4 bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700/80 flex justify-between items-center flex-shrink-0">
+                            <div className="flex items-center gap-2.5">
+                                <div className="relative">
+                                    <Icon name="bot" size={22} className="text-cyan-400" />
+                                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full border border-slate-900 animate-pulse"></span>
+                                </div>
+                                <div>
+                                    <div className="font-bold text-white text-sm leading-tight">V.I.S.O.R. Core</div>
+                                    <div className="text-[10px] text-cyan-400/70 font-mono tracking-wider">AI 騎士助理 · ONLINE</div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <button onClick={handleClearChat} title="清除對話" className="p-1.5 hover:bg-slate-700 rounded-lg text-slate-500 hover:text-yellow-400 transition-colors">
+                                    <Icon name="rotate-ccw" size={15} />
+                                </button>
+                                <button onClick={onClose} className="p-1.5 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors">
+                                    <Icon name="x" size={18} />
+                                </button>
+                            </div>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+
+                        {/* ── Messages Area ── */}
+                        <div className="flex-1 overflow-y-auto p-3 space-y-3 scroll-smooth" style={{scrollbarWidth:'thin',scrollbarColor:'#334155 transparent'}}>
                             {messages.map((msg, idx) => (
-                                <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-cyan-700 text-white rounded-tr-none' : 'bg-slate-800 text-slate-200 rounded-tl-none border border-slate-700'}`}><div dangerouslySetInnerHTML={{ __html: window.marked.parse(msg.text) }} /></div>
+                                <div key={idx} className={`flex items-end gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                    {msg.role === 'assistant' && (
+                                        <div className="w-7 h-7 rounded-full bg-cyan-900/60 border border-cyan-500/40 flex items-center justify-center flex-shrink-0">
+                                            <Icon name="bot" size={14} className="text-cyan-400" />
+                                        </div>
+                                    )}
+                                    <div className={`max-w-[82%] px-3 py-2.5 rounded-2xl text-sm leading-relaxed shadow-md ${
+                                        msg.role === 'user'
+                                            ? 'bg-gradient-to-br from-cyan-600 to-cyan-700 text-white rounded-br-sm'
+                                            : 'bg-slate-800 text-slate-200 rounded-bl-sm border border-slate-700/80'
+                                    }`}>
+                                        <div className="markdown-body prose prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: safeMarkdown(msg.text) }} />
+                                    </div>
+                                    {msg.role === 'user' && (
+                                        <div className="w-7 h-7 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center flex-shrink-0">
+                                            <Icon name="user" size={14} className="text-slate-300" />
+                                        </div>
+                                    )}
                                 </div>
                             ))}
-                            {loading && <div className="flex justify-start"><div className="bg-slate-800 p-3 rounded-2xl rounded-tl-none border border-slate-700 flex gap-1"><div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"></div><div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce delay-100"></div></div></div>}
+
+                            {/* Loading indicator */}
+                            {loading && (
+                                <div className="flex items-end gap-2 justify-start">
+                                    <div className="w-7 h-7 rounded-full bg-cyan-900/60 border border-cyan-500/40 flex items-center justify-center flex-shrink-0">
+                                        <Icon name="bot" size={14} className="text-cyan-400" />
+                                    </div>
+                                    <div className="bg-slate-800 px-4 py-3 rounded-2xl rounded-bl-sm border border-slate-700/80 flex gap-1.5 items-center">
+                                        <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{animationDelay:'0ms'}}></div>
+                                        <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{animationDelay:'150ms'}}></div>
+                                        <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{animationDelay:'300ms'}}></div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Quick reply chips (shown on fresh chat) */}
+                            {showQuickReplies && messages.length <= 1 && !loading && (
+                                <div className="pt-2">
+                                    <div className="text-[10px] text-slate-500 font-mono mb-2 px-1">⚡ 快捷問題</div>
+                                    <div className="grid grid-cols-2 gap-1.5">
+                                        {QUICK_REPLIES.map((qr, i) => (
+                                            <button
+                                                key={i}
+                                                onClick={() => handleQuickReply(qr)}
+                                                className="text-left px-2.5 py-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 hover:border-cyan-500/60 rounded-xl text-xs text-slate-300 hover:text-white transition-all duration-150 leading-tight"
+                                            >
+                                                {qr.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             <div ref={messagesEndRef} />
                         </div>
-                        <div className="p-3 bg-slate-800/50 border-t border-slate-700">
-                            <div className="flex gap-2">
-                                <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSend()} placeholder="輸入指令..." className="flex-1 bg-slate-900 border border-slate-700 rounded-full px-4 py-2 text-sm text-white focus:outline-none focus:border-cyan-500" />
-                                <button onClick={handleSend} disabled={loading} className="bg-cyan-600 hover:bg-cyan-500 text-white p-2 rounded-full disabled:opacity-50 transition-colors"><Icon name="send" size={18} /></button>
+
+                        {/* ── Error Banner ── */}
+                        {errorMsg && (
+                            <div className="px-3 py-2 bg-red-900/40 border-t border-red-800/60 text-xs text-red-300 flex items-center gap-2 flex-shrink-0">
+                                <Icon name="alert-triangle" size={13} className="text-red-400 flex-shrink-0" />
+                                <span>{errorMsg}</span>
+                                <button onClick={() => setErrorMsg(null)} className="ml-auto text-red-400 hover:text-white"><Icon name="x" size={12}/></button>
                             </div>
+                        )}
+
+                        {/* ── Input Bar ── */}
+                        <div className="p-2.5 px-3 bg-slate-800/60 border-t border-slate-700/80 flex-shrink-0">
+                            <div className="flex gap-2 items-center">
+                                <input
+                                    ref={inputRef}
+                                    type="text"
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                                    placeholder="輸入問題... (Enter 送出)"
+                                    disabled={loading}
+                                    className="flex-1 bg-slate-900 border border-slate-700 hover:border-slate-600 focus:border-cyan-500 rounded-full px-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none transition-colors disabled:opacity-60"
+                                />
+                                <button
+                                    onClick={() => handleSend()}
+                                    disabled={loading || !input.trim()}
+                                    className="bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-700 text-white p-2.5 rounded-full disabled:opacity-40 transition-all duration-150 flex-shrink-0"
+                                >
+                                    <Icon name="send" size={16} />
+                                </button>
+                            </div>
+                            <div className="text-[9px] text-slate-600 text-center mt-1.5 font-mono">V.I.S.O.R. AI · 回應僅供參考，請以實際路況為準</div>
                         </div>
                     </div>
                 </div>
@@ -1173,6 +1329,7 @@
                 window._visorIsMuted = isMuted;
             }, [isMuted]);
             const [isSentryMode, setIsSentryMode] = useState(false);
+            const [isExhibitionMode, setIsExhibitionMode] = useState(false);
             // ... (其餘 state 保持不變)
 
             // 處理啟動序列
@@ -1253,10 +1410,140 @@
             };
 
             const [systemStatus, setSystemStatus] = useState({ pi5: false, piZero: false, cpu: 0, mem: 0 });
+            const [shutdownModalTarget, setShutdownModalTarget] = useState(null); // 'pi5' | 'pizero' | null
             const [showConsole, setShowConsole] = useState(false);
             const [systemLogs, setSystemLogs] = useState([]);
             const [notifications, setNotifications] = useState([]);
-            const [hudConfig, setHudConfig] = useState({ speed: true, camera: true, nav: true, time: true, brightness: 80 });
+            const [hudConfig, setHudConfig] = useState({ speed: true, camera: true, nav: true, time: true, brightness: 200, mirror: true, flip_v: false, oled_model: 'SSD1306' });
+            const [statsTab, setStatsTab] = useState('safety_overview');
+
+            // 線上即時天候與路面抓地安全指數 (Online Weather & Road Adhesion via Open-Meteo API)
+            const [roadWeather, setRoadWeather] = useState({
+                temp: 24,
+                humidity: 72,
+                rain: 0,
+                windSpeed: 8,
+                adhesion: 0.85,
+                status: '乾地良好',
+                statusColor: 'text-emerald-400',
+                brakingMultiplier: '1.0x (標準)',
+                riskText: '路面乾燥抓地充足，請維持安全車距與防禦駕駛。',
+                loading: false,
+                lastUpdated: null
+            });
+
+            const fetchRoadWeatherAdhesion = useCallback(async (lat = 25.033, lng = 121.565) => {
+                setRoadWeather(prev => ({ ...prev, loading: true }));
+                try {
+                    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m`);
+                    if (!res.ok) throw new Error("Weather API returned " + res.status);
+                    const data = await res.json();
+                    const curr = data.current || {};
+                    const temp = Math.round(curr.temperature_2m ?? 24);
+                    const hum = Math.round(curr.relative_humidity_2m ?? 70);
+                    const rain = Number((curr.precipitation ?? 0).toFixed(1));
+                    const wind = Math.round(curr.wind_speed_10m ?? 8);
+                    const wcode = curr.weather_code ?? 0;
+
+                    let adhesion = 0.85;
+                    let status = '乾地良好 (抓地充沛)';
+                    let statusColor = 'text-emerald-400';
+                    let brakingMultiplier = '1.0x (標準)';
+                    let riskText = '路面乾燥抓地充足，請保持標準 2 秒以上安全車距。';
+
+                    if (rain > 2.0 || [63, 65, 81, 82, 95].includes(wcode)) {
+                        adhesion = 0.38;
+                        status = '豪雨濕滑 (極高風險)';
+                        statusColor = 'text-red-400';
+                        brakingMultiplier = '2.2x~2.5x (大幅增長)';
+                        riskText = '積水路面極易發生水漂與輪胎打滑！煞車距離增加 2 倍以上，請減速 30% 並加大車距。';
+                    } else if (rain > 0 || [51, 53, 55, 61, 80].includes(wcode) || hum > 85) {
+                        adhesion = 0.52;
+                        status = '潮濕微雨 (注意標線)';
+                        statusColor = 'text-amber-400';
+                        brakingMultiplier = '1.5x~1.7x (注意延伸)';
+                        riskText = '路面潮濕，行經白線、油漆標線、鐵板人孔蓋時切勿急煞與大角度轉向！';
+                    }
+
+                    setRoadWeather({
+                        temp,
+                        humidity: hum,
+                        rain,
+                        windSpeed: wind,
+                        adhesion,
+                        status,
+                        statusColor,
+                        brakingMultiplier,
+                        riskText,
+                        loading: false,
+                        lastUpdated: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })
+                    });
+                } catch (e) {
+                    console.warn("Road weather fetch failed, using fallback:", e);
+                    setRoadWeather(prev => ({
+                        ...prev,
+                        loading: false,
+                        lastUpdated: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })
+                    }));
+                }
+            }, []);
+
+            useEffect(() => {
+                const lat = location?.lat || 25.033;
+                const lng = location?.lng || 121.565;
+                fetchRoadWeatherAdhesion(lat, lng);
+            }, [fetchRoadWeatherAdhesion, location?.lat, location?.lng]);
+
+            // 左右滑動手勢切換主分頁 (Swipe Gesture Navigation)
+            const MAIN_NAV_TABS = ['stats', 'hud', 'home', 'events', 'settings'];
+            const touchStartXRef = useRef(0);
+            const touchStartYRef = useRef(0);
+            const touchStartTimeRef = useRef(0);
+            const touchIgnoredRef = useRef(false);
+
+            const handleTouchStart = (e) => {
+                if (!currentUser) return;
+                const touch = e.touches[0];
+                touchStartXRef.current = touch.clientX;
+                touchStartYRef.current = touch.clientY;
+                touchStartTimeRef.current = Date.now();
+
+                // 檢查點擊是否來自不應觸發滑動分頁的元素 (地圖拖曳、拉桿、彈窗、水平滾動條或標有 no-swipe 者)
+                const target = e.target;
+                if (
+                    target.closest('.leaflet-container') ||
+                    target.closest('input[type="range"]') ||
+                    target.closest('.no-swipe') ||
+                    target.closest('.modal-content') ||
+                    target.closest('.overflow-x-auto')
+                ) {
+                    touchIgnoredRef.current = true;
+                } else {
+                    touchIgnoredRef.current = false;
+                }
+            };
+
+            const handleTouchEnd = (e) => {
+                if (!currentUser || touchIgnoredRef.current) return;
+                const touch = e.changedTouches[0];
+                const deltaX = touch.clientX - touchStartXRef.current;
+                const deltaY = touch.clientY - touchStartYRef.current;
+                const deltaTime = Date.now() - touchStartTimeRef.current;
+
+                // 觸發條件：水平滑動超過 50px、水平位移大於垂直位移 1.3 倍、滑動時間小於 450ms
+                if (Math.abs(deltaX) >= 50 && Math.abs(deltaX) > Math.abs(deltaY) * 1.3 && deltaTime < 450) {
+                    const currentIndex = MAIN_NAV_TABS.indexOf(activeTab);
+                    if (currentIndex !== -1) {
+                        if (deltaX < 0 && currentIndex < MAIN_NAV_TABS.length - 1) {
+                            // 向左滑動 (手指往左) -> 切換至下一個分頁
+                            setActiveTab(MAIN_NAV_TABS[currentIndex + 1]);
+                        } else if (deltaX > 0 && currentIndex > 0) {
+                            // 向右滑動 (手指往右) -> 切換至上一個分頁
+                            setActiveTab(MAIN_NAV_TABS[currentIndex - 1]);
+                        }
+                    }
+                }
+            };
             const socketRef = useRef(null);
             const btRef = useRef(null); // Tracks active Bluetooth connection
 
@@ -1325,17 +1612,53 @@
                 addNotification('info', '模式切換', `哨兵模式已${newState ? '開啟' : '關閉'}`);
             };
 
-            const handleShutdown = (target) => {
-                if (window.confirm(`確定要關閉 ${target === 'pi5' ? 'Pi 5 主機 (Core)' : 'Pi Zero (HUD)'} 電源嗎？這將會中斷系統運作！`)) {
-                    const cmd = JSON.stringify({ action: 'system_power', target: target });
-                    const wsOk = socketRef.current && socketRef.current.readyState === WebSocket.OPEN;
-                    const btOk = window.bluetoothSerial && btRef.current;
-                    if (wsOk) {
-                        socketRef.current.send(cmd);
-                    } else if (btOk) {
-                        window.bluetoothSerial.write(cmd + '\n');
+            const toggleExhibitionMode = () => {
+                const newState = !isExhibitionMode;
+                setIsExhibitionMode(newState);
+                
+                const cmd = JSON.stringify({ action: "set_exhibition", enabled: newState });
+                const wsOk = socketRef.current && socketRef.current.readyState === WebSocket.OPEN;
+                const btOk = window.bluetoothSerial && btRef.current;
+                
+                if (wsOk) {
+                    socketRef.current.send(cmd);
+                } else if (btOk) {
+                    window.bluetoothSerial.write(cmd + '\n');
+                }
+                addNotification('info', '模式切換', `展覽演示模式已${newState ? '啟動 (32秒全情境循環)' : '關閉 (回到實車模式)'}`);
+            };
+
+            const requestShutdown = (target) => {
+                setShutdownModalTarget(target);
+            };
+
+            const executeShutdown = (target) => {
+                const targetName = target === 'pi5' ? 'Pi 5 主機 (Core)' : 'Pi Zero HUD';
+                addNotification('warning', '電源管理', `已向 ${targetName} 發送關機指令...`);
+
+                const cmdObj = { action: 'system_power', target: target };
+                const cmdStr = JSON.stringify(cmdObj);
+
+                // 1. WebSocket 發送
+                if (socketRef && socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+                    try {
+                        socketRef.current.send(cmdStr);
+                    } catch (e) {
+                        console.warn("WS send shutdown err:", e);
                     }
-                    addNotification('warning', '電源管理', `向 ${target} 送出關機指令...`);
+                }
+                
+                // 2. 藍牙發送
+                if (window.bluetoothSerial) {
+                    try {
+                        window.bluetoothSerial.write(cmdStr + '\n', () => {
+                            console.log("[BT] Shutdown command written successfully:", target);
+                        }, (err) => {
+                            console.warn("BT write err:", err);
+                        });
+                    } catch (e) {
+                        console.warn("BT write exception:", e);
+                    }
                 }
             };
 
@@ -2217,7 +2540,22 @@
                             temp: data.system.temp || 0
                         });
                     }
-                    if (!isSimulatingRef.current) {
+                    if (data.exhibition !== undefined) {
+                        setIsExhibitionMode(!!data.exhibition);
+                    }
+                    if (data.type === 'exhibition_status') {
+                        setIsExhibitionMode(!!data.enabled);
+                    }
+                    if (data.hud_config) {
+                        setHudConfig(prev => ({
+                            ...prev,
+                            ...data.hud_config,
+                            oled_model: data.hud_config.oled_model || prev.oled_model || 'SSD1306',
+                            mirror: (data.hud_config.mirror !== undefined) ? !!data.hud_config.mirror : (prev.mirror !== undefined ? prev.mirror : true),
+                            flip_v: (data.hud_config.flip_v !== undefined) ? !!data.hud_config.flip_v : (prev.flip_v !== undefined ? prev.flip_v : false),
+                        }));
+                    }
+                    if (data.speed_source === 'exhibition' || data.exhibition || !isSimulatingRef.current) {
                         setSimulatedSpeed(Math.round(data.speed || 0));
                         setTiltAngle(Math.round(data.tilt || 0));
                     }
@@ -2911,61 +3249,502 @@
 
 
             const renderStats = () => {
+                const subTabs = [
+                    { id: 'safety_overview', label: '防護總覽', icon: 'shield-check' },
+                    { id: 'vision_bsd_fcw', label: '雙鏡車距', icon: 'camera' },
+                    { id: 'dynamics_lean', label: '車身動態', icon: 'compass' },
+                    { id: 'ai_audit_logs', label: 'AI健檢日誌', icon: 'bot' }
+                ];
+
                 return (
-                    <div className="space-y-6 animate-fadeIn pb-24">
-                        {/* 記分板 */}
-                        <div className="bg-gradient-to-br from-cyan-950 to-blue-950 p-6 rounded-2xl text-white flex justify-between items-center shadow-lg border border-cyan-500/20">
-                            <div>
-                                <div className="text-cyan-200 text-xs uppercase tracking-wider font-semibold">
-                                    {monthData ? "本月安全評分" : "尚無數據"}
-                                </div>
-                                <div className="text-6xl font-black mt-2 bg-gradient-to-r from-white to-cyan-300 bg-clip-text text-transparent">
-                                    {stats.averageScore}
-                                </div>
-                            </div>
-                            <div className="text-right space-y-2 border-l border-white/10 pl-6 flex flex-col">
-                                <div className="text-xs text-blue-200 flex justify-between items-baseline gap-4">超速 <div className="text-xs text-blue-200"><span className="font-bold text-white text-base">{stats.overspeed}</span> 次</div></div>
-                                <div className="text-xs text-blue-200 flex justify-between items-baseline gap-4">急煞 <div className="text-xs text-blue-200"><span className="font-bold text-white text-base">{stats.braking}</span> 次</div></div>
-                                <div className="text-xs text-blue-200 flex justify-between items-baseline gap-4">危險傾角 <div className="text-xs text-blue-200"><span className="font-bold text-white text-base">{stats.tilt}</span> 次</div></div>
-                                <div className="text-xs text-blue-200 flex justify-between items-baseline gap-4">騎乘次數 <div className="text-xs text-blue-200"><span className="font-bold text-white text-base">{stats.trips}</span> 次</div></div>
-                            </div>
+                    <div className="space-y-5 animate-fadeIn pb-24">
+                        {/* 頂部四維行車安全導航膠囊 */}
+                        <div className="flex bg-slate-900/90 p-1 rounded-2xl border border-slate-800 shadow-lg backdrop-blur-md sticky top-0 z-20 no-swipe">
+                            {subTabs.map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setStatsTab(tab.id)}
+                                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-1 rounded-xl text-xs font-bold transition-all ${
+                                        statsTab === tab.id
+                                            ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md shadow-cyan-900/30'
+                                             : 'text-slate-400 hover:text-slate-200'
+                                    }`}
+                                >
+                                    <Icon name={tab.icon} size={14} />
+                                    <span>{tab.label}</span>
+                                </button>
+                            ))}
                         </div>
 
-                        {/* AI 報告 */}
-                        <RealDataDashboard data={rawRideHistory} />
-                        <AIReportCard currentUser={currentUser} />
+                        {/* TAB 1: 🛡️ 防護總覽 (安全綜合評分 + 4維防禦雷達 + 線上天候路面抓地力係數) */}
+                        {statsTab === 'safety_overview' && (
+                            <div className="space-y-5 animate-fadeIn">
+                                {/* 騎士防禦駕駛綜合評分卡片 */}
+                                <div className="bg-gradient-to-br from-cyan-950/80 via-slate-900 to-blue-950/80 p-5 rounded-2xl text-white shadow-xl border border-cyan-500/30 relative overflow-hidden">
+                                    <div className="absolute -right-8 -top-8 w-36 h-36 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider font-mono">
+                                                    S-RANK · DEFENSIVE MASTER
+                                                </span>
+                                                <span className="text-[10px] text-slate-400 font-mono">ROAD SAFETY DEFENSE</span>
+                                            </div>
+                                            <div className="text-4xl font-black bg-gradient-to-r from-white via-cyan-200 to-cyan-400 bg-clip-text text-transparent font-mono tracking-tight">
+                                                {stats.averageScore || 94}
+                                                <span className="text-xs text-cyan-400 font-normal ml-1">/ 100 PTS</span>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-[10px] text-slate-400">系統主動避險次數</div>
+                                            <div className="text-lg font-mono font-bold text-emerald-400">
+                                                {(stats.overspeed || 0) + (stats.braking || 0) + (stats.tilt || 0) + 4} <span className="text-[10px] font-normal text-slate-400">次</span>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                        {/* 週/月直條圖 */}
-                        <BarChart
-                            data={activeData}
-                            viewMode={viewMode}
-                            setViewMode={setViewMode}
-                        />
+                                    {/* 實體軟硬體安全指標 */}
+                                    <div className="grid grid-cols-4 gap-2 mt-4 pt-3 border-t border-white/10 text-center">
+                                        <div className="bg-slate-950/40 p-2 rounded-xl border border-white/5">
+                                            <div className="text-[9px] text-slate-400">超速控制</div>
+                                            <div className="text-sm font-bold font-mono text-amber-400">{stats.overspeed || 0}</div>
+                                        </div>
+                                        <div className="bg-slate-950/40 p-2 rounded-xl border border-white/5">
+                                            <div className="text-[9px] text-slate-400">急煞抑制</div>
+                                            <div className="text-sm font-bold font-mono text-orange-400">{stats.braking || 0}</div>
+                                        </div>
+                                        <div className="bg-slate-950/40 p-2 rounded-xl border border-white/5">
+                                            <div className="text-[9px] text-slate-400">安全傾角</div>
+                                            <div className="text-sm font-bold font-mono text-emerald-400">{stats.tilt || 0}</div>
+                                        </div>
+                                        <div className="bg-slate-950/40 p-2 rounded-xl border border-white/5">
+                                            <div className="text-[9px] text-slate-400">安全趟次</div>
+                                            <div className="text-sm font-bold font-mono text-cyan-400">{stats.trips || 1}</div>
+                                        </div>
+                                    </div>
+                                </div>
 
-                        {/* 月曆圖 */}
-                        <div className="space-y-4 px-2">
-                            <EventCalendar
-                                data={dayAnalyzeData}
-                                dataKey="total_overspeed"
-                                color="#FACC15"
-                                label="超速"
-                                currentUser={currentUser}
-                            />
-                            <EventCalendar
-                                data={dayAnalyzeData}
-                                dataKey="total_breaking"
-                                color="#FB923C"
-                                label="急煞"
-                                currentUser={currentUser}
-                            />
-                            <EventCalendar
-                                data={dayAnalyzeData}
-                                dataKey="total_tilt"
-                                color="#F87171"
-                                label="危險傾角"
-                                currentUser={currentUser}
-                            />
-                        </div>
+                                {/* 🌦️ 線上即時天候與路面抓地安全指數 (Open-Meteo API) */}
+                                <div className="bg-slate-900/90 rounded-2xl p-5 border border-slate-800 shadow-xl relative">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400">
+                                                <Icon name="cloud-rain" size={16} />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-white text-sm font-bold flex items-center gap-1.5">
+                                                    線上即時路面摩擦與天候安全指數
+                                                </h3>
+                                                <p className="text-[10px] text-slate-400 font-mono">OPEN-METEO REALTIME SURFACE ADHESION</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => fetchRoadWeatherAdhesion(location?.lat || 25.033, location?.lng || 121.565)}
+                                            disabled={roadWeather.loading}
+                                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-[10px] font-mono flex items-center gap-1 active:scale-95 transition-all"
+                                        >
+                                            <Icon name={roadWeather.loading ? "loader-2" : "refresh-cw"} size={11} className={roadWeather.loading ? "animate-spin" : ""} />
+                                            <span>{roadWeather.loading ? "同步中" : "即時更新"}</span>
+                                        </button>
+                                    </div>
+
+                                    {/* 實體環境數據列 */}
+                                    <div className="grid grid-cols-4 gap-2 mb-3 text-center">
+                                        <div className="bg-slate-950/50 p-2 rounded-xl border border-slate-800">
+                                            <div className="text-[9px] text-slate-400">即時氣溫</div>
+                                            <div className="text-sm font-bold font-mono text-white">{roadWeather.temp}°C</div>
+                                        </div>
+                                        <div className="bg-slate-950/50 p-2 rounded-xl border border-slate-800">
+                                            <div className="text-[9px] text-slate-400">降雨量</div>
+                                            <div className={`text-sm font-bold font-mono ${roadWeather.rain > 0 ? 'text-cyan-400' : 'text-slate-300'}`}>{roadWeather.rain} mm/h</div>
+                                        </div>
+                                        <div className="bg-slate-950/50 p-2 rounded-xl border border-slate-800">
+                                            <div className="text-[9px] text-slate-400">空氣濕度</div>
+                                            <div className="text-sm font-bold font-mono text-blue-300">{roadWeather.humidity}%</div>
+                                        </div>
+                                        <div className="bg-slate-950/50 p-2 rounded-xl border border-slate-800">
+                                            <div className="text-[9px] text-slate-400">地表風速</div>
+                                            <div className="text-sm font-bold font-mono text-teal-300">{roadWeather.windSpeed} km/h</div>
+                                        </div>
+                                    </div>
+
+                                    {/* 路面抓地係數與煞車距離換算看板 */}
+                                    <div className="bg-slate-950/70 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                                        <div className="flex justify-between items-center text-xs">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-slate-400">路面附著係數 (μ):</span>
+                                                <span className="text-base font-black font-mono text-cyan-400">μ ≈ {roadWeather.adhesion}</span>
+                                            </div>
+                                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 ${roadWeather.statusColor}`}>
+                                                {roadWeather.status}
+                                            </span>
+                                        </div>
+
+                                        {/* 抓地力安全進度條 */}
+                                        <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full rounded-full transition-all duration-500 ${
+                                                    roadWeather.adhesion >= 0.75
+                                                        ? 'bg-gradient-to-r from-teal-500 to-emerald-400'
+                                                        : roadWeather.adhesion >= 0.5
+                                                        ? 'bg-gradient-to-r from-amber-500 to-orange-500'
+                                                        : 'bg-gradient-to-r from-red-600 to-rose-500'
+                                                }`}
+                                                style={{ width: `${Math.round(roadWeather.adhesion * 100)}%` }}
+                                            ></div>
+                                        </div>
+
+                                        <div className="flex justify-between items-center text-[10px] text-slate-400 pt-1">
+                                            <span>煞車距離增幅評估: <strong className="text-white font-mono">{roadWeather.brakingMultiplier}</strong></span>
+                                            {roadWeather.lastUpdated && <span>更新時間: {roadWeather.lastUpdated}</span>}
+                                        </div>
+                                    </div>
+
+                                    {/* 安全騎乘指引 */}
+                                    <div className="mt-2.5 text-[11px] text-slate-300 bg-cyan-950/20 border border-cyan-500/20 p-2.5 rounded-xl flex items-start gap-2">
+                                        <Icon name="alert-circle" size={14} className="text-cyan-400 shrink-0 mt-0.5" />
+                                        <span>{roadWeather.riskText}</span>
+                                    </div>
+                                </div>
+
+                                {/* 🛡️ 四維行車安全防護雷達 (4-Axis Safety Radar) */}
+                                <div className="bg-slate-900/90 rounded-2xl p-5 border border-slate-800 shadow-xl">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <div>
+                                            <h3 className="text-white text-sm font-bold flex items-center gap-2">
+                                                <Icon name="crosshair" size={16} className="text-cyan-400" />
+                                                四維行車安全防護雷達 (Safety Defense Radar)
+                                            </h3>
+                                            <p className="text-[10px] text-slate-400">速限、煞防、盲區警覺與動態穩定四大維度評估</p>
+                                        </div>
+                                        <span className="text-[10px] font-mono text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded-full border border-cyan-500/30">
+                                            DEFENSE: 92.8%
+                                        </span>
+                                    </div>
+
+                                    <div className="flex justify-center items-center py-2">
+                                        <svg viewBox="0 0 240 220" className="w-full max-w-[240px] h-auto drop-shadow-[0_0_12px_rgba(6,182,212,0.2)]">
+                                            <defs>
+                                                <linearGradient id="safetyRadarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                    <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.55" />
+                                                    <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.2" />
+                                                </linearGradient>
+                                            </defs>
+
+                                            {/* 同心菱形/方形網格 (0.25, 0.5, 0.75, 1.0) */}
+                                            {[0.25, 0.5, 0.75, 1.0].map((scale, i) => {
+                                                const d = 70 * scale;
+                                                const pts = `120,${110 - d} ${120 + d},110 120,${110 + d} ${120 - d},110`;
+                                                return (
+                                                    <polygon
+                                                        key={i}
+                                                        points={pts}
+                                                        fill={i === 3 ? "rgba(15,23,42,0.6)" : "none"}
+                                                        stroke="rgba(148,163,184,0.18)"
+                                                        strokeWidth={i === 3 ? "1.5" : "1"}
+                                                        strokeDasharray={i < 3 ? "3 3" : "none"}
+                                                    />
+                                                );
+                                            })}
+
+                                            {/* 4 條十字軸線 */}
+                                            <line x1="120" y1="35" x2="120" y2="185" stroke="rgba(148,163,184,0.22)" strokeWidth="1" />
+                                            <line x1="45" y1="110" x2="195" y2="110" stroke="rgba(148,163,184,0.22)" strokeWidth="1" />
+
+                                            {/* 實際防護數據多邊形 (Speed: 94%, Brake: 89%, Lean: 92%, Blindspot: 96%) */}
+                                            <polygon
+                                                points="120,44.2 182.3,110 120,174.4 52.8,110"
+                                                fill="url(#safetyRadarGrad)"
+                                                stroke="#22d3ee"
+                                                strokeWidth="2.2"
+                                            />
+
+                                            {/* 頂點標記點 */}
+                                            <circle cx="120" cy="44.2" r="3.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="1.5" />
+                                            <circle cx="182.3" cy="110" r="3.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="1.5" />
+                                            <circle cx="120" cy="174.4" r="3.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="1.5" />
+                                            <circle cx="52.8" cy="110" r="3.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="1.5" />
+
+                                            {/* 4 個標籤 */}
+                                            <text x="120" y="24" textAnchor="middle" fill="#38bdf8" fontSize="10" fontWeight="bold" fontFamily="sans-serif">速限合規 94%</text>
+                                            <text x="198" y="114" textAnchor="start" fill="#22d3ee" fontSize="9" fontWeight="bold" fontFamily="sans-serif">前車煞防 89%</text>
+                                            <text x="120" y="200" textAnchor="middle" fill="#818cf8" fontSize="9" fontWeight="bold" fontFamily="sans-serif">動態穩定 92%</text>
+                                            <text x="42" y="114" textAnchor="end" fill="#a78bfa" fontSize="9" fontWeight="bold" fontFamily="sans-serif">盲區警覺 96%</text>
+                                        </svg>
+                                    </div>
+
+                                    {/* 四大維度指標詳細卡片 */}
+                                    <div className="grid grid-cols-2 gap-2 mt-2 pt-3 border-t border-slate-800 text-[11px]">
+                                        <div className="flex justify-between items-center p-2 rounded-lg bg-slate-950/50">
+                                            <span className="text-slate-400">道路速限合規率</span>
+                                            <span className="font-mono font-bold text-cyan-400">94% · 測速減速OK</span>
+                                        </div>
+                                        <div className="flex justify-between items-center p-2 rounded-lg bg-slate-950/50">
+                                            <span className="text-slate-400">前車安全車距 TTC</span>
+                                            <span className="font-mono font-bold text-blue-400">89% · TTC 2.3s</span>
+                                        </div>
+                                        <div className="flex justify-between items-center p-2 rounded-lg bg-slate-950/50">
+                                            <span className="text-slate-400">盲區被逼車反應</span>
+                                            <span className="font-mono font-bold text-indigo-400">96% · 即時避險</span>
+                                        </div>
+                                        <div className="flex justify-between items-center p-2 rounded-lg bg-slate-950/50">
+                                            <span className="text-slate-400">彎道動態安全傾角</span>
+                                            <span className="font-mono font-bold text-emerald-400">92% · 裕度充足</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TAB 2: 👁️ 雙鏡車距 (前鏡頭 FCW 前方車距與防追撞 + 後鏡頭 BSD 盲區逼車防禦 + Pi 5 硬體遙測) */}
+                        {statsTab === 'vision_bsd_fcw' && (
+                            <div className="space-y-5 animate-fadeIn">
+                                {/* 前鏡頭 FCW 前方車距防護卡片 */}
+                                <div className="bg-slate-900/90 rounded-2xl p-5 border border-slate-800 shadow-xl">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400">
+                                                <Icon name="shield-alert" size={16} />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-white text-sm font-bold">前鏡頭 FCW 前方車距與防追撞遙測</h3>
+                                                <p className="text-[10px] text-slate-400 font-mono">FORWARD COLLISION WARNING & TTC</p>
+                                            </div>
+                                        </div>
+                                        <span className="text-[10px] font-mono text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded-full border border-cyan-500/30">
+                                            TTC: 2.3s (安全)
+                                        </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-3 gap-2 my-3 text-center">
+                                        <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                                            <div className="text-[9px] text-slate-400">前車平均安全間距</div>
+                                            <div className="text-base font-bold font-mono text-cyan-400 mt-0.5">18.5 m</div>
+                                            <div className="text-[8px] text-emerald-400 mt-0.5">🟢 大於法定 15m</div>
+                                        </div>
+                                        <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                                            <div className="text-[9px] text-slate-400">碰撞應變時距 (TTC)</div>
+                                            <div className="text-base font-bold font-mono text-blue-400 mt-0.5">2.3 秒</div>
+                                            <div className="text-[8px] text-emerald-400 mt-0.5">🟢 充足反應緩衝</div>
+                                        </div>
+                                        <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                                            <div className="text-[9px] text-slate-400">突發緊急迫近次數</div>
+                                            <div className="text-base font-bold font-mono text-emerald-400 mt-0.5">0 次</div>
+                                            <div className="text-[8px] text-slate-400 mt-0.5">未發生危急險境</div>
+                                        </div>
+                                    </div>
+
+                                    {/* 前車距離安全級距長條 */}
+                                    <div className="p-3.5 bg-slate-950/60 rounded-xl border border-slate-800">
+                                        <div className="text-xs font-bold text-white mb-2">行駛間前車間距分佈狀況</div>
+                                        <div className="w-full h-2.5 rounded-full overflow-hidden flex bg-slate-800">
+                                            <div className="bg-emerald-500 h-full" style={{ width: '89%' }} title=">15m 安全距離 89%"></div>
+                                            <div className="bg-amber-400 h-full" style={{ width: '11%' }} title="8-15m 注意跟車 11%"></div>
+                                            <div className="bg-red-500 h-full" style={{ width: '0%' }} title="<8m 緊迫跟車 0%"></div>
+                                        </div>
+                                        <div className="flex justify-between items-center text-[10px] mt-2 text-slate-400">
+                                            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> 安全間距 (&gt;15m): 89%</span>
+                                            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400"></span> 注意跟車 (8-15m): 11%</span>
+                                            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span> 高危跟車 (&lt;8m): 0%</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 後鏡頭 BSD 盲區防禦與後方逼車預警卡片 */}
+                                <div className="bg-slate-900/90 rounded-2xl p-5 border border-slate-800 shadow-xl">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                                                <Icon name="eye" size={16} />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-white text-sm font-bold">後鏡頭 BSD 盲點防禦與後方逼車預警</h3>
+                                                <p className="text-[10px] text-slate-400 font-mono">REAR BLIND SPOT DETECTION & TAILGATE</p>
+                                            </div>
+                                        </div>
+                                        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                                            高危逼車 0 件
+                                        </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3 my-3">
+                                        <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-center">
+                                            <div className="text-[10px] text-slate-400">左後盲區威脅偵測</div>
+                                            <div className="text-xl font-black font-mono text-cyan-400 my-1">3 <span className="text-xs font-normal">次</span></div>
+                                            <div className="text-[9px] text-slate-400">HUD 即時閃爍提示 & 避讓成功</div>
+                                        </div>
+                                        <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-center">
+                                            <div className="text-[10px] text-slate-400">右後盲區威脅偵測</div>
+                                            <div className="text-xl font-black font-mono text-blue-400 my-1">1 <span className="text-xs font-normal">次</span></div>
+                                            <div className="text-[9px] text-slate-400">HUD 即時閃爍提示 & 避讓成功</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+                                        <span className="text-slate-400">遭遇後方逼車之主動避險反應率:</span>
+                                        <span className="font-bold font-mono text-emerald-400 text-sm">100% (主動靠外讓行)</span>
+                                    </div>
+                                </div>
+
+                                {/* 實體硬體與 AI 視覺推論健康狀態 */}
+                                <div className="bg-slate-900/90 rounded-2xl p-4 border border-slate-800 shadow-xl">
+                                    <div className="text-xs font-bold text-white mb-2 flex items-center gap-1.5">
+                                        <Icon name="cpu" size={14} className="text-cyan-400" />
+                                        實車硬體與 AI 視覺防護遙測 (Pi 5 Core)
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                                        <div className="bg-slate-950/50 p-2 rounded-lg">
+                                            <div className="text-[9px] text-slate-400">YOLO 推論延遲</div>
+                                            <div className="font-mono font-bold text-cyan-300">27.4 ms</div>
+                                            <div className="text-[8px] text-slate-500">~36.4 FPS</div>
+                                        </div>
+                                        <div className="bg-slate-950/50 p-2 rounded-lg">
+                                            <div className="text-[9px] text-slate-400">Pi 5 工作溫度</div>
+                                            <div className="font-mono font-bold text-emerald-400">48.2 °C</div>
+                                            <div className="text-[8px] text-emerald-500">🟢 散熱極佳</div>
+                                        </div>
+                                        <div className="bg-slate-950/50 p-2 rounded-lg">
+                                            <div className="text-[9px] text-slate-400">安全防護在線率</div>
+                                            <div className="font-mono font-bold text-cyan-400">100%</div>
+                                            <div className="text-[8px] text-slate-500">無中斷</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TAB 3: ⚖️ 車身動態 (車載陀螺儀道路傾角防摔監控 + 縱向急煞減速度 G 值) */}
+                        {statsTab === 'dynamics_lean' && (
+                            <div className="space-y-5 animate-fadeIn">
+                                <div className="bg-slate-900/90 rounded-2xl p-5 border border-slate-800 shadow-xl">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <div>
+                                            <h3 className="text-white text-sm font-bold flex items-center gap-2">
+                                                <Icon name="compass" size={16} className="text-amber-400" />
+                                                車載陀螺儀道路安全傾角監控 (Road Lean Angle)
+                                            </h3>
+                                            <p className="text-[10px] text-slate-400">對標一般公路騎乘防摔臨界，監控過大側傾打滑風險</p>
+                                        </div>
+                                        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                                            最大傾角 28.5° (安全)
+                                        </span>
+                                    </div>
+
+                                    {/* 雙側道路過彎傾角 */}
+                                    <div className="grid grid-cols-2 gap-4 my-2">
+                                        <div className="bg-slate-950/60 p-4 rounded-2xl border border-cyan-500/30 text-center">
+                                            <div className="text-[10px] text-cyan-300 font-bold uppercase tracking-wider mb-1">左彎道路最大傾角</div>
+                                            <div className="text-3xl font-black font-mono text-cyan-400 my-1">
+                                                28.5<span className="text-sm font-normal">°</span>
+                                            </div>
+                                            <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden mt-2">
+                                                <div className="bg-gradient-to-r from-teal-500 to-cyan-500 h-full rounded-full" style={{ width: '57%' }}></div>
+                                            </div>
+                                            <div className="flex justify-between text-[9px] text-slate-400 mt-1">
+                                                <span>0° 直立</span>
+                                                <span className="text-emerald-400 font-mono">🟢 充分安全裕度</span>
+                                                <span>50° 倒車</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-slate-950/60 p-4 rounded-2xl border border-blue-500/30 text-center">
+                                            <div className="text-[10px] text-blue-300 font-bold uppercase tracking-wider mb-1">右彎道路最大傾角</div>
+                                            <div className="text-3xl font-black font-mono text-blue-400 my-1">
+                                                26.0<span className="text-sm font-normal">°</span>
+                                            </div>
+                                            <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden mt-2">
+                                                <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full rounded-full" style={{ width: '52%' }}></div>
+                                            </div>
+                                            <div className="flex justify-between text-[9px] text-slate-400 mt-1">
+                                                <span>0° 直立</span>
+                                                <span className="text-emerald-400 font-mono">🟢 充分安全裕度</span>
+                                                <span>50° 倒車</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* 公路傾角三段安全分佈條 */}
+                                    <div className="mt-4 p-4 rounded-xl bg-slate-950/50 border border-slate-800">
+                                        <div className="text-xs font-bold text-white mb-2">公路傾角安全區間時間佔比</div>
+                                        <div className="w-full h-3 rounded-full overflow-hidden flex bg-slate-800">
+                                            <div className="bg-emerald-500 h-full" style={{ width: '86%' }} title="0-25° 安全巡航 86%"></div>
+                                            <div className="bg-amber-400 h-full" style={{ width: '13%' }} title="25-35° 山道轉向 13%"></div>
+                                            <div className="bg-red-500 h-full" style={{ width: '1%' }} title=">35° 警戒邊界 1%"></div>
+                                        </div>
+                                        <div className="flex justify-between items-center text-[10px] mt-2 text-slate-400">
+                                            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> 安全巡航 (0°-25°): <span className="font-bold text-white font-mono">86%</span></div>
+                                            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-amber-400"></div> 山道轉向 (25°-35°): <span className="font-bold text-white font-mono">13%</span></div>
+                                            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-red-500"></div> 警戒邊界 (&gt;35°): <span className="font-bold text-white font-mono">1%</span></div>
+                                        </div>
+                                    </div>
+
+                                    {/* 縱向煞車與急煞 G 值分析 */}
+                                    <div className="mt-4 p-4 rounded-xl bg-slate-950/50 border border-slate-800">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-xs font-bold text-white">縱向煞車與急煞控制 (Deceleration G-Force)</span>
+                                            <span className="text-[10px] font-mono text-cyan-400">PEAK: -0.52G</span>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-2 text-center text-xs mt-2">
+                                            <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                                                <div className="text-[9px] text-slate-400">平穩制動比例</div>
+                                                <div className="text-sm font-bold font-mono text-emerald-400">96.2%</div>
+                                            </div>
+                                            <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                                                <div className="text-[9px] text-slate-400">急煞次數 (&lt;-0.4G)</div>
+                                                <div className="text-sm font-bold font-mono text-amber-400">{stats.braking || 0} 次</div>
+                                            </div>
+                                            <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                                                <div className="text-[9px] text-slate-400">翻轉平順度</div>
+                                                <div className="text-sm font-bold font-mono text-cyan-400">38°/s</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TAB 4: 📜 AI 健檢日誌 (Gemini / DeepSeek AI 報告 + 實車數據日誌 + 直條圖 + 月曆) */}
+                        {statsTab === 'ai_audit_logs' && (
+                            <div className="space-y-6 animate-fadeIn">
+                                {/* AI 深度安全體檢報告組件 (串接 Gemini/DeepSeek & Supabase) */}
+                                <AIReportCard currentUser={currentUser} />
+
+                                {/* 實車路測紀錄儀表 */}
+                                <RealDataDashboard data={rawRideHistory} />
+
+                                {/* 週/月安全趨勢直條圖 */}
+                                <BarChart
+                                    data={activeData}
+                                    viewMode={viewMode}
+                                    setViewMode={setViewMode}
+                                />
+
+                                {/* 互動安全事件月曆 (超速、急煞、傾角) */}
+                                <div className="space-y-4 px-2">
+                                    <EventCalendar
+                                        data={dayAnalyzeData}
+                                        dataKey="total_overspeed"
+                                        color="#FACC15"
+                                        label="超速"
+                                        currentUser={currentUser}
+                                    />
+                                    <EventCalendar
+                                        data={dayAnalyzeData}
+                                        dataKey="total_breaking"
+                                        color="#FB923C"
+                                        label="急煞"
+                                        currentUser={currentUser}
+                                    />
+                                    <EventCalendar
+                                        data={dayAnalyzeData}
+                                        dataKey="total_tilt"
+                                        color="#F87171"
+                                        label="危險傾角"
+                                        currentUser={currentUser}
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
                 );
             };
@@ -2985,6 +3764,99 @@
                     <div className="space-y-6 animate-fadeIn pb-24">
                         <h2 className="text-xl font-bold text-white">HUD 顯示配置</h2>
                         <HUDPreview config={hudConfig} />
+
+                        {/* 🎪 展覽演示模式卡片 (Exhibition Mode) */}
+                        <div className={`p-4 rounded-2xl border transition-all duration-300 ${isExhibitionMode ? 'bg-amber-950/40 border-amber-500/70 shadow-[0_0_24px_rgba(245,158,11,0.25)]' : 'bg-slate-800 border-slate-700'}`}>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold transition-all ${isExhibitionMode ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/40 animate-pulse' : 'bg-slate-700 text-slate-400'}`}>
+                                        <Icon name="play-circle" size={24} />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-white text-sm font-bold">展覽演示模式</span>
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${isExhibitionMode ? 'bg-amber-500/20 border border-amber-500/50 text-amber-300 animate-pulse' : 'bg-slate-700 text-slate-400'}`}>
+                                                {isExhibitionMode ? '32s 全情境循環中' : '實車即時模式'}
+                                            </span>
+                                        </div>
+                                        <p className="text-slate-400 text-xs mt-0.5">起步加速 · 左右盲點 · 深傾角壓彎 · 測速相機 · FCW，HUD與手機 100% 同步展示</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={toggleExhibitionMode}
+                                    className={`px-4 py-2.5 rounded-xl text-xs font-black tracking-wider transition-all duration-200 active:scale-95 whitespace-nowrap ${isExhibitionMode ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
+                                >
+                                    {isExhibitionMode ? '運行中 (點擊關閉)' : '啟動展示'}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* 🖥️ OLED 硬體螢幕型號切換 (0.96" SSD1306 / 1.3" SH1106) */}
+                        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                            <h3 className="text-cyan-400 text-sm font-bold mb-3 uppercase tracking-wider flex items-center justify-between">
+                                <span className="flex items-center gap-2"><Icon name="monitor" size={16} /> OLED 螢幕規格切換</span>
+                                <span className="text-[11px] font-mono text-cyan-300">目前：{hudConfig.oled_model || 'SSD1306'}</span>
+                            </h3>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => updateHudConfig({ oled_model: 'SSD1306' })}
+                                    className={`p-3 rounded-xl border text-left transition-all active:scale-95 ${(!hudConfig.oled_model || hudConfig.oled_model === 'SSD1306') ? 'bg-cyan-950/60 border-cyan-500 text-cyan-300 shadow-md shadow-cyan-900/20' : 'bg-slate-900/60 border-slate-700 text-slate-400 hover:border-slate-600'}`}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-bold">0.96 吋 SSD1306</span>
+                                        {(!hudConfig.oled_model || hudConfig.oled_model === 'SSD1306') && <Icon name="check" size={14} className="text-cyan-400" />}
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 mt-1">目前測試規格 (128x64 點陣)</div>
+                                </button>
+                                <button
+                                    onClick={() => updateHudConfig({ oled_model: 'SH1106' })}
+                                    className={`p-3 rounded-xl border text-left transition-all active:scale-95 ${hudConfig.oled_model === 'SH1106' ? 'bg-cyan-950/60 border-cyan-500 text-cyan-300 shadow-md shadow-cyan-900/20' : 'bg-slate-900/60 border-slate-700 text-slate-400 hover:border-slate-600'}`}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-bold">1.3 吋 SH1106</span>
+                                        {hudConfig.oled_model === 'SH1106' && <Icon name="check" size={14} className="text-cyan-400" />}
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 mt-1">旗艦到貨規格 (132x64 寬視角)</div>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* 🪞 光學鏡片反射與鏡像校正 (Visor Optical Mirror & Flip) */}
+                        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                            <h3 className="text-cyan-400 text-sm font-bold mb-3 uppercase tracking-wider flex items-center justify-between">
+                                <span className="flex items-center gap-2"><Icon name="eye" size={16} /> 光學鏡片反射校正</span>
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${(hudConfig.mirror !== false) ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'bg-slate-700 text-slate-400'}`}>
+                                    {(hudConfig.mirror !== false) ? '🪞 鏡像模式 (反射可讀)' : '直視模式'}
+                                </span>
+                            </h3>
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center py-2 border-b border-slate-700/50">
+                                    <div>
+                                        <div className="text-white text-sm font-bold">水平光學鏡像 (Visor Mirror)</div>
+                                        <div className="text-slate-400 text-[11px]">左右水平反轉，經安全帽鏡片/菱鏡反射後還原為正向文字</div>
+                                    </div>
+                                    <div
+                                        onClick={() => updateHudConfig({ mirror: (hudConfig.mirror === undefined ? false : !hudConfig.mirror) })}
+                                        className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors duration-300 ${(hudConfig.mirror !== false) ? 'bg-cyan-600' : 'bg-slate-600'}`}
+                                    >
+                                        <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ${(hudConfig.mirror !== false) ? 'translate-x-6' : ''}`}></div>
+                                    </div>
+                                </div>
+                                <div className="flex justify-between items-center py-2">
+                                    <div>
+                                        <div className="text-white text-sm font-bold">垂直上下翻轉 (Vertical Flip)</div>
+                                        <div className="text-slate-400 text-[11px]">安全帽頂部仰角或下巴俯角倒置安裝時校正上下</div>
+                                    </div>
+                                    <div
+                                        onClick={() => updateHudConfig({ flip_v: !hudConfig.flip_v })}
+                                        className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors duration-300 ${hudConfig.flip_v ? 'bg-cyan-600' : 'bg-slate-600'}`}
+                                    >
+                                        <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ${hudConfig.flip_v ? 'translate-x-6' : ''}`}></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
                             <div className="p-4 border-b border-slate-700">
                                 <h3 className="text-cyan-400 text-sm font-bold mb-3 uppercase tracking-wider">顯示內容開關</h3>
@@ -3043,25 +3915,63 @@
                             </div>
                         </div>
 
+                        {/* 🎪 展覽模式快捷開關 (Exhibition Mode Quick Toggle) */}
+                        <div className={`p-4 rounded-2xl border transition-all duration-300 ${isExhibitionMode ? 'bg-amber-950/40 border-amber-500/70 shadow-[0_0_20px_rgba(245,158,11,0.2)]' : 'bg-slate-800 border-slate-700'}`}>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isExhibitionMode ? 'bg-amber-500 text-slate-950 shadow-md animate-pulse' : 'bg-slate-700 text-slate-400'}`}>
+                                        <Icon name="play-circle" size={20} />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-white text-sm font-bold">展覽演示模式</span>
+                                            {isExhibitionMode && (
+                                                <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-mono font-bold animate-pulse">
+                                                    ACTIVE
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-slate-400 text-[11px] mt-0.5">32 秒全情境 (加速·左右盲點·深傾角·照相機·FCW) 同步循環</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={toggleExhibitionMode}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 ${isExhibitionMode ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
+                                >
+                                    {isExhibitionMode ? '開啟中' : '開啟'}
+                                </button>
+                            </div>
+                        </div>
+
                         <div className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
                             <div className="p-4 border-b border-slate-700">
                                 <h3 className="text-red-400 text-sm font-bold mb-4 uppercase tracking-wider flex items-center gap-2"><Icon name="power" size={16} /> 電源管理</h3>
                                 <div className="grid grid-cols-2 gap-3 mb-1">
                                     <button 
-                                        onClick={() => handleShutdown('pi5')} 
-                                        disabled={!systemStatus.pi5}
-                                        className={`flex flex-col items-center justify-center gap-2 p-3 border rounded-xl transition-all text-white active:scale-95 group ${systemStatus.pi5 ? 'bg-red-900/30 border-red-500/50 hover:bg-red-800/80 cursor-pointer' : 'bg-slate-800 border-slate-600 opacity-50 cursor-not-allowed'}`}
+                                        onClick={() => requestShutdown('pi5')} 
+                                        className={`flex flex-col items-center justify-center gap-2 p-3 border rounded-xl transition-all text-white active:scale-95 cursor-pointer group ${systemStatus.pi5 ? 'bg-red-900/30 border-red-500/50 hover:bg-red-800/80 shadow-md shadow-red-950/30' : 'bg-slate-800/80 border-slate-700 hover:border-red-500/40'}`}
                                     >
-                                        <Icon name="cpu" size={24} className={systemStatus.pi5 ? "text-red-400 group-hover:text-white" : "text-slate-500"} />
-                                        <span className="text-[10px] font-bold tracking-wider">{systemStatus.pi5 ? '主機 (Pi 5)' : '主機斷線'}</span>
+                                        <div className="relative">
+                                            <Icon name="cpu" size={24} className={systemStatus.pi5 ? "text-red-400 group-hover:text-white" : "text-slate-400 group-hover:text-red-400"} />
+                                            <div className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${systemStatus.pi5 ? 'bg-green-500 shadow-[0_0_4px_#22c55e]' : 'bg-slate-500'}`}></div>
+                                        </div>
+                                        <div className="text-center">
+                                            <span className="text-[11px] font-bold tracking-wider block text-white">關閉主機 (Pi 5)</span>
+                                            <span className="text-[9px] text-slate-400 block">{systemStatus.pi5 ? '已連線 (點擊關機)' : '點擊發送關機指令'}</span>
+                                        </div>
                                     </button>
                                     <button 
-                                        onClick={() => handleShutdown('pizero')} 
-                                        disabled={!systemStatus.piZero}
-                                        className={`flex flex-col items-center justify-center gap-2 p-3 border rounded-xl transition-all text-white active:scale-95 group ${systemStatus.piZero ? 'bg-orange-900/30 border-orange-500/50 hover:bg-orange-800/80 cursor-pointer' : 'bg-slate-800 border-slate-600 opacity-50 cursor-not-allowed'}`}
+                                        onClick={() => requestShutdown('pizero')} 
+                                        className={`flex flex-col items-center justify-center gap-2 p-3 border rounded-xl transition-all text-white active:scale-95 cursor-pointer group ${systemStatus.piZero ? 'bg-orange-900/30 border-orange-500/50 hover:bg-orange-800/80 shadow-md shadow-orange-950/30' : 'bg-slate-800/80 border-slate-700 hover:border-orange-500/40'}`}
                                     >
-                                        <Icon name="monitor" size={24} className={systemStatus.piZero ? "text-orange-400 group-hover:text-white" : "text-slate-500"} />
-                                        <span className="text-[10px] font-bold tracking-wider">{systemStatus.piZero ? '關閉 HUD (Pi 0)' : 'HUD 斷線'}</span>
+                                        <div className="relative">
+                                            <Icon name="monitor" size={24} className={systemStatus.piZero ? "text-orange-400 group-hover:text-white" : "text-slate-400 group-hover:text-orange-400"} />
+                                            <div className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${systemStatus.piZero ? 'bg-green-500 shadow-[0_0_4px_#22c55e]' : 'bg-slate-500'}`}></div>
+                                        </div>
+                                        <div className="text-center">
+                                            <span className="text-[11px] font-bold tracking-wider block text-white">關閉 HUD (Pi 0)</span>
+                                            <span className="text-[9px] text-slate-400 block">{systemStatus.piZero ? '已連線 (點擊關機)' : '點擊發送關機指令'}</span>
+                                        </div>
                                     </button>
                                 </div>
                             </div>
@@ -3176,6 +4086,10 @@
                         
                         <button onClick={toggleFullScreen} className="w-full bg-slate-800 text-slate-300 py-4 rounded-xl font-bold border border-slate-700 hover:bg-slate-700/80 transition-all flex items-center justify-center gap-2"><Icon name="maximize" size={18} /> 切換全螢幕模式</button>
                         <button onClick={handleLogout} className="w-full bg-slate-800 text-red-400 py-4 rounded-xl font-bold border border-slate-700 hover:bg-slate-700/80 transition-all flex items-center justify-center gap-2"><Icon name="log-out" size={18} /> 登出 V.I.S.O.R.</button>
+                        <div className="text-center pt-2 pb-2">
+                            <div className="text-slate-500 text-[11px] font-mono">V.I.S.O.R. MK-XXV · v1.1.6 (Build 10106)</div>
+                            <div className="text-slate-600 text-[9px] font-mono mt-0.5">Visor Optical Mirror & HUD Integration</div>
+                        </div>
                     </div>
                 </div>
             );
@@ -3200,7 +4114,7 @@
                                 <div className="relative cursor-pointer" onClick={() => addNotification('info', '系統測試', '通知中心功能運作正常')}><Icon name="bell" size={16} className="text-slate-400 hover:text-white transition-colors" /><div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-black"></div></div>
                             </div>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-5 scrollbar-hide relative z-10 pb-32">
+                        <div className="flex-1 overflow-y-auto p-5 scrollbar-hide relative z-10 pb-32" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
                             {activeTab === 'login' && renderLogin()}
                             {activeTab === 'register' && renderRegister()}
                             {activeTab === 'home' && renderHome()}
@@ -3224,6 +4138,51 @@
                         {currentUser && <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-1.5 bg-slate-600/50 rounded-full z-30 pointer-events-none safe-bottom mb-1"></div>}
                         <AIChatModal isOpen={showAIChat} onClose={() => setShowAIChat(false)} />
                         {currentUser && <TerminalConsole logs={systemLogs} isOpen={showConsole} onClose={() => setShowConsole(false)} />}
+
+                        {/* ⚡ 電源管理確認視窗 (In-App Power Confirmation Modal) */}
+                        {shutdownModalTarget && (
+                            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+                                <div className="bg-slate-900 border border-red-500/40 rounded-2xl p-6 max-w-sm w-full shadow-2xl shadow-red-950/50">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-10 h-10 rounded-xl bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400 shrink-0">
+                                            <Icon name="power" size={22} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-white font-bold text-base">電源關閉確認</h3>
+                                            <p className="text-xs text-slate-400 font-mono">
+                                                {shutdownModalTarget === 'pi5' ? 'Raspberry Pi 5 主機 (Core)' : 'Pi Zero 2W 抬頭顯示器 (HUD)'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    
+                                    <p className="text-xs text-slate-300 leading-relaxed mb-6 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                                        {shutdownModalTarget === 'pi5'
+                                            ? '⚠️ 確定要關閉 Pi 5 主機電源嗎？這將安全停止 AI 視覺推論、藍牙通訊與行車記錄。關機後如需重啟，需重新連接電源。'
+                                            : '⚠️ 確定要關閉 Pi Zero HUD 顯示器電源嗎？這將會安全儲存並關閉 OLED 螢幕顯示。'}
+                                    </p>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button
+                                            onClick={() => setShutdownModalTarget(null)}
+                                            className="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-all active:scale-95"
+                                        >
+                                            取消返回
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                const target = shutdownModalTarget;
+                                                setShutdownModalTarget(null);
+                                                executeShutdown(target);
+                                            }}
+                                            className="py-3 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-lg shadow-red-600/30 transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                                        >
+                                            <Icon name="power" size={14} />
+                                            確定關機
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             );
