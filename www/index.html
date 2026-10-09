@@ -8,7 +8,7 @@
 
     <!-- 修正：允許地圖圖塊載入與混合內容 -->
     <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self' data: gap: cdvfile: https://ssl.gstatic.com 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net ; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.org https://unpkg.com; connect-src * https://*.supabase.co wss://*.supabase.co;">
+        content="default-src 'self' data: gap: cdvfile: https://ssl.gstatic.com 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net ; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.openstreetmap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://*.arcgisonline.com https://unpkg.com; connect-src * https://*.supabase.co wss://*.supabase.co;">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>V.I.S.O.R. MK-XXV</title>
@@ -56,6 +56,12 @@
 
     <!-- 9. 自定義樣式 -->
     <style>
+        /* ── 🗺️ 免 API Key 智慧地圖暗色濾鏡 (OSM Dark Mode Filter) ── */
+        .map-dark-pane img,
+        .leaflet-tile-pane.map-dark-pane img {
+            filter: brightness(0.6) invert(1) contrast(2.2) hue-rotate(200deg) saturate(0.25) brightness(0.7) !important;
+        }
+
         /* ── Global scrollbar hide (all pages: showcase, presentation, etc.) ── */
         *,
         *::before,
@@ -1866,12 +1872,20 @@ html.dark .modal-content {
                     attributionControl: false
                 }).setView([location.lat, location.lng], 16);
 
-                // Tile Layer (Dynamic Dark / Light Map Tiles)
-                const tileUrl = darkMode
-                    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-                    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+                // 免 API Key 開放圖資 (OpenStreetMap 標準圖層，無浮水印限制)
+                const osmUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+                polylineRef.current_tile = L.tileLayer(osmUrl, {
+                    maxZoom: 19,
+                    subdomains: ['a', 'b', 'c']
+                }).addTo(map);
 
-                polylineRef.current_tile = L.tileLayer(tileUrl, { maxZoom: 20 }).addTo(map);
+                // 設定暗黑模式圖層濾鏡
+                const tilePane = map.getPane('tilePane');
+                if (tilePane) {
+                    if (darkMode) tilePane.classList.add('map-dark-pane');
+                    else tilePane.classList.remove('map-dark-pane');
+                }
+
                 mapInstanceRef.current = map;
 
                 // Current Pos Marker
@@ -1897,11 +1911,15 @@ html.dark .modal-content {
 
             // Tile layer update on dark mode toggle
             useEffect(() => {
-                if (!mapInstanceRef.current || !polylineRef.current_tile) return;
-                const newTileUrl = darkMode
-                    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-                    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-                polylineRef.current_tile.setUrl(newTileUrl);
+                if (!mapInstanceRef.current) return;
+                const tilePane = mapInstanceRef.current.getPane('tilePane');
+                if (tilePane) {
+                    if (darkMode) {
+                        tilePane.classList.add('map-dark-pane');
+                    } else {
+                        tilePane.classList.remove('map-dark-pane');
+                    }
+                }
             }, [darkMode]);
 
             useEffect(() => {
@@ -5157,50 +5175,6 @@ html.dark .modal-content {
                                 </span>
                             </button>
                         </div>
-
-                        {/* 測試模式快捷欄 
-                        <div className="flex flex-col gap-2 p-3.5 bg-slate-900/80 rounded-2xl border border-slate-800 shadow-sm">
-                            <div className="flex justify-between items-center">
-                                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider font-mono">路測駕駛行為模擬</p>
-                                <span className="text-[10px] text-slate-500 font-mono">{forceSpeeding ? '觸發超速警示' : '正常安全巡航'}</span>
-                            </div>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => setForceSpeeding(false)}
-                                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
-                                        !forceSpeeding
-                                            ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 ring-2 ring-emerald-400'
-                                            : 'bg-slate-800 text-slate-400 hover:bg-slate-750'
-                                    }`}
-                                >
-                                    🟢 安全行駛
-                                </button>
-                                <button
-                                    onClick={() => setForceSpeeding(true)}
-                                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
-                                        forceSpeeding
-                                            ? 'bg-red-600 text-white shadow-lg shadow-red-600/30 ring-2 ring-red-400 animate-pulse'
-                                            : 'bg-slate-800 text-slate-400 hover:bg-slate-750'
-                                    }`}
-                                >
-                                    🔴 模擬超速警報
-                                </button>
-                            </div>
-                        </div>
-                        
-
-                        <button 
-                            onClick={startSimulation} 
-                            className={`w-full py-3.5 border rounded-2xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm ${
-                                simulationMode 
-                                    ? 'bg-red-950/70 border-red-500 text-red-200 animate-pulse' 
-                                    : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-cyan-500/40'
-                            }`}
-                        >
-                            <Icon name={simulationMode ? "stop-circle" : "play-circle"} size={16} />
-                            {simulationMode ? "停止模擬動態行車" : "啟動行車路測模擬 (Demo)"}
-                        </button>
-                        */}
                     </div>
 
                     {/* 5. 即時行車軌跡地圖 */}
@@ -5218,6 +5192,48 @@ html.dark .modal-content {
                             <LeafletMap location={location} isTracking={true} trackHistory={trackRef} darkMode={darkMode} />
                         </div>
                     </div>
+
+                    {/* 測試模式快捷欄 */}
+                    <div className="flex flex-col gap-2 p-3.5 bg-slate-900/80 rounded-2xl border border-slate-800 shadow-sm">
+                        <div className="flex justify-between items-center">
+                            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider font-mono">路測駕駛行為模擬</p>
+                            <span className="text-[10px] text-slate-500 font-mono">{forceSpeeding ? '觸發超速警示' : '正常安全巡航'}</span>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setForceSpeeding(false)}
+                                className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+                                    !forceSpeeding
+                                        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 ring-2 ring-emerald-400'
+                                        : 'bg-slate-800 text-slate-400 hover:bg-slate-750'
+                                }`}
+                            >
+                                🟢 安全行駛
+                            </button>
+                            <button
+                                onClick={() => setForceSpeeding(true)}
+                                className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+                                    forceSpeeding
+                                        ? 'bg-red-600 text-white shadow-lg shadow-red-600/30 ring-2 ring-red-400 animate-pulse'
+                                        : 'bg-slate-800 text-slate-400 hover:bg-slate-750'
+                                }`}
+                            >
+                                🔴 模擬超速警報
+                            </button>
+                        </div>
+                    </div>
+
+                    <button 
+                            onClick={startSimulation} 
+                            className={`w-full py-3.5 border rounded-2xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm ${
+                                simulationMode 
+                                    ? 'bg-red-950/70 border-red-500 text-red-200 animate-pulse' 
+                                    : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-cyan-500/40'
+                            }`}
+                        >
+                            <Icon name={simulationMode ? "stop-circle" : "play-circle"} size={16} />
+                            {simulationMode ? "停止模擬動態行車" : "啟動行車路測模擬 (Demo)"}
+                    </button>
                 </div>
             );
 

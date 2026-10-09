@@ -361,10 +361,16 @@
                     attributionControl: false
                 }).setView([location.lat, location.lng], 16);
 
-                // Dark Tile Layer
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                    maxZoom: 20
+                // OpenStreetMap Tile Layer
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    subdomains: ['a', 'b', 'c']
                 }).addTo(map);
+
+                const tilePane = map.getPane('tilePane');
+                if (tilePane) {
+                    tilePane.classList.add('map-dark-pane');
+                }
 
                 mapInstanceRef.current = map;
 
