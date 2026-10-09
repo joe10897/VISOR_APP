@@ -1470,6 +1470,17 @@ html.dark .modal-content {
             const [contactName, setContactName] = useState('');
             const [timeLeft, setTimeLeft] = useState(60); 
 
+            // LINE 官方帳號加好友連結
+            const LINE_OFFICIAL_ACCOUNT_URL = 'https://lin.ee/OUaNMB0';
+
+            const handleOpenLineOfficial = () => {
+                if (window.cordova && window.cordova.InAppBrowser) {
+                    window.cordova.InAppBrowser.open(LINE_OFFICIAL_ACCOUNT_URL, '_system');
+                } else {
+                    window.open(LINE_OFFICIAL_ACCOUNT_URL, '_blank', 'noopener,noreferrer');
+                }
+            };
+
             const generateCode = async () => {
                 if (!currentUserId) {
                     alert("錯誤：沒有取得使用者 ID，無法產生驗證碼");
@@ -1594,7 +1605,21 @@ html.dark .modal-content {
 
             return (
                 <div className="p-4 bg-slate-800 rounded-xl space-y-4 text-white">
-                    <h3 className="font-bold text-lg">緊急聯絡人 LINE 綁定</h3>
+                    <div className="flex items-center justify-between gap-2">
+                        <div class="flex flex-col">
+                            <span className="font-bold text-x">緊急聯絡人 LINE 綁定</span>
+                            <span className="font-bold text-[10px]">加入官方好友並傳送驗證碼即可綁定</span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleOpenLineOfficial}
+                            className="px-3 py-1.5 bg-[#06C755] hover:bg-[#05b34c] !text-white text-xs font-bold rounded-lg flex items-center gap-1.5 transition active:scale-95 shadow shrink-0"
+                            title="前往 LINE 加入官方帳號好友"
+                        >
+                            <Icon name="user-plus" size={14} />
+                            <span>V.I.S.O.R.官方好友</span>
+                        </button>
+                    </div>
                     
                     {status === 'unlinked' && (
                         <button onClick={generateCode} className="w-full py-2 bg-red-600 rounded font-bold hover:bg-red-700 transition">
@@ -1604,7 +1629,16 @@ html.dark .modal-content {
 
                     {status === 'pending' && (
                         <div className="space-y-2 text-center bg-slate-700/50 p-4 rounded-lg relative overflow-hidden">
-                            <p className="text-sm text-slate-300">請讓親友加入 LINE 機器人並傳送以下驗證碼：</p>
+                            <p className="text-sm text-slate-300">
+                                請讓親友加入 LINE 官方帳號並傳送以下驗證碼：
+                                <button 
+                                    type="button" 
+                                    onClick={handleOpenLineOfficial} 
+                                    className="ml-1 text-xs text-[#06C755] underline hover:text-[#05b34c] font-bold"
+                                >
+                                    (點此加好友)
+                                </button>
+                            </p>
                             <div className="text-4xl font-mono font-bold tracking-widest text-red-400 py-2">{code}</div>
                             
                             <div className={`text-sm font-bold ${timeLeft <= 30 ? 'text-red-500 animate-pulse' : 'text-yellow-400'}`}>
@@ -5766,7 +5800,7 @@ html.dark .modal-content {
                             <div className="space-y-5 animate-fadeIn">
                                 {/* 騎士防禦駕駛綜合評分卡片 */}
                                 <div className="bg-gradient-to-br from-cyan-950/80 via-slate-900 to-blue-950/80 p-5 rounded-2xl text-white shadow-xl border border-cyan-500/30 relative overflow-hidden">
-                                    <div className="absolute -right-8 -top-8 w-36 h-36 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                                    <div className="absolute -right-8 -top-8 w-36 h-36 bg-cyan-500/8 rounded-full blur-2xl pointer-events-none"></div>
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
