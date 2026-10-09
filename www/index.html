@@ -2639,6 +2639,7 @@ html.dark .modal-content {
                     if (session && session.user) {
                         // 登入成功：存入使用者資訊，跳轉到首頁
                         setCurrentUser(session.user);
+                        setCurrentUserId(session.user.id);
                         setActiveTab('home');
                     } else {
                         // 未登入或登出：清空資訊，跳轉到登入頁
@@ -3169,8 +3170,8 @@ html.dark .modal-content {
             // SOS Trigger Handler
             const triggerSOS = useCallback(async (isAuto = false) => {
                 const emergencyNumber = "0912345678";
-                const lat = location.lat.toFixed(6);
-                const lng = location.lng.toFixed(6);
+                const latStr = (location && location.lat != null) ? Number(location.lat).toFixed(6) : "25.033964";
+                const lngStr = (location && location.lng != null) ? Number(location.lng).toFixed(6) : "121.564468";
                 const prefix = isAuto ? "[自動偵測: 嚴重傾倒] " : "";
                 const message = `${prefix}我現在出車禍了，位置在 ${latStr}, ${lngStr} (V.I.S.O.R. 緊急通報)`;
                 const googleMapsUrl = `https://www.google.com/maps?q=${latStr},${lngStr}`;
@@ -3195,8 +3196,9 @@ html.dark .modal-content {
 
                         if (error) {
                             console.error('LINE SOS 呼叫失敗:', error);
+                            const errMsg = error.message || (typeof error === 'string' ? error : '請確認是否綁定聯絡人');
                             if (typeof addNotification === 'function') {
-                                addNotification('danger', 'LINE 緊急聯絡人', '發送失敗：' + (error.message || '請確認是否綁定聯絡人'));
+                                addNotification('danger', 'LINE 緊急聯絡人', '發送失敗：' + errMsg);
                             }
                         } else {
                             console.log('LINE SOS 發送成功:', data);
@@ -3206,39 +3208,45 @@ html.dark .modal-content {
                         }
                     } catch (err) {
                         console.error('LINE SOS 發送意外錯誤:', err);
+                        if (typeof addNotification === 'function') {
+                            addNotification('danger', 'LINE 緊急聯絡人', '發送異常：' + (err.message || err));
+                        }
                     }
                 } else {
                     console.warn("未取得登入使用者 ID，無法發送 LINE 緊急聯絡人通知");
+                    if (typeof addNotification === 'function') {
+                        addNotification('danger', 'LINE 緊急聯絡人', '未取得登入資訊，無法發送 LINE 通報');
+                    }
                 }
 
                 // 2. 發送 SMS 簡訊 / 簡訊模擬
-                if (window.sms && window.cordova && cordova.plugins && cordova.plugins.permissions) {
-                    const permissions = cordova.plugins.permissions;
-                    const sendRealSMS = () => {
-                        window.sms.send(emergencyNumber, message, { android: { intent: '' } },
-                            () => {
-                                alert(`✅ E-SOS 已發送\n${message}`);
-                                playWarningSound('danger', 3);
-                            },
-                            (e) => alert(`❌ E-SOS 發送失敗: ${e}`)
-                        );
-                    };
+                // if (window.sms && window.cordova && cordova.plugins && cordova.plugins.permissions) {
+                //     const permissions = cordova.plugins.permissions;
+                //     const sendRealSMS = () => {
+                //         window.sms.send(emergencyNumber, message, { android: { intent: '' } },
+                //             () => {
+                //                 alert(`✅ E-SOS 已發送\n${message}`);
+                //                 playWarningSound('danger', 3);
+                //             },
+                //             (e) => alert(`❌ E-SOS 發送失敗: ${e}`)
+                //         );
+                //     };
 
-                    permissions.checkPermission(permissions.SEND_SMS, function(status) {
-                        if (status.hasPermission) {
-                            sendRealSMS();
-                        } else {
-                            permissions.requestPermission(permissions.SEND_SMS, function(status) {
-                                if (status.hasPermission) sendRealSMS();
-                                else alert("⚠️ E-SOS 發送失敗：未授予發送簡訊權限。");
-                            }, () => alert("⚠️ E-SOS 發送失敗：權限請求發生錯誤。"));
-                        }
-                    }, () => sendRealSMS());
+                //     permissions.checkPermission(permissions.SEND_SMS, function(status) {
+                //         if (status.hasPermission) {
+                //             sendRealSMS();
+                //         } else {
+                //             permissions.requestPermission(permissions.SEND_SMS, function(status) {
+                //                 if (status.hasPermission) sendRealSMS();
+                //                 else alert("⚠️ E-SOS 發送失敗：未授予發送簡訊權限。");
+                //             }, () => alert("⚠️ E-SOS 發送失敗：權限請求發生錯誤。"));
+                //         }
+                //     }, () => sendRealSMS());
 
-                } else {
-                    alert(`⚠️ [E-SOS ${isAuto ? '自動傾倒' : '手動'}發送]\n已觸發 LINE 通知與簡訊通報\n對象: ${emergencyNumber}\n內容: ${message}`);
-                    playWarningSound('danger', 3);
-                }
+                // } else {
+                //     alert(`⚠️ [E-SOS ${isAuto ? '自動傾倒' : '手動'}發送]\n已觸發 LINE 通知與簡訊通報\n對象: ${emergencyNumber}\n內容: ${message}`);
+                //     playWarningSound('danger', 3);
+                // }
             }, [location, currentUserId, currentUser]);
 
             const triggerEdgeWarning = (direction) => {
@@ -5008,7 +5016,7 @@ html.dark .modal-content {
                         </div>
                     </div>
 
-                    {/* 🏁 實車路測數據採集控制面板 (Trip Data Logger) */}
+                    {/* 🏁 實車路測數據採集控制面板 (Trip Data Logger) 
                     <div className="bg-slate-900/90 rounded-3xl p-5 border border-slate-800 shadow-xl relative overflow-hidden transition-all">
                         <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2.5">
@@ -5063,6 +5071,7 @@ html.dark .modal-content {
                             </div>
                         )}
                     </div>
+                    */}
 
                     {/* 4. 核心安全快捷控制 */}
                     <div className="space-y-3.5">
@@ -5149,7 +5158,7 @@ html.dark .modal-content {
                             </button>
                         </div>
 
-                        {/* 測試模式快捷欄 */}
+                        {/* 測試模式快捷欄 
                         <div className="flex flex-col gap-2 p-3.5 bg-slate-900/80 rounded-2xl border border-slate-800 shadow-sm">
                             <div className="flex justify-between items-center">
                                 <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider font-mono">路測駕駛行為模擬</p>
@@ -5178,6 +5187,7 @@ html.dark .modal-content {
                                 </button>
                             </div>
                         </div>
+                        
 
                         <button 
                             onClick={startSimulation} 
@@ -5190,6 +5200,7 @@ html.dark .modal-content {
                             <Icon name={simulationMode ? "stop-circle" : "play-circle"} size={16} />
                             {simulationMode ? "停止模擬動態行車" : "啟動行車路測模擬 (Demo)"}
                         </button>
+                        */}
                     </div>
 
                     {/* 5. 即時行車軌跡地圖 */}
