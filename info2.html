@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>AI機車前後防護行車助理系統 V.I.S.O.R. (Visual Intelligent Safety On Road)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #121212;
+      --primary-color: #1e1e1e;
+      --secondary-color: #2a2a2a;
+      --accent-color: #00c7b3;
+      --text-color: #e0e0e0;
+      --header-font: 'Poppins', sans-serif;
+      --body-font: 'Microsoft JhengHei', sans-serif;
+    }
+    body {
+      margin: 0;
+      font-family: var(--body-font);
+      background: var(--bg-color);
+      color: var(--text-color);
+      scroll-behavior: smooth;
+    }
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: rgba(18, 18, 18, 0.85);
+      backdrop-filter: blur(10px);
+      padding: 10px 0;
+      text-align: center;
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--secondary-color);
+    }
+    nav a {
+      font-family: var(--header-font);
+      font-weight: 600;
+      color: var(--text-color);
+      text-decoration: none;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 50px;
+      transition: background 0.3s, color 0.3s;
+    }
+    nav a:hover, nav a.active {
+      background: var(--accent-color);
+      color: #000;
+    }
+    section {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 120px 50px;
+      box-sizing: border-box;
+      border-bottom: 1px solid var(--secondary-color);
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+    }
+    section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    #cover {
+      position: relative;
+      background-image: url('https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=2070&auto=format&fit=crop');
+      background-size: cover;
+      background-position: center;
+      background-blend-mode: lighten; /* Changed from screen for better effect */
+      animation: background-pan 20s linear infinite;
+    }
+    @keyframes background-pan {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    #cover::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(18, 18, 18, 0.6);
+        z-index: 1;
+    }
+    #cover > * {
+        position: relative;
+        z-index: 2;
+    }
+    h1, h2, h3, p, ul {
+      margin: 15px 0;
+      text-align: center;
+      max-width: 800px;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      margin: 12px 0;
+      font-size: 1.2rem;
+      line-height: 1.6;
+    }
+    h1, h2 {
+      font-family: var(--header-font);
+      font-weight: 700;
+      color: #fff;
+    }
+    h1 { font-size: 3.5rem; }
+    h2 { 
+      font-size: 3rem; 
+      color: var(--accent-color);
+    }
+    h3 { 
+      font-family: var(--header-font);
+      font-weight: 400;
+      font-size: 1.5rem; 
+      color: #aaa;
+    }
+    #cover p {
+      font-size: 1.1rem;
+    }
+    .scroll-to-top {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: var(--accent-color);
+      color: #000;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 50px;
+      font-size: 24px;
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.3s, transform 0.3s;
+      z-index: 999;
+    }
+    .scroll-to-top.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .architecture-container {
+      display: flex;
+      justify-content: center;
+      align-items: center; /* Center items vertically */
+      flex-wrap: wrap;
+      gap: 20px;
+      max-width: 1200px;
+      margin-top: 40px;
+    }
+    .arch-card-group-horizontal {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+    .arch-card, .arch-card-sub {
+      background: var(--secondary-color);
+      border: 1px solid #444;
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      width: 220px; /* Fixed width for cards */
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .arch-card:hover, .arch-card-sub:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0, 199, 179, 0.2);
+      border-color: var(--accent-color);
+    }
+    .arch-icon {
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+    }
+    .arch-card h4, .arch-card-sub h4 {
+      margin: 0 0 10px 0;
+      font-family: var(--header-font);
+      font-size: 1.2rem;
+      color: var(--accent-color);
+    }
+    .arch-card p, .arch-card-sub p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--text-color);
+      line-height: 1.5;
+    }
+    .arch-arrow, .arch-arrow-down {
+      font-size: 2.5rem;
+      color: var(--accent-color);
+      align-self: center;
+      margin: 0 15px;
+    }
+    .arch-arrow-down {
+      margin: 15px 0;
+    }
+    .arch-card-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    .fusion-card-style {
+      border-style: dashed;
+    }
+    .fusion-container {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      flex-wrap: wrap;
+      width: 100%;
+      max-width: 1000px;
+      margin-top: 40px;
+    }
+    .fusion-card {
+      background: var(--secondary-color);
+      border: 1px solid #444;
+      border-radius: 15px;
+      padding: 25px;
+      width: 45%;
+      min-width: 320px;
+      box-sizing: border-box;
+      text-align: left;
+    }
+    .fusion-card h4 {
+      font-family: var(--header-font);
+      font-size: 1.5rem;
+      color: var(--accent-color);
+      margin-top: 0;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .fusion-card p {
+      text-align: left;
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+    .fusion-card code {
+      background: #111;
+      border-radius: 5px;
+      padding: 2px 6px;
+      font-family: 'Courier New', Courier, monospace;
+      color: #00c7b3;
+    }
+    .flow-timeline {
+      position: relative;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px 0;
+    }
+    .flow-timeline::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 3px;
+      background: var(--accent-color);
+      transform: translateX(-50%);
+    }
+    .flow-item {
+      padding: 10px 40px;
+      position: relative;
+      width: 50%;
+      box-sizing: border-box;
+    }
+    .flow-item:nth-child(odd) {
+      left: 0;
+      padding-right: 25px;
+      text-align: right;
+    }
+    .flow-item:nth-child(even) {
+      left: 50%;
+      padding-left: 25px;
+      text-align: left;
+    }
+    .flow-item::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      right: -11px;
+      background-color: var(--bg-color);
+      border: 4px solid var(--accent-color);
+      top: 25px;
+      border-radius: 50%;
+      z-index: 1;
+    }
+    .flow-item:nth-child(odd)::after {
+      right: -11px;
+    }
+    .flow-item:nth-child(even)::after {
+      left: -9px;
+    }
+    .flow-content {
+      padding: 20px 30px;
+      background: var(--secondary-color);
+      position: relative;
+      border-radius: 10px;
+    }
+    .flow-content h4 {
+      margin-top: 0;
+      font-family: var(--header-font);
+      color: var(--accent-color);
+    }
+    .flow-content p {
+      margin-bottom: 0;
+      font-size: 0.95rem;
+      text-align: left;
+    }
+    .card-container {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      flex-wrap: wrap;
+      width: 100%;
+      max-width: 1100px;
+      margin-top: 40px;
+    }
+    .info-card {
+      background: var(--secondary-color);
+      border-radius: 15px;
+      padding: 30px;
+      width: 30%;
+      min-width: 280px;
+      box-sizing: border-box;
+      text-align: center;
+      border: 1px solid #444;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .info-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 10px 25px rgba(0, 199, 179, 0.15);
+      border-color: var(--accent-color);
+    }
+    a.info-card {
+      text-decoration: none;
+      color: var(--text-color);
+    }
+    .info-card .product-links {
+      margin-top: 15px;
+      list-style: none;
+      padding: 0;
+    }
+    .info-card .product-links li {
+      margin-bottom: 8px;
+    }
+    .info-card .product-links a {
+      color: var(--accent-color);
+      text-decoration: none;
+      font-weight: bold;
+      transition: color 0.3s;
+    }
+    .info-card .product-links a:hover {
+      color: #fff;
+      text-decoration: underline;
+    }
+    .info-card .icon {
+      font-size: 3rem;
+      color: var(--accent-color);
+      margin-bottom: 20px;
+    }
+    .info-card h4 {
+      font-family: var(--header-font);
+      font-size: 1.4rem;
+      color: #fff;
+      margin-bottom: 15px;
+    }
+    .info-card ul {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
+    .info-card li {
+      font-size: 1rem;
+      line-height: 1.7;
+      margin-bottom: 10px;
+    }
+    pre {
+      background: #1e1e1e;
+      border: 1px solid #444;
+      border-radius: 10px;
+      padding: 20px;
+      overflow-x: auto;
+      text-align: left;
+      font-family: 'Fira Code', 'Courier New', monospace;
+      font-size: 0.9rem;
+      margin-top: 20px;
+    }
+    code .comment { color: #6a9955; } /* 註解 */
+    code .keyword { color: #569cd6; } /* 關鍵字 */
+    code .function { color: #dcdcaa; } /* 函式 */
+    code .string { color: #ce9178; } /* 字串 */
+    code .number { color: #b5cea8; } /* 數字 */
+    code .class { color: #4ec9b0; } /* 類別 */
+    .mermaid-diagram {
+      background-color: #f9f9f9;
+      border-radius: 15px;
+      padding: 20px;
+      margin-top: 40px;
+      max-width: 1000px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+
+  <nav>
+    <a href="#cover" class="active">封面</a>
+    <a href="#motivation">研究動機</a>
+    <a href="#definition">問題定義</a>
+    <a href="#features">目標與功能</a>
+    <a href="#architecture">系統架構</a>
+    <a href="#fusion">感測器融合</a>
+    <a href="#model">模型設計</a>
+    <a href="#flow">開發流程</a>
+    <a href="#demo">Demo</a>
+    <a href="#evaluation">評估</a>
+    <a href="#team">分工與時程</a>
+    <a href="#conclusion">結論</a>
+    <a href="#visual_transmission">視覺傳輸串接方案</a>
+    <a href="#distributed_computing">分散式運算</a>
+    <a href="#solution">解決方案</a>
+  </nav>
+
+  <section id="cover">
+    <h1>AI機車前後防護行車助理系統</h1>
+    <h3>V.I.S.O.R. (Visual Intelligent Safety On Road)</h3>
+    <p>組員：楊詠媜、王靖雯、陳于庭、林韋丞、林佳嫻、翁怡蓉、黃澤然</p>
+    <p>學校：致理科技大學</p>
+    <p>日期：2025/10/18</p>
+  </section>
+
+  <section id="motivation">
+    <h2>研究動機</h2>
+    <div class="card-container">
+      <div class="info-card">
+        <div class="icon">🚨</div>
+        <h4>高事故率</h4>
+        <p>日益頻繁的交通事故，凸顯了為所有用路人（特別是機車騎士）提供先進駕駛輔助系統的迫切性。</p>
+      </div>
+      <div class="info-card">
+        <div class="icon">📱</div>
+        <h4>智慧型手機普及</h4>
+        <p>利用人手一機的智慧型手機作為運算核心，可大幅降低硬體成本，並透過 App 快速部署至大眾市場。</p>
+      </div>
+      <div class="info-card">
+        <div class="icon">💡</div>
+        <h4>市場潛力</h4>
+        <p>開發一套即時、有效且低成本的機車行車輔助系統，不僅能提升騎士安全，也具備龐大的市場應用價值。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="definition">
+    <h2>問題定義</h2>
+    <div class="card-container">
+      <div class="info-card">
+        <div class="icon">🤔</div>
+        <h4>環境感知挑戰</h4>
+        <p>機車騎士需同時應對車輛、行人、號誌等多重動態目標，在複雜路況中難以全面兼顧，易生危險。</p>
+      </div>
+      <div class="info-card">
+        <div class="icon">🏍️</div>
+        <h4>駕駛行為風險</h4>
+        <p>不當的駕駛行為，如車道偏移、彎道超速或過彎傾角過大，是造成機車自摔或碰撞事故的主要原因之一。</p>
+      </div>
+      <div class="info-card">
+        <div class="icon">🌧️</div>
+        <h4>極端條件限制</h4>
+        <p>在夜間、雨天或起霧等惡劣天候下，人眼與攝影機的辨識能力皆會顯著下降，導致偵測精度不足。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <h2>目標與功能</h2>
+    <div class="card-container">
+      <div class="info-card">
+        <div class="icon">⚠️</div>
+        <h4>後方追撞警示</h4>
+        <p>即時偵測後方車輛，並根據相對距離與位置判斷威脅，發出警示。</p>
+      </div>
+      <div class="info-card">
+        <div class="icon">📐</div>
+        <h4>過彎傾角警示</h4>
+        <p>偵測機車過彎時的傾斜角度，當角度過大時提醒騎士，預防失控打滑。</p>
+      </div>
+      <div class="info-card">
+        <div class="icon">👁️</div>
+        <h4>即時物件偵測</h4>
+        <p>辨識畫面中的行人、汽車、機車等用路人，提供全面的環境感知。</p>
+      </div>
+      <div class="info-card">
+        <div class="icon">📊</div>
+        <h4>行車資訊顯示</h4>
+        <p>在畫面上即時顯示目前車速與傾角等關鍵數據，讓騎士一目了然。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="architecture">
+    <h2>系統架構</h2>
+    <div class="architecture-container">
+      <div class="arch-card">
+        <div class="arch-icon">📱</div>
+        <h4>影像輸入</h4>
+        <p>透過手機相機，使用 OpenCV 讀取即時影像串流。</p>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-card">
+        <div class="arch-icon">🧠</div>
+        <h4>物件偵測</h4>
+        <p>載入輕量化的 YOLOv8n 模型，偵測畫面中的車輛、行人等目標。</p>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-card-group-horizontal">
+        <div class="arch-card">
+          <div class="arch-icon">🎯</div>
+          <h4>物件追蹤</h4>
+          <p>使用 CentroidTracker 追蹤偵測到的物件，並賦予其唯一 ID。</p>
+        </div>
+        <div class="arch-card">
+          <div class="arch-icon">🛰️</div>
+          <h4>感測器模擬</h4>
+          <p>模擬 GPS 和 IMU，提供車速與傾角數據。</p>
+        </div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-card fusion-card-style">
+        <div class="arch-icon">🔗</div>
+        <h4>融合與決策</h4>
+        <p>融合影像與感測器數據，判斷後方威脅與過彎風險。</p>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-card">
+        <div class="arch-icon">⚠️</div>
+        <h4>警示呈現</h4>
+        <p>根據決策結果，在手機螢幕上以視覺化方式發出即時警示。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="fusion">
+    <h2>多感測器融合</h2>
+    <div class="fusion-container">
+      <div class="fusion-card">
+        <h4>後方威脅判斷</h4>
+        <p>融合以下三項條件，判斷後方物體是否構成威脅：</p>
+        <ul>
+          <li><b>距離估算:</b> <code>dist < 6.0</code> 公尺</li>
+          <li><b>垂直位置:</b> <code>cy > 60%</code> 畫面高度</li>
+          <li><b>模型信心度:</b> <code>conf > 0.4</code></li>
+        </ul>
+        <p>當三者同時成立時，系統將觸發「後方威脅」警示。</p>
+        <pre><code><span class="comment"># fusion.py</span>
+<span class="keyword">def</span> <span class="function">is_rear_threat</span>(<span class="self">self</span>, obj, sensor_data):
+    _, conf, bbox = obj
+    cx, cy = utils.bbox_to_centroid(bbox)
+    dist = <span class="self">self</span>.estimate_distance(bbox)
+
+    <span class="keyword">if</span> dist < <span class="number">6.0</span> <span class="keyword">and</span> cy > (<span class="number">0.6</span> * <span class="self">self</span>.h) <span class="keyword">and</span> conf > <span class="number">0.4</span>:
+        <span class="keyword">return</span> <span class="keyword">True</span>, dist
+    <span class="keyword">return</span> <span class="keyword">False</span>, dist</code></pre>
+      </div>
+      <div class="fusion-card">
+        <h4>傾角警示</h4>
+        <p>根據感測器回報的傾斜角度，判斷車輛是否可能發生不穩或車道偏移：</p>
+        <ul>
+          <li><b>觸發條件:</b><br><code>abs(tilt_deg) > 18.0</code> 度</li>
+        </ul>
+        <p>當偵測到機車傾角過大時，系統將觸發「傾角過大」警示，提醒騎士注意行車姿態。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="model">
+    <h2>模型設計</h2>
+    <div class="card-container">
+      <div class="info-card">
+        <div class="icon">🧠</div>
+        <h4>輕量化模型</h4>
+        <p>選用 YOLOv8-nano 作為核心，此模型在維持高精度的同時，具備優異的推論速度，適合行動裝置。</p>
+        <pre><code><span class="comment"># model_inference.py</span>
+<span class="keyword">from</span> ultralytics <span class="keyword">import</span> YOLO
+
+<span class="keyword">class</span> <span class="class">Detector</span>:
+    <span class="keyword">def</span> <span class="function">__init__</span>(<span class="self">self</span>):
+        <span class="comment"># 載入 YOLOv8-nano 模型</span>
+        <span class="self">self</span>.model = YOLO(<span class="string">'yolov8n.pt'</span>)</code></pre>
+      </div>
+      <div class="info-card">
+        <div class="icon">⚙️</div>
+        <h4>模型最佳化</h4>
+        <p>未來可透過量化 (Quantization) 與剪枝 (Pruning) 等技術，進一步壓縮模型大小，降低運算需求。</p>
+      </div>
+      <div class="info-card">
+        <div class="icon">🚀</div>
+        <h4>即時推論效能</h4>
+        <p>目標在主流智慧型手機上達到至少 15-20 FPS 的即時推論速度，確保警示的及時性。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="flow">
+    <h2>開發流程</h2>
+    <div class="flow-timeline">
+      <div class="flow-item">
+        <div class="flow-content">
+          <h4>第一階段：資料與模型</h4>
+          <p>收集與標註影像資料，完成初步的模型訓練與壓縮。</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-content">
+          <h4>第二階段：核心功能開發</h4>
+          <p>開發手機端 App 骨架，並整合感測器融合演算法。</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-content">
+          <h4>第三階段：部署與整合</h4>
+          <p>將訓練好的模型部署至手機，並與 App 完整對接。</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-content">
+          <h4>第四階段：實地測試</h4>
+          <p>分別在汽車與機車上進行實地測試，收集反饋。</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-content">
+          <h4>第五階段：強健性與優化</h4>
+          <p>針對雨天、夜間等惡劣環境進行測試，並優化效能。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="demo">
+    <h2>Demo 預覽</h2>
+    <ul>
+      <li>汽車端：手機即時偵測行人 / 車輛 / 車道</li>
+      <li>機車端：手機架 + 傾角 / 車速警示</li>
+      <li>語音警示 + 視覺提醒</li>
+      <br>
+      <li><b>範例影片：</b></li>
+      <video controls width="100%" style="max-width: 720px; border-radius: 10px; margin-top: 15px;">
+        <source src="sample_videos/sample2.mp4" type="video/mp4">
+        您的瀏覽器不支援影片標籤。
+      </video>
+      <!-- <li style="font-size: 1rem; color: #aaa;">(請將影片檔 `scooter_sample.mp4` 放入 `sample_videos` 資料夾中以供預覽)</li> -->
+    </ul>
+  </section>
+
+  <section id="evaluation">
+    <h2>強健性 & 評估</h2>
+    <ul>
+      <li>模型準確率 (mAP)、FPS</li>
+      <li>惡劣環境測試：雨天、夜間</li>
+      <li>手機運行延遲與功耗測試</li>
+    </ul>
+  </section>
+
+  <section id="team">
+    <h2>分工與時程</h2>
+    <div class="card-container">
+      <div class="info-card">
+        <div class="icon">🤖</div>
+        <h4>模型訓練 (2人)</h4>
+        <p>負責資料集建立、模型選型、訓練與優化。</p>
+      </div>
+      <div class="info-card">
+        <div class="icon">📱</div>
+        <h4>App 開發 (2人)</h4>
+        <p>負責客戶端應用程式開發、UI/UX 設計與功能實現。</p>
+      </div>
+      <div class="info-card">
+        <div class="icon">🔗</div>
+        <h4>感測器融合 (2人)</h4>
+        <p>負責攝影機與 IMU 感測器數據的整合與決策邏輯開發。</p>
+      </div>
+      <div class="info-card">
+        <div class="icon">📋</div>
+        <h4>整合與報告 (1人)</h4>
+        <p>負責專案整合、測試、報告撰寫與 Demo 準備。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="conclusion">
+    <h2>結論與展望</h2>
+    <div class="card-container">
+      <div class="info-card">
+        <div class="icon">✅</div>
+        <h4>專案可行性</h4>
+        <p>本專案成功驗證了在智慧型手機上，實現低成本、高效能的機車駕駛輔助系統是完全可行的。</p>
+      </div>
+      <div class="info-card">
+        <div class="icon">🛡️</div>
+        <h4>提升行車安全</h4>
+        <p>透過即時的後方追撞與傾角警示，能有效輔助騎士感知環境風險，從而降低事故發生機率。</p>
+      </div>
+      <div class="info-card">
+        <div class="icon">🚀</div>
+        <h4>未來擴展性</h4>
+        <p>未來可整合更多功能，如盲點偵測、AR 安全帽顯示、甚至是結合 V2X 車聯網技術，發展更全面的智慧輔助系統。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="visual_transmission">
+    <h2>視覺傳輸串接方案</h2>
+    <h3>使用 Raspberry Pi 5 搭配 ROS (Robot Operating System)、IMU 和 2MP USB 鏡頭組合</h3>
+    <div class="card-container">
+      <a href="https://www.raspberrypi.com/products/raspberry-pi-5/" target="_blank" rel="noopener noreferrer" class="info-card">
+        <div class="icon">⚡️</div>
+        <h4>性能與運算優勢 (Raspberry Pi 5)</h4>
+        <ul style="text-align: left; padding-left: 20px;">
+          <li><b>AI 運算能力:</b> CPU/GPU 性能顯著提升，能高效運行 YOLOv8 等複雜模型。</li>
+          <li><b>多媒體處理:</b> 可處理雙 2MP 鏡頭串流，並進行 H.264/H.265 硬體編碼。</li>
+          <li><b>高速 I/O:</b> 具備 USB 3.0 與 PCIe 2.0，確保數據穩定，並可擴充 AI 加速卡 (NPU)。</li>
+        </ul>
+      </a>
+      <div class="info-card">
+        <div class="icon">🤖</div>
+        <h4>軟體架構優勢 (ROS)</h4>
+        <ul style="text-align: left; padding-left: 20px;">
+          <li><b>模組化設計:</b> 將影像、IMU、警示等功能設計為獨立節點 (Node)，易於開發與維護。</li>
+          <li><b>感測器融合:</b> 成熟的工具包可輕鬆同步與融合視覺和 IMU 數據，提升 ADAS 穩定性。</li>
+          <li><b>豐富生態系:</b> 可利用 cv_bridge, tf, Rviz 等現成工具加速開發。</li>
+        </ul>
+      </div>
+      <a href="https://www.st.com/en/mems-and-sensors/lsm6dsm.html" target="_blank" rel="noopener noreferrer" class="info-card">
+        <div class="icon">🧭</div>
+        <h4>系統功能優勢 (IMU 與整合)</h4>
+        <ul style="text-align: left; padding-left: 20px;">
+          <li><b>IMU 數據整合:</b> 精準偵測加速度變化以觸發碰撞鎖檔，並提供姿態估計以提高追蹤準確性。</li>
+          <li><b>靈活鏡頭選擇:</b> 採用 UVC USB 鏡頭，具備即插即用特性，免去複雜的驅動開發。</li>
+        </ul>
+      </a>
+      <div class="info-card">
+        <div class="icon">🔌</div>
+        <h4>供電方案</h4>
+        <p>採用 12V DC to 5V/5A 降壓模組，為 Raspberry Pi 5 和周邊設備提供穩定電力。</p>
+        <ul class="product-links">
+            <li><a href="https://robotkingdom.com.tw/product/dc-dc-converter-in-12v24v-out-5v5a/" target="_blank" rel="noopener noreferrer">參考方案 1</a></li>
+            <li><a href="https://www.amazon.com/-/zh_TW/Klnuoxj-%E9%99%8D%E5%A3%93%E8%BD%89%E6%8F%9B%E5%99%A8-Type-C-%E9%98%B2%E6%B0%B4%E9%99%8D%E5%A3%93%E6%A8%A1%E7%B5%84%E9%9B%BB%E6%BA%90%E8%BD%89%E6%8E%A5%E5%99%A8-Raspberry/dp/B0CRVVWL4Y?th=1" target="_blank" rel="noopener noreferrer">參考方案 2 (Amazon)</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="mermaid mermaid-diagram" style="max-width: 800px;">
+graph TD
+    subgraph "電源輸入與調節"
+        A["12V 機車電池"] -->|"1. +12V 輸出"| B("保險絲 5A-10A");
+        B -->|"2. 輸入 VIN+"| C{"DC-DC 降壓轉換器 12V→5V"};
+        A -->|"GND 負極"| C;
+    end
+
+    subgraph "系統核心"
+        C -->|"3. 穩定 5.1V VOUT+"| D["Raspberry Pi 5 主機板 (5V 輸入)"];
+        C -->|GND| D;
+    end
+
+    subgraph "週邊設備連接"
+        D -->|"USB 3.0 數據 (5V 供電)"| E1["USB 鏡頭 1"];
+        D -->|"USB 3.0 數據 (5V 供電)"| E2["USB 鏡頭 2"];
+        
+        D -->|"GPIO VCC 供電 (3.3V/5V)"| F("IMU 感測器");
+        D -->|"GPIO I2C/SPI 數據線"| F;
+    end
+    </div>
+  </section>
+
+  <section id="distributed_computing">
+    <h2>硬體架構二：分散式運算方案</h2>
+    <h3>前後廣角鏡頭 -> Raspberry Pi 5 (YOLOv8n) -> Raspberry Pi Zero 2W -> AR眼鏡/HUD</h3>
+          <div class="mermaid mermaid-diagram">
+          graph TD
+              subgraph "輸入層 (Input Layer)"
+                  A["前置 2MP 廣角鏡頭"] --> C{"Raspberry Pi 5"};
+                  B["後置 2MP 廣角鏡頭"] --> C;
+              end
+    
+              subgraph "處理層 (Processing Layer)"
+                  C -- "1. 影像串流" --> C;
+                  C -- "2. 運行 YOLOv8n 進行物件偵測" --> D["數據壓縮與格式化"];
+              end
+    
+              subgraph "傳輸層 (Transmission Layer)"
+                  D -- "3. 透過 Wi-Fi/USB 傳輸" --> E{"Raspberry Pi Zero 2W"};
+              end
+    
+              subgraph "顯示層 (Display Layer)"
+                  E -- "4. 處理數據並生成顯示畫面" --> F["Rokid AR 眼鏡"];
+                  E -- " " --> G["抬頭顯示器 (HUD)"];
+              end
+    
+              style A fill:#e6f7ff,stroke:#91d5ff,stroke-width:2px
+              style B fill:#e6f7ff,stroke:#91d5ff,stroke-width:2px
+              style C fill:#fffbe6,stroke:#ffd666,stroke-width:2px
+              style E fill:#f6ffed,stroke:#b7eb8f,stroke-width:2px
+              style F fill:#f9f0ff,stroke:#d3adf7,stroke-width:2px
+              style G fill:#f9f0ff,stroke:#d3adf7,stroke-width:2px
+        </div>    <div class="card-container">
+        <div class="info-card">
+            <div class="icon">📸</div>
+            <h4>雙向即時影像</h4>
+            <p>使用前後兩個 2MP 廣角 USB 鏡頭，同時捕捉前方與後方的道路影像，提供全面的環境數據。</p>
+        </div>
+        <div class="info-card">
+            <div class="icon">🧠</div>
+            <h4>主運算核心 (Pi 5)</h4>
+            <p>Raspberry Pi 5 作為主要的運算單元，專門負責執行資源密集型的 YOLOv8n 物件偵測模型，以達到最高的偵測效率與準確性。</p>
+        </div>
+        <div class="info-card">
+            <div class="icon">📡</div>
+            <h4>輕量級顯示驅動 (Pi Zero 2W)</h4>
+            <p>Raspberry Pi Zero 2W 接收從 Pi 5 傳來的精簡數據，專職負責將警示資訊渲染並輸出至顯示設備，實現了計算與顯示的分離。</p>
+        </div>
+        <div class="info-card">
+            <div class="icon">👓</div>
+            <h4>沉浸式顯示</h4>
+            <p>最終的警示與行車資訊會顯示在 Rokid AR 眼鏡或客製化的抬頭顯示器上，讓騎士無需低頭就能獲取關鍵安全資訊。</p>
+        </div>
+    </div>
+    <div class="architecture-container">
+      <div class="arch-card">
+        <div class="arch-icon">🤖</div>
+        <h4>運算主機: RPi 5</h4>
+        <p>負責 YOLOv8n & ADAS 運算。需其強大處理能力。</p>
+        <p style="margin-top:10px; font-size:0.8rem; color: #aaa;"><b>IMU (MPU-6050)</b> 需置於此端，供 ADAS 姿態修正。</p>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-card">
+        <div class="arch-icon">📡</div>
+        <h4>無線通訊</h4>
+        <p>使用 ROS 2/TCP 或 MAVLink 協定，僅傳輸物件座標、ID、警示等純數據。</p>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-card">
+        <div class="arch-icon">💻</div>
+        <h4>頭盔顯示驅動: RPi Zero 2W</h4>
+        <p>接收數據並渲染 HUD 疊加層。體積小、功耗低。</p>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-card-group-horizontal">
+        <div class="arch-card-sub" style="min-height: 160px; width: 200px;">
+          <div class="arch-icon">👓</div>
+          <h4>Rokid Glasses</h4>
+          <p>直接將渲染後的畫面傳送至 AR 眼鏡。</p>
+          <div style="margin-top: 10px;">
+            <a href="https://www.youtube.com/watch?v=rEmUmsKqZVc" target="_blank" rel="noopener noreferrer" style="color: var(--accent-color); text-decoration: none; font-weight: bold;">參考影片 1</a>
+            <span style="margin: 0 5px;">|</span>
+            <a href="https://www.youtube.com/watch?v=7oGdRbpAiYE" target="_blank" rel="noopener noreferrer" style="color: var(--accent-color); text-decoration: none; font-weight: bold;">參考影片 2</a>
+          </div>
+        </div>
+        <div class="arch-card-sub" style="min-height: 160px; width: 200px; text-align: left; padding: 15px;">
+          <div style="text-align: center;">
+            <div class="arch-icon">📺</div>
+            <h4>抬頭顯示器 (HUD)</h4>
+          </div>
+          <p style="font-size: 0.85rem; line-height: 1.4; margin-top: 5px;"><b>介面:</b> Mini-HDMI (首選)。連接 Pi Zero 2W 與 OL23A 模組，確保低 CPU 負載。</p>
+          <p style="font-size: 0.85rem; line-height: 1.4; margin-top: 5px;"><b>優化:</b> 需強制 Pi Zero 2W 使用極低分辨率，以降低渲染負擔。</p>
+          <p style="font-size: 0.85rem; line-height: 1.4; margin-top: 5px;"><b>供電:</b> <a href="https://www.meiyagroup.com.tw/product/%E6%A8%B9%E8%8E%93%E6%B4%BE-zero-%E5%B0%88%E7%94%A8-ups-%E6%93%B4%E5%85%85%E6%A8%A1%E7%B5%84%E6%94%AF%E6%8F%B4%E9%82%8A%E5%85%85%E9%82%8A%E6%94%BE/?srsltid=AfmBOooBy2mHaVxphhM-Ja7saYwrpUNF9FhVTOWuLSyKoVEp8Pq1ig_M" target="_blank" rel="noopener noreferrer" style="color: var(--accent-color); text-decoration: none; font-weight: bold;">UPS 擴充模組</a></p>
+          <div style="margin-top: 10px; text-align: center;">
+            <a href="https://www.bilibili.com/video/BV1g24y1T7u6/?spm_id_from=333.337.search-card.all.click" target="_blank" rel="noopener noreferrer" style="color: var(--accent-color); text-decoration: none; font-weight: bold;">影片 1</a>
+            <span style="margin: 0 5px;">|</span>
+            <a href="https://www.bilibili.com/video/BV1b4421Z7vX/?spm_id_from=333.337.search-card.all.click" target="_blank" rel="noopener noreferrer" style="color: var(--accent-color); text-decoration: none; font-weight: bold;">影片 2</a>
+            <span style="margin: 0 5px;">|</span>
+            <a href="https://www.bilibili.com/video/BV1df4y1c73j/?spm_id_from=333.788.recommend_more_video.13&trackid=web_related_0.router-related-2206419-dk9pw.1763142496437.8" target="_blank" rel="noopener noreferrer" style="color: var(--accent-color); text-decoration: none; font-weight: bold;">影片 3</a>
+            <br>
+            <a href="https://www.sz-sonicom.com/productinfo/967523.html?templateId=1133605" target="_blank" rel="noopener noreferrer" style="color: var(--accent-color); text-decoration: none; font-weight: bold;">參考方案</a>
+            <span style="margin: 0 5px;">|</span>
+            <a href="https://www.raystar-optronics.com/cht/oled-graphic-display-module/micro-oled-display.html" target="_blank" rel="noopener noreferrer" style="color: var(--accent-color); text-decoration: none; font-weight: bold;">Micro OLED 方案</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="solution">
+    <h2>解決方案</h2>
+    <div class="card-container">
+      <a href="https://www.wpgdadatong.com/solution/detail/75367" target="_blank" rel="noopener noreferrer" class="info-card">
+        <div class="icon">📷</div>
+        <h4>鏡頭組合方案</h4>
+        <p>提供多種鏡頭搭配選擇，以應對不同車型與安裝位置，確保最佳偵測視角。</p>
+      </a>
+      <div class="info-card">
+        <div class="icon">➕</div>
+        <h4>延伸功能</h4>
+        <p>規劃行車記錄、路線規劃、緊急求助等加值功能，打造一站式機車騎士服務平台。</p>
+      </div>
+      <div class="info-card">
+        <div class="icon">📱</div>
+        <h4>手機端App</h4>
+        <p>開發專屬手機應用程式，提供個人化設定、數據分析與社群分享功能。</p>
+      </div>
+      <div class="info-card">
+        <div class="icon"> HUD</div>
+        <h4>全新HUD顯示方式</h4>
+        <p>設計創新的抬頭顯示器（HUD）介面，將警示資訊直接投射於騎士視線範圍，無需分心查看手機。</p>
+        <ul class="product-links">
+            <li><a href="https://www.mobile01.com/topicdetail.php?f=669&t=6030984&p=2" target="_blank" rel="noopener noreferrer">參考方案 (Mobile01)</a></li>
+        </ul>
+      </div>
+      <div class="info-card">
+        <div class="icon">📦</div>
+        <h4>第一代產品</h4>
+        <p>參考市面上的機車行車記錄器，作為我們開發第一代產品功能與規格的參考基準。</p>
+        <ul class="product-links">
+            <li><a href="https://24h.pchome.com.tw/prod/DEBB8A-A900IU6UO?srsltid=AfmBOorKlThB185bnQMJ4edhLYKdMbp78Ay4ARYZX21dEvZ6cPj6-G3E" target="_blank" rel="noopener noreferrer">參考產品 1 (PChome)</a></li>
+            <li><a href="https://www.supermoto8.com/articles/10520" target="_blank" rel="noopener noreferrer">參考產品 2 (Supermoto8)</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+  
+  <div class="scroll-to-top" onclick="scrollToTop()">↑</div>
+
+  <script>
+    // Scroll animation
+    const sections = document.querySelectorAll('section');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+    sections.forEach(section => {
+      observer.observe(section);
+    });
+
+    // Scroll to top button
+    const scrollToTopBtn = document.querySelector('.scroll-to-top');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 300) {
+        scrollToTopBtn.classList.add('visible');
+      } else {
+        scrollToTopBtn.classList.remove('visible');
+      }
+    });
+    function scrollToTop() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Nav active state
+    const navLinks = document.querySelectorAll('nav a');
+    const sectionObserver = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const id = entry.target.getAttribute('id');
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === `#${id}`) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+        });
+    }, { rootMargin: '-50% 0px -50% 0px' });
+    sections.forEach(section => {
+        sectionObserver.observe(section);
+    });
+  </script>
+
+</body>
+</html>
