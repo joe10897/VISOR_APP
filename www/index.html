@@ -2161,7 +2161,7 @@ html.dark .modal-content {
                         <div className="flex-1 overflow-y-auto p-4 space-y-4">
                             {messages.map((msg, idx) => (
                                 <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-cyan-700 text-white rounded-tr-none' : 'bg-slate-800 text-slate-200 rounded-tl-none border border-slate-700'}`}><div dangerouslySetInnerHTML={{ __html: window.marked.parse(msg.text) }} /></div>
+                                    <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-cyan-700/50 !text-white rounded-tr-none' : 'bg-slate-800 text-slate-200 rounded-tl-none border border-slate-700'}`}><div dangerouslySetInnerHTML={{ __html: window.marked.parse(msg.text) }} /></div>
                                 </div>
                             ))}
                             {loading && <div className="flex justify-start"><div className="bg-slate-800 p-3 rounded-2xl rounded-tl-none border border-slate-700 flex gap-1"><div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"></div><div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce delay-100"></div></div></div>}
