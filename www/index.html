@@ -1363,7 +1363,7 @@ html.dark .modal-content {
             if (!alert) return null;
 
             return (
-                <div className={`w-full rounded-xl p-3 mb-4 flex items-center gap-4 shadow-lg transition-all duration-300 border ${isOverSpeed ? 'bg-red-900/90 border-red-500 animate-danger' : (isStationary ? 'bg-slate-800/80 border-slate-600 opacity-70' : 'bg-slate-800/95 border-yellow-500/50')}`}>
+                <div className={`w-full rounded-xl p-3 mb-4 flex items-center gap-4 shadow-lg transition-all duration-300 border ${isOverSpeed ? 'bg-red-900/50 border-red-500 animate-danger' : (isStationary ? 'bg-slate-800/50 border-slate-600 opacity-70' : 'bg-slate-800/50 border-yellow-500/50')}`}>
                     <div className={`w-14 h-14 rounded-full flex items-center justify-center shadow shrink-0 ${isOverSpeed ? 'bg-white border-4 border-red-600 text-black' : 'bg-slate-700 border-2 border-slate-500 text-slate-300'}`}>
                         <span className="font-black text-2xl tracking-tighter">{alert.limit}</span>
                     </div>
@@ -2868,7 +2868,7 @@ html.dark .modal-content {
             const hasGpsFixRef = useRef(false);
             const lastGpsPointRef = useRef(null); // { lat, lng, time }
             const wakeLockRef = useRef(null);
-            const [showAIChat, setShowAIChat] = useState(false);
+            const [showAIChat, setShowAIChat] = useState(false);    
             const [location, setLocation] = useState({ lat: 25.033964, lng: 121.564468 });
             const [cameras, setCameras] = useState(BUILT_IN_CAMERAS);
             const [dbInfo, setDbInfo] = useState({ count: BUILT_IN_CAMERAS.length, source: '內建' });
@@ -4950,7 +4950,7 @@ html.dark .modal-content {
             // Render Functions
                         // Render Functions
             const renderHome = () => (
-                <div className="space-y-4 animate-fadeIn pb-32 relative">
+                <div className="space-y-8 animate-fadeIn pb-32 relative">
 
                     {/* 1. 測速照相最高優先級警示橫幅 */}
                     <SpeedCameraAlert alert={cameraAlert} currentSpeed={simulatedSpeed} />
