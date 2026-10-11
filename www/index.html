@@ -6358,62 +6358,6 @@ html.dark .modal-content {
                         <h2 className="text-xl font-bold text-white">HUD 顯示配置</h2>
                         <HUDPreview config={hudConfig} />
 
-                        {/* 🎪 展覽演示模式卡片 (Exhibition Mode) 
-                        <div className={`p-4 rounded-2xl border transition-all duration-300 ${isExhibitionMode ? 'bg-amber-950/40 border-amber-500/70 shadow-[0_0_24px_rgba(245,158,11,0.25)]' : 'bg-slate-800 border-slate-700'}`}>
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold transition-all ${isExhibitionMode ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/40 animate-pulse' : 'bg-slate-700 text-slate-400'}`}>
-                                        <Icon name="play-circle" size={24} />
-                                    </div>
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-white text-sm font-bold">展覽演示模式</span>
-                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${isExhibitionMode ? 'bg-amber-500/20 border border-amber-500/50 text-amber-300 animate-pulse' : 'bg-slate-700 text-slate-400'}`}>
-                                                {isExhibitionMode ? '32s 全情境循環中' : '實車即時模式'}
-                                            </span>
-                                        </div>
-                                        <p className="text-slate-400 text-xs mt-0.5">起步加速 · 左右盲點 · 深傾角壓彎 · 測速相機 · FCW，HUD與手機 100% 同步展示</p>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={toggleExhibitionMode}
-                                    className={`px-4 py-2.5 rounded-xl text-xs font-black tracking-wider transition-all duration-200 active:scale-95 whitespace-nowrap ${isExhibitionMode ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
-                                >
-                                    {isExhibitionMode ? '運行中 (點擊關閉)' : '啟動展示'}
-                                </button>
-                            </div>
-                        </div>
-*/}
-                        {/* 🖥️ OLED 硬體螢幕型號切換 (0.96" SSD1306 / 1.3" SH1106) */}
-                        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
-                            <h3 className="text-cyan-400 text-sm font-bold mb-3 uppercase tracking-wider flex items-center justify-between">
-                                <span className="flex items-center gap-2"><Icon name="monitor" size={16} /> OLED 螢幕規格切換</span>
-                                <span className="text-[11px] font-mono text-cyan-300">目前：{hudConfig.oled_model || 'SSD1306'}</span>
-                            </h3>
-                            <div className="grid grid-cols-2 gap-3">
-                                <button
-                                    onClick={() => updateHudConfig({ oled_model: 'SSD1306' })}
-                                    className={`p-3 rounded-xl border text-left transition-all active:scale-95 ${(!hudConfig.oled_model || hudConfig.oled_model === 'SSD1306') ? 'bg-cyan-950/60 border-cyan-500 text-cyan-300 shadow-md shadow-cyan-900/20' : 'bg-slate-900/60 border-slate-700 text-slate-400 hover:border-slate-600'}`}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs font-bold">0.96 吋 SSD1306</span>
-                                        {(!hudConfig.oled_model || hudConfig.oled_model === 'SSD1306') && <Icon name="check" size={14} className="text-cyan-400" />}
-                                    </div>
-                                    <div className="text-[10px] text-slate-400 mt-1">目前測試規格 (128x64 點陣)</div>
-                                </button>
-                                <button
-                                    onClick={() => updateHudConfig({ oled_model: 'SH1106' })}
-                                    className={`p-3 rounded-xl border text-left transition-all active:scale-95 ${hudConfig.oled_model === 'SH1106' ? 'bg-cyan-950/60 border-cyan-500 text-cyan-300 shadow-md shadow-cyan-900/20' : 'bg-slate-900/60 border-slate-700 text-slate-400 hover:border-slate-600'}`}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs font-bold">1.3 吋 SH1106</span>
-                                        {hudConfig.oled_model === 'SH1106' && <Icon name="check" size={14} className="text-cyan-400" />}
-                                    </div>
-                                    <div className="text-[10px] text-slate-400 mt-1">旗艦到貨規格 (132x64 寬視角)</div>
-                                </button>
-                            </div>
-                        </div>
-
                         {/* 🪞 光學鏡片反射與鏡像校正 (Visor Optical Mirror & Flip) */}
                         <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
                             <h3 className="text-cyan-400 text-sm font-bold mb-3 uppercase tracking-wider flex items-center justify-between">
@@ -6483,7 +6427,61 @@ html.dark .modal-content {
                             </div>
                         </div>
 
+                        {/* 🎪 展覽演示模式卡片 (Exhibition Mode) */}
+                        <div className={`p-4 rounded-2xl border transition-all duration-300 ${isExhibitionMode ? 'bg-amber-950/40 border-amber-500/70 shadow-[0_0_24px_rgba(245,158,11,0.25)]' : 'bg-slate-800 border-slate-700'}`}>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold transition-all ${isExhibitionMode ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/40 animate-pulse' : 'bg-slate-700 text-slate-400'}`}>
+                                        <Icon name="play-circle" size={24} />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-white text-sm font-bold">展覽演示模式</span>
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${isExhibitionMode ? 'bg-amber-500/20 border border-amber-500/50 text-amber-300 animate-pulse' : 'bg-slate-700 text-slate-400'}`}>
+                                                {isExhibitionMode ? '32s 全情境循環中' : '實車即時模式'}
+                                            </span>
+                                        </div>
+                                        <p className="text-slate-400 text-xs mt-0.5">起步加速 · 左右盲點 · 深傾角壓彎 · 測速相機 · FCW，HUD與手機 100% 同步展示</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={toggleExhibitionMode}
+                                    className={`px-4 py-2.5 rounded-xl text-xs font-black tracking-wider transition-all duration-200 active:scale-95 whitespace-nowrap ${isExhibitionMode ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
+                                >
+                                    {isExhibitionMode ? '運行中 (點擊關閉)' : '啟動展示'}
+                                </button>
+                            </div>
+                        </div>
 
+                        {/* 🖥️ OLED 硬體螢幕型號切換 (0.96" SSD1306 / 1.3" SH1106) */}
+                        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                            <h3 className="text-cyan-400 text-sm font-bold mb-3 uppercase tracking-wider flex items-center justify-between">
+                                <span className="flex items-center gap-2"><Icon name="monitor" size={16} /> OLED 螢幕規格切換</span>
+                                <span className="text-[11px] font-mono text-cyan-300">目前：{hudConfig.oled_model || 'SSD1306'}</span>
+                            </h3>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => updateHudConfig({ oled_model: 'SSD1306' })}
+                                    className={`p-3 rounded-xl border text-left transition-all active:scale-95 ${(!hudConfig.oled_model || hudConfig.oled_model === 'SSD1306') ? 'bg-cyan-950/60 border-cyan-500 text-cyan-300 shadow-md shadow-cyan-900/20' : 'bg-slate-900/60 border-slate-700 text-slate-400 hover:border-slate-600'}`}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-bold">0.96 吋 SSD1306</span>
+                                        {(!hudConfig.oled_model || hudConfig.oled_model === 'SSD1306') && <Icon name="check" size={14} className="text-cyan-400" />}
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 mt-1">目前測試規格 (128x64 點陣)</div>
+                                </button>
+                                <button
+                                    onClick={() => updateHudConfig({ oled_model: 'SH1106' })}
+                                    className={`p-3 rounded-xl border text-left transition-all active:scale-95 ${hudConfig.oled_model === 'SH1106' ? 'bg-cyan-950/60 border-cyan-500 text-cyan-300 shadow-md shadow-cyan-900/20' : 'bg-slate-900/60 border-slate-700 text-slate-400 hover:border-slate-600'}`}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-bold">1.3 吋 SH1106</span>
+                                        {hudConfig.oled_model === 'SH1106' && <Icon name="check" size={14} className="text-cyan-400" />}
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 mt-1">旗艦到貨規格 (132x64 寬視角)</div>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 );
             };
@@ -6928,9 +6926,9 @@ html.dark .modal-content {
                                 </div>
 
                                 <div className="space-y-4 pb-12 flex-1">
-                                    {/* 1. 鏡頭選擇與傳輸模式 */}
+                                    {/* 1. 鏡頭選擇與傳輸模式 
                                     <div className="flex flex-col sm:flex-row gap-2">
-                                        {/* 鏡頭切換 */}
+                                        {/* 鏡頭切換 
                                         <div className="flex-1 grid grid-cols-2 gap-2 bg-slate-900 p-1 rounded-2xl border border-slate-800">
                                             <button
                                                 onClick={() => { setWizardCam('front'); requestCalibrationFrame('front'); }}
@@ -6954,7 +6952,7 @@ html.dark .modal-content {
                                             </button>
                                         </div>
 
-                                        {/* 傳輸模式 (純藍牙 vs Wi-Fi) */}
+                                        {/* 傳輸模式 (純藍牙 vs Wi-Fi) 
                                         <div className="grid grid-cols-2 gap-1.5 bg-slate-900 p-1 rounded-2xl border border-slate-800">
                                             <button
                                                 onClick={() => setWizardStreamMode('bt_snapshot')}
@@ -6977,11 +6975,11 @@ html.dark .modal-content {
                                                 Wi-Fi 串流 (30 FPS)
                                             </button>
                                         </div>
-                                    </div>
+                                    </div>*/}
 
-                                    {/* 2. 即時校正視窗 (含水平儀輔助線與十字準心) */}
+                                    {/* 2. 即時校正視窗 (含水平儀輔助線與十字準心) 
                                     <div className="bg-black rounded-3xl border border-slate-800 overflow-hidden relative aspect-video flex items-center justify-center shadow-2xl">
-                                        {/* 影像顯示 */}
+                                        {/* 影像顯示 
                                         {wizardStreamMode === 'wifi_mjpeg' ? (
                                             <img 
                                                 src={`http://${window.location.hostname || '192.168.4.1'}:${wizardCam === 'front' ? '8000' : '8001'}/stream.mjpg`}
@@ -7003,9 +7001,9 @@ html.dark .modal-content {
                                             )
                                         )}
 
-                                        {/* 戰術 HUD 對齊疊加層 */}
+                                        {/* 戰術 HUD 對齊疊加層 
                                         <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-3">
-                                            {/* 水平中線 (Horizon Guide) */}
+                                            {/* 水平中線 (Horizon Guide) 
                                             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex items-center">
                                                 <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-cyan-400/80 to-transparent"></div>
                                                 <div className="w-6 h-6 rounded-full border border-cyan-400/90 flex items-center justify-center bg-cyan-950/40">
@@ -7014,13 +7012,13 @@ html.dark .modal-content {
                                                 <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-cyan-400/80 to-transparent"></div>
                                             </div>
 
-                                            {/* 垂直中線 (Vertical Heading Axis) */}
+                                            {/* 垂直中線 (Vertical Heading Axis) 
                                             <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex flex-col items-center">
                                                 <div className="w-[1px] flex-1 bg-gradient-to-b from-transparent via-cyan-400/50 to-transparent"></div>
                                                 <div className="w-[1px] flex-1 bg-gradient-to-b from-transparent via-cyan-400/50 to-transparent"></div>
                                             </div>
 
-                                            {/* 四角框線與狀態 */}
+                                            {/* 四角框線與狀態 
                                             <div className="flex justify-between items-start z-10">
                                                 <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-black/70 text-cyan-300 border border-cyan-500/30">
                                                     {wizardCam === 'front' ? 'FRONT CAM (120°)' : 'REAR CAM (160°)'}
@@ -7058,7 +7056,7 @@ html.dark .modal-content {
                                         </div>
                                     </div>
 
-                                    {/* 影像控制按鈕列 */}
+                                    {/* 影像控制按鈕列 
                                     <div className="flex gap-2">
                                         <button
                                             onClick={() => requestCalibrationFrame(wizardCam)}
@@ -7080,6 +7078,7 @@ html.dark .modal-content {
                                             自動輪詢 (1 FPS): {wizardAutoRefresh ? '開啟中' : '已關閉'}
                                         </button>
                                     </div>
+                                */}
 
                                     {/* 3. 車身水平校正工具 (Zero IMU) */}
                                     <div className="bg-slate-900 rounded-2xl p-4 border border-slate-800 space-y-3">
