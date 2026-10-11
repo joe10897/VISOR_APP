@@ -2136,7 +2136,9 @@ html.dark .modal-content {
             const [input, setInput] = useState("");
             const [loading, setLoading] = useState(false);
             const messagesEndRef = useRef(null);
-            useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
+            useEffect(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }, [messages]);
             if (!isOpen) return null;
             const handleSend = async () => {
                 if (!input.trim()) return;
@@ -4196,35 +4198,25 @@ html.dark .modal-content {
                     currentRideDataRef.current = [];
                     if (trackRef.current) trackRef.current = [];
 
-                    // 確保取得有效的測速照相點
-                    const defaultCam = {
-                        address: "國道五號南向22.5公里(雪山隧道)",
-                        lat: 24.88923,
-                        lng: 121.761765,
-                        limit: 90,
+                    // 模擬路段與測速執法點：新北市板橋區中山路二段 (往光復橋方向，速限 50 km/h)
+                    const targetCam = {
+                        address: "新北市板橋區中山路二段 (往光復橋方向)",
+                        lat: 25.022123,
+                        lng: 121.484758,
+                        limit: 50,
                         type: "fixed",
-                        direct: "往南",
-                        heading: 180
+                        direct: "西南向東北 (往光復橋)",
+                        heading: 55
                     };
-
-                    let targetCam = defaultCam;
-                    if (Array.isArray(cameras) && cameras.length > 0) {
-                        const found = cameras.find(c => c && c.address && (c.address.includes("雪山") || c.address.includes("國道五號") || c.address.includes("隧道")));
-                        if (found && found.lat) targetCam = found;
-                        else {
-                            const nearby = cameras.find(c => c && c.lat > 24.5 && c.lat < 25.5);
-                            if (nearby && nearby.lat) targetCam = nearby;
-                        }
-                    }
 
                     console.log("[Simulation] Target camera selected:", targetCam);
 
-                    // 速度設定 (超速模式 vs 安全模式)
-                    const baseSpeed = forceSpeeding ? targetCam.limit + 18 : targetCam.limit - 8;
+                    // 速度設定 (超速模式 vs 安全模式)：板橋中山路二段市區幹道速限 50 km/h
+                    const baseSpeed = forceSpeeding ? targetCam.limit + 18 : targetCam.limit - 7;
 
-                    // 從測速照相點北方約 650 公尺處出發 (緯度差距約 0.0058 度)
-                    let currentLat = targetCam.lat + 0.0058;
-                    let currentLng = targetCam.lng;
+                    // 起點精確設定為使用者指定座標：25.019646, 121.480846 (朝向 25.020244, 121.481791 前進，距離執法點約 480m)
+                    let currentLat = 25.019646;
+                    let currentLng = 121.480846;
                     let passedTarget = false;
                     let tick = 0;
 
@@ -4233,12 +4225,13 @@ html.dark .modal-content {
                     setSimulationMode(true);
                     setIsRiding(true);
                     setIsConnected(true);
+                    setHeading(55);
                     setLocation({ lat: currentLat, lng: currentLng });
                     setSimulatedSpeed(baseSpeed);
-                    setTiltAngle(forceSpeeding ? 15 : 5);
+                    setTiltAngle(forceSpeeding ? 12 : 5);
                     setCameraAlert({
                         ...targetCam,
-                        distance: 650,
+                        distance: 480,
                         isOverSpeed: forceSpeeding
                     });
 
@@ -4251,8 +4244,9 @@ html.dark .modal-content {
                     simRef.current = setInterval(() => {
                         tick++;
 
-                        // 1. 車輛物理位移模擬 (往南前進，約 38.8m/s)
-                        currentLat -= 0.000035;
+                        // 1. 車輛物理位移模擬：從 25.019646, 121.480846 沿中山路二段往 25.020244, 121.481791 (東北向 55° 前進)
+                        currentLat += 0.00000775;
+                        currentLng += 0.00001222;
                         const jitterLat = currentLat + (Math.random() - 0.5) * 0.000002;
                         const jitterLng = currentLng + (Math.random() - 0.5) * 0.000002;
                         
@@ -4261,50 +4255,50 @@ html.dark .modal-content {
                         if (trackRef.current) trackRef.current.push([jitterLat, jitterLng]);
 
                         // 2. 計算與測速照相點距離
-                        let dist = 650;
+                        let dist = 480;
                         if (window.GeoUtils && typeof window.GeoUtils.calculateDistance === 'function') {
                             dist = window.GeoUtils.calculateDistance(jitterLat, jitterLng, targetCam.lat, targetCam.lng);
                         } else {
-                            dist = Math.abs(currentLat - targetCam.lat) * 111000;
+                            dist = Math.hypot((currentLat - targetCam.lat) * 111000, (currentLng - targetCam.lng) * 100600);
                         }
 
-                        const physicallyPassed = currentLat <= targetCam.lat;
+                        const physicallyPassed = (currentLat >= targetCam.lat && currentLng >= targetCam.lng);
 
-                        // 3. 動態時速與急煞模擬 (逼真行車速度波形與合理急煞力道 ~16.5 km/h/s / 0.45G)
+                        // 3. 動態時速與急煞模擬 (符合 50 km/h 速限，合理急煞減速度 ~16.5 km/h/s)
                         let liveSpeed = baseSpeed;
                         if (forceSpeeding) {
                             if (!passedTarget) {
-                                if (dist > 175) {
-                                    // 前段超速巡航 (約 108 km/h，輕微自然浮動)
+                                if (dist > 160) {
+                                    // 前段超速巡航 (約 68 km/h，輕微自然浮動)
                                     liveSpeed = Math.round(baseSpeed + Math.sin(tick * 0.05) * 1.2);
-                                } else if (dist <= 175 && dist >= 130) {
-                                    // 急煞區間 (模擬騎士在相機前 175m~130m 發現測速器全力緊急煞車，速度於 1 秒內從 108 降至 91 km/h)
-                                    const brakeProgress = Math.min(1, Math.max(0, (175 - dist) / 40));
-                                    liveSpeed = Math.round(baseSpeed - 17 * brakeProgress);
+                                } else if (dist <= 160 && dist >= 115) {
+                                    // 急煞區間 (模擬騎士在相機前 160m~115m 發現測速器全力緊急煞車，速度於 1 秒內從 68 降至 48 km/h)
+                                    const brakeProgress = Math.min(1, Math.max(0, (160 - dist) / 45));
+                                    liveSpeed = Math.round(baseSpeed - 20 * brakeProgress);
                                 } else {
-                                    // 急煞完成後平穩通過測速點 (88 ~ 90 km/h)
-                                    liveSpeed = Math.round(targetCam.limit - 1 + Math.sin(tick * 0.04) * 0.8);
+                                    // 急煞完成後平穩通過測速點 (47 ~ 49 km/h)
+                                    liveSpeed = Math.round(targetCam.limit - 2 + Math.sin(tick * 0.04) * 0.8);
                                 }
                             } else {
-                                // 通過測速相機後平穩安全續行 (88 ~ 90 km/h)
-                                liveSpeed = Math.round(targetCam.limit - 1 + Math.sin(tick * 0.04) * 0.8);
+                                // 通過測速相機後平穩安全續行 (47 ~ 49 km/h)
+                                liveSpeed = Math.round(targetCam.limit - 2 + Math.sin(tick * 0.04) * 0.8);
                             }
                         } else {
-                            // 安全模式：平穩巡航
+                            // 安全模式：平穩巡航 (41 ~ 45 km/h)
                             liveSpeed = Math.max(10, Math.round(baseSpeed + Math.sin(tick * 0.04) * 1.5 + (Math.random() - 0.5) * 0.8));
                         }
                         setSimulatedSpeed(liveSpeed);
 
-                        // 4. 動態傾角波形模擬 (模擬彎道壓車 41°~43° 與平路動態)
+                        // 4. 動態傾角波形模擬 (模擬市區轉彎壓車 41°~43° 與平路動態)
                         let liveTilt = 0;
-                        if (forceSpeeding && !passedTarget && dist >= 300 && dist <= 480) {
-                            // 相機前 480m~300m 處模擬連續急彎，彎心最大傾角達 41°~43° (觸發危險傾角判定 >= 40°)
-                            const curveProgress = (480 - dist) / 180;
+                        if (forceSpeeding && !passedTarget && dist >= 260 && dist <= 420) {
+                            // 相機前 420m~260m 處模擬轉向避障，最大傾角達 41°~43° (觸發危險傾角判定 >= 40°)
+                            const curveProgress = (420 - dist) / 160;
                             const curvePhase = Math.sin(curveProgress * Math.PI); // 0 -> 1 -> 0
                             liveTilt = Math.round(curvePhase * 43.5 + (Math.random() - 0.5) * 0.8);
                         } else {
-                            // 正常路段自然浮動 (2°~10°)
-                            const normalMax = forceSpeeding ? 10 : 7;
+                            // 正常路段自然浮動 (2°~8°)
+                            const normalMax = forceSpeeding ? 8 : 5;
                             liveTilt = Math.round(Math.sin(tick * 0.03) * normalMax + (Math.random() - 0.5) * 1.0);
                         }
                         setTiltAngle(liveTilt);
