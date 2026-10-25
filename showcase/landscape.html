@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>V.I.S.O.R. | 橫屏旗艦座艙 (Landscape Cockpit Deck)</title>
+  
+  <link rel="stylesheet" href="css/showcase.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body class="selection:bg-cyan-500 selection:text-black">
+
+  <!-- Cybernetic Atmosphere & Grid Floor -->
+  <div class="cyber-atmosphere">
+    <div class="cyber-stars"></div>
+    <div class="cyber-aurora"></div>
+    <div class="cyber-grid-floor"></div>
+    <div class="scanlines"></div>
+  </div>
+
+  <!-- Top Avionics Ribbon -->
+  <header class="showcase-header">
+    <div class="brand-block">
+      <div class="brand-logo">V</div>
+      <div class="brand-text">
+        <h1>V.I.S.O.R.</h1>
+        <p>AVIONICS COCKPIT DECK // 橫屏旗艦座艙</p>
+      </div>
+    </div>
+
+    <!-- Auto-Loop Status Strip -->
+    <div class="auto-loop-strip">
+      <span class="status-dot dot-green"></span>
+      <span>AUTO SEQUENCE // </span>
+      <span class="current-scenario-label" style="color: #fff;">公路巡航</span>
+      <div class="auto-progress-track">
+        <div class="auto-progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- Quick Navigation Tabs -->
+    <div class="view-mode-tabs">
+      <a href="landscape.html" class="tab-btn active">
+        <svg class="v-icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span>橫屏座艙</span>
+      </a>
+      <a href="portrait.html" class="tab-btn">
+        <svg class="v-icon" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        <span>直屏中樞</span>
+      </a>
+      <a href="index.html?mode=dual" class="tab-btn">
+        <svg class="v-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+        <span>雙屏並排</span>
+      </a>
+    </div>
+
+    <!-- Kiosk Presentation Mode Badge -->
+    <div class="kiosk-banner">
+      <span class="status-dot dot-red"></span>
+      <span>KIOSK // AUTONOMOUS DEMO</span>
+    </div>
+
+    <!-- Status & Sound Toggle -->
+    <div class="action-tools">
+      <button class="tool-btn active" data-action="toggle-auto" title="切換自動循環/手動控制">
+        <svg class="v-icon v-icon-sm" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <span class="auto-text">自動循環中</span>
+      </button>
+      <button class="tool-btn" data-action="toggle-kiosk" title="展場/簡報滿版模式 (快捷鍵 K)">
+        <svg class="v-icon v-icon-sm" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span>簡報模式</span>
+      </button>
+      <button class="tool-btn" data-action="toggle-sound" title="切換 8D 空間立體聲音效 (快捷鍵 A)">
+        <svg class="v-icon v-icon-sm" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        <span>8D 音效</span>
+        <span class="audio-waves"><span class="audio-bar"></span><span class="audio-bar"></span><span class="audio-bar"></span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- 3D Floating Landscape Cockpit Grid -->
+  <main class="landscape-container card-perspective-container">
+
+    <!-- ==================== LEFT WING: VISION AI & TOPOLOGY ==================== -->
+    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+      
+      <!-- Card 1: Dual Camera Vision AI -->
+      <section class="floating-card" data-tilt>
+        <div class="corner-bracket bracket-tl"></div>
+        <div class="corner-bracket bracket-tr"></div>
+        <div class="corner-bracket bracket-bl"></div>
+        <div class="corner-bracket bracket-br"></div>
+
+        <div class="card-title">
+          <span class="icon-chip">
+            <svg class="v-icon v-icon-sm" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </span>
+          <span>雙路視覺 AI 推論 (CSI Stream)</span>
+        </div>
+
+        <div class="camera-stream-wrapper">
+          <canvas class="camera-canvas"></canvas>
+          <div class="stream-overlay-stats">
+            <span class="badge-pill badge-cyan camera-mode-label">FRONT 160° FCW</span>
+            <span class="badge-pill badge-emerald">30.5 FPS</span>
+          </div>
+          <div class="stream-threat-pill">
+            <span class="fcw-status-badge badge-pill badge-emerald">車距安全</span>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.85rem;">
+          <div style="font-size: 0.78rem; color: var(--text-muted); font-family: var(--font-mono);">
+            YOLO NANO // NPU: <span style="color: var(--cyan-core);">24.2ms</span>
+          </div>
+          <div style="display: flex; gap: 0.45rem;">
+            <button class="tool-btn active" data-action="toggle-ar" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;" title="切換護目鏡虛擬浮空 AR 疊加 (快捷鍵 V)">
+              <svg class="v-icon v-icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>
+              <span>AR 護目鏡</span>
+            </button>
+            <button class="tool-btn" data-action="toggle-cam" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;" title="切換前後鏡頭 (快捷鍵 C)">
+              <svg class="v-icon v-icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              <span>鏡頭</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Card 2: Distributed System Topology -->
+      <section class="floating-card" data-tilt>
+        <div class="corner-bracket bracket-tl"></div>
+        <div class="corner-bracket bracket-tr"></div>
+        <div class="corner-bracket bracket-bl"></div>
+        <div class="corner-bracket bracket-br"></div>
+
+        <div class="card-title">
+          <span class="icon-chip">
+            <svg class="v-icon v-icon-sm" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+          </span>
+          <span>分散式核心拓撲架構</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.55rem 0.75rem; background: rgba(6,11,25,0.7); border-radius: 8px; border: 1px solid rgba(0,240,255,0.15);">
+            <div>
+              <div style="font-weight: 700; color: #fff; font-size: 0.85rem;">Raspberry Pi 5 (車載網關)</div>
+              <div style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono);">192.168.4.1 // AP Hotspot</div>
+            </div>
+            <div style="text-align: right;">
+              <span class="badge-pill badge-cyan" style="font-size: 0.68rem;">AI 視覺中樞</span>
+              <div style="font-size: 0.7rem; color: var(--emerald-core); font-family: var(--font-mono);">42°C | 34%</div>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.55rem 0.75rem; background: rgba(6,11,25,0.7); border-radius: 8px; border: 1px solid rgba(0,240,255,0.15);">
+            <div>
+              <div style="font-weight: 700; color: #fff; font-size: 0.85rem;">Pi Zero 2W (頭盔 HUD)</div>
+              <div style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono);">192.168.4.60 // UDP:5005</div>
+            </div>
+            <div style="text-align: right;">
+              <span class="badge-pill badge-emerald" style="font-size: 0.68rem;">光學微投影</span>
+              <div style="font-size: 0.7rem; color: var(--cyan-core); font-family: var(--font-mono);">&lt; 3.8ms</div>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.55rem 0.75rem; background: rgba(6,11,25,0.7); border-radius: 8px; border: 1px solid rgba(0,240,255,0.15);">
+            <div>
+              <div style="font-weight: 700; color: #fff; font-size: 0.85rem;">騎士手機 (Pixel 7a)</div>
+              <div style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono);">BLE + 雙引擎 GPS 4Hz</div>
+            </div>
+            <div style="text-align: right;">
+              <span class="badge-pill badge-amber" style="font-size: 0.68rem;">遙測上鏈</span>
+              <div style="font-size: 0.7rem; color: var(--emerald-core); font-family: var(--font-mono);">16 顆衛星</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ==================== CENTER CORE: SPEEDOMETER & HUD ==================== -->
+    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+
+      <!-- Card 3: Digital Avionics & Speedometer Hero -->
+      <section class="floating-card" data-tilt style="padding: 1.5rem;">
+        <div class="corner-bracket bracket-tl"></div>
+        <div class="corner-bracket bracket-tr"></div>
+        <div class="corner-bracket bracket-bl"></div>
+        <div class="corner-bracket bracket-br"></div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <div class="badge-pill badge-cyan">
+            <svg class="v-icon v-icon-sm" viewBox="0 0 24 24"><path d="M13 2 3 12"/><path d="m14 6 4 4"/><path d="m17 3 4 4"/><circle cx="6" cy="18" r="3"/><path d="m19 19-3-3"/></svg>
+            <span>雙引擎 GPS (Doppler + Haversine)</span>
+          </div>
+          <div class="badge-pill badge-emerald">
+            <span>TTC: <span class="val-ttc font-mono">3.8s</span></span>
+          </div>
+        </div>
+
+        <div class="speed-hero-display">
+          <div class="speed-value-huge val-speed">72</div>
+          <div class="speed-unit">KM / H</div>
+          <div class="speed-bar-track">
+            <div class="speed-bar-fill"></div>
+          </div>
+        </div>
+
+        <!-- 6-DOF IMU Leaning & Roll Physics -->
+        <div class="lean-gyro-box">
+          <div style="display: flex; align-items: center; gap: 0.85rem;">
+            <div class="bike-lean-graphic">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="16" cy="46" r="10" stroke="#00f0ff" stroke-width="3"/>
+                <circle cx="48" cy="46" r="10" stroke="#00f0ff" stroke-width="3"/>
+                <path d="M16 46L28 32H38L48 46" stroke="#fff"/>
+                <path d="M28 32L34 20H42" stroke="#00ff9d"/>
+                <circle cx="34" cy="15" r="4" fill="#00f0ff"/>
+                <line x1="16" y1="46" x2="28" y2="46" stroke="#00f0ff"/>
+              </svg>
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-family: var(--font-hud);">
+                6-AXIS IMU 壓車動態傾角
+              </div>
+              <div style="font-size: 1.4rem; font-weight: 800; color: #fff; font-family: var(--font-hud);" class="val-tilt">
+                0°
+              </div>
+            </div>
+          </div>
+
+          <div style="text-align: right;">
+            <div style="font-size: 0.7rem; color: var(--text-dim); font-family: var(--font-mono);">
+              SESSION PEAK
+            </div>
+            <div style="font-size: 1rem; font-weight: 700; color: var(--amber-core); font-family: var(--font-hud);" class="val-max-tilt">
+              0°
+            </div>
+            <div class="lean-tire-grip">
+              <span>抓地力: <span class="val-grip-pct font-mono">98%</span></span>
+              <div class="grip-bar"><div class="grip-fill"></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Card 4: Helmet Optical HUD Combiner Simulation -->
+      <section class="floating-card" data-tilt>
+        <div class="corner-bracket bracket-tl"></div>
+        <div class="corner-bracket bracket-tr"></div>
+        <div class="corner-bracket bracket-bl"></div>
+        <div class="corner-bracket bracket-br"></div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center;" class="card-title">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span class="icon-chip">
+              <svg class="v-icon v-icon-sm" viewBox="0 0 24 24"><path d="M2 12h20"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"/><path d="M12 2v20"/><circle cx="12" cy="12" r="7"/></svg>
+            </span>
+            <span>頭盔光學菱鏡 HUD (Pi Zero 投影)</span>
+          </div>
+          <span class="badge-pill badge-emerald" style="font-size: 0.65rem;">SSD1306 128x64</span>
+        </div>
+
+        <div class="hud-combiner-screen hud-flipped-v hud-mirrored-h">
+          <div class="visor-lens-glare"></div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; z-index: 2;">
+            <div class="hud-oled-text" style="font-size: 0.8rem; font-weight: 700;">VISOR // ADAS</div>
+            <div class="hud-oled-text" style="font-size: 0.75rem;">192.168.4.60</div>
+          </div>
+
+          <div style="display: flex; align-items: baseline; justify-content: center; gap: 0.6rem; z-index: 2;">
+            <div class="hud-oled-text val-speed" style="font-size: 3.2rem; font-weight: 900; line-height: 1;">72</div>
+            <div class="hud-oled-text" style="font-size: 0.9rem; font-weight: 700;">KM/H</div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; z-index: 2;">
+            <div class="hud-oled-text val-tilt" style="font-size: 0.85rem; font-weight: 700;">0° LEAN</div>
+            <div class="hud-oled-text" style="font-size: 0.85rem; font-weight: 700;">STRAIGHT 400M</div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.85rem; padding-top: 0.6rem; border-top: 1px solid rgba(255,255,255,0.08);">
+          <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">
+            光學折射補償:
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="tool-btn active" data-action="hud-flip-v">
+              <span>上下反轉</span>
+            </button>
+            <button class="tool-btn active" data-action="hud-mirror-h">
+              <span>左右鏡像</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ==================== RIGHT WING: 24GHz RADAR & BLACKBOX ==================== -->
+    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+
+      <!-- Card 5: 24GHz Radar & Blind Spot Threat -->
+      <section class="floating-card" data-tilt>
+        <div class="corner-bracket bracket-tl"></div>
+        <div class="corner-bracket bracket-tr"></div>
+        <div class="corner-bracket bracket-bl"></div>
+        <div class="corner-bracket bracket-br"></div>
+
+        <div class="card-title">
+          <span class="icon-chip">
+            <svg class="v-icon v-icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+          </span>
+          <span>24GHz 毫米波雷達掃描儀</span>
+        </div>
+
+        <div class="radar-wrapper">
+          <canvas class="radar-canvas"></canvas>
+        </div>
+
+        <div class="bsm-indicator-group">
+          <div class="bsm-box bsm-left safe">
+            <div style="font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono);">左後視鏡盲區</div>
+            <div class="bsm-text font-hud" style="font-size: 0.9rem; font-weight: 800; color: #fff;">左後淨空</div>
+          </div>
+          <div class="bsm-box bsm-right safe">
+            <div style="font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono);">右後視鏡盲區</div>
+            <div class="bsm-text font-hud" style="font-size: 0.9rem; font-weight: 800; color: #fff;">右後淨空</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Card 6: Telemetry Blackbox -->
+      <section class="floating-card" data-tilt>
+        <div class="corner-bracket bracket-tl"></div>
+        <div class="corner-bracket bracket-tr"></div>
+        <div class="corner-bracket bracket-bl"></div>
+        <div class="corner-bracket bracket-br"></div>
+
+        <div class="card-title">
+          <span class="icon-chip">
+            <svg class="v-icon v-icon-sm" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </span>
+          <span>動態遙測黑盒子 (Trip Stats)</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem;">
+          <div style="background: rgba(6,11,25,0.7); padding: 0.65rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="font-size: 0.7rem; color: var(--text-dim); font-family: var(--font-mono);">TRIP DURATION</div>
+            <div class="val-trip-time font-hud" style="font-size: 1.15rem; font-weight: 700; color: #fff;">14:30</div>
+          </div>
+
+          <div style="background: rgba(6,11,25,0.7); padding: 0.65rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="font-size: 0.7rem; color: var(--text-dim); font-family: var(--font-mono);">ODOMETER</div>
+            <div class="val-trip-dist font-hud" style="font-size: 1.15rem; font-weight: 700; color: var(--cyan-core);">14.8 km</div>
+          </div>
+
+          <div style="background: rgba(6,11,25,0.7); padding: 0.65rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="font-size: 0.7rem; color: var(--text-dim); font-family: var(--font-mono);">GPS ENGINE</div>
+            <div class="font-hud" style="font-size: 0.82rem; font-weight: 700; color: var(--emerald-core);">Doppler 4Hz</div>
+          </div>
+
+          <div style="background: rgba(6,11,25,0.7); padding: 0.65rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="font-size: 0.7rem; color: var(--text-dim); font-family: var(--font-mono);">WAKELOCK</div>
+            <div class="font-hud" style="font-size: 0.82rem; font-weight: 700; color: var(--cyan-core);">ACTIVE 保持恆亮</div>
+          </div>
+        </div>
+
+        <div class="log-replay-pill">
+          <div style="display: flex; align-items: center; gap: 0.4rem;">
+            <span class="status-dot dot-green"></span>
+            <span class="log-replay-status" style="color: var(--cyan-core); font-weight: 700;">即時推論模式</span>
+          </div>
+          <button class="tool-btn" data-action="toggle-log" style="padding: 0.2rem 0.5rem; font-size: 0.68rem;" title="切換北宜公路真實路測數據回放 (快捷鍵 L)">
+            <svg class="v-icon v-icon-sm" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+            <span>路測日誌回放</span>
+          </button>
+        </div>
+        <div class="log-replay-note" style="font-size: 0.68rem; color: var(--text-dim); font-family: var(--font-mono); margin-top: 0.35rem;">
+          台9線北宜公路 // GPS Doppler + 6-AXIS IMU 4Hz
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- Bottom Floating Interactive Control Bar -->
+  <nav class="sim-toolbar">
+    <div style="display: flex; gap: 0.4rem;">
+      <button class="sim-btn active" data-scenario="cruise" title="巡航模式">
+        <span>公路巡航</span>
+      </button>
+      <button class="sim-btn" data-scenario="twist" title="山道壓車">
+        <span>山道壓車</span>
+      </button>
+      <button class="sim-btn" data-scenario="blindspot" title="盲區超車預警">
+        <span>盲區預警</span>
+      </button>
+      <button class="sim-btn" data-scenario="emergency" title="緊急避險制動">
+        <span>緊急制動</span>
+      </button>
+    </div>
+
+    <!-- Throttle & Brake Pushers -->
+    <div class="sim-throttle-group">
+      <button class="throttle-btn btn-accel" data-action="accel" title="踩油門加速 (+15 km/h)">
+        <svg class="v-icon v-icon-sm" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+        <span>加速</span>
+      </button>
+      <button class="throttle-btn btn-brake" data-action="brake" title="按剎車制動 (-20 km/h)">
+        <svg class="v-icon v-icon-sm" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        <span>制動</span>
+      </button>
+    </div>
+
+    <!-- Lean Steering -->
+    <div style="display: flex; gap: 0.35rem;">
+      <button class="sim-btn" data-action="lean-left" title="左傾壓車">
+        <svg class="v-icon v-icon-sm" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        <span>左傾</span>
+      </button>
+      <button class="sim-btn" data-action="lean-center" title="回正">
+        <span>回正</span>
+      </button>
+      <button class="sim-btn" data-action="lean-right" title="右傾壓車">
+        <span>右傾</span>
+        <svg class="v-icon v-icon-sm" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Scripts -->
+  <script src="js/card_tilt.js"></script>
+  <script src="js/sim_engine.js"></script>
+</body>
+</html>

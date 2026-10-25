@@ -1,0 +1,372 @@
+            const analyzeOverspeed = (ridePoints) => {
+                // æª¢æŸ¥?‰æ??‰è??™ï?æ²’è??™å°±?å‚³ 0
+                if (!ridePoints || ridePoints.length === 0) {
+                    return { count: 0, events: [], class: 'normal' };
+                }
+
+                let isSpeeding = false; // ç´€?„ã€Œç¾?¨é€™ä?ç§’ã€æ˜¯?¦æ­£?¨è???
+                let count = 0; // ç´€?„æ¬¡??
+                let currentEvent = null; // ç´€?„ç•¶ä¸‹ä?ä»¶ç´°ç¯€
+                let events = []; // ç¸½ç?äº‹ä»¶?„ç´°ç¯€
+
+                // ?ä?æª¢æŸ¥æ¯å€‹é?
+                ridePoints.forEach((point) => {
+                    if (point.limit) {
+                        const limit = point.limit; // ?–å??é€?
+                        const speedDiff = point.speed - limit; // è¨ˆç?è¶…é€Ÿç?åº?
+
+                        if (point.speed > limit) { // å¦‚æ??™ç?è¶…é??é€?
+                            if (!isSpeeding) {// è¶…é€Ÿé?å§?
+                                isSpeeding = true;
+                                count++; // è§¸ç™¼æ¬¡æ•¸+1
+                                currentEvent = {
+                                    time: point.time, // ç´€?„èµ·å§‹æ???å­—ä¸²)
+                                    rawTime: point.rawTime, // ç´€?„èµ·å§‹æ????¸å?)
+                                    maxSpeed: point.speed,
+                                    lowSpeed: point.speed,
+                                    limit: limit
+                                };
+                            } else { // ?ç?è¶…é€Ÿä¸­ï¼šæ›´?°æ?é«˜ã€æ?ä½é€?
+                                if (point.speed > currentEvent.maxSpeed) {
+                                    currentEvent.maxSpeed = point.speed;
+                                }
+                                if (point.speed < currentEvent.lowSpeed) {
+                                    currentEvent.lowSpeed = point.speed;
+                                }
+                            }
+                        } else { // è¶…é€Ÿç???
+                            if (isSpeeding && currentEvent) {
+                                const eventSeconds = (point.rawTime - currentEvent.rawTime) / 1000;
+                                events.push({
+                                    time: currentEvent.time,        // ?‹å??‚é?(å­—ä¸²)
+                                    endtime: point.time,             // çµæ??‚é?(å­—ä¸²)
+                                    duration: eventSeconds, //ç´€?„è??Ÿå¹¾ç§?
+                                    maxspeed: Math.round(currentEvent.maxSpeed), // ?™æ®µ?€?“ç??€é«˜æ???
+                                    lowspeed: Math.round(currentEvent.lowSpeed), // ?™æ®µ?€?“ç??€ä½æ???
+                                    limit: currentEvent.limit,
+                                    overspeed: Math.round(currentEvent.maxSpeed - currentEvent.limit), // ?™ä??€?“æ?å¤§ç?è¶…é€Ÿé?
+                                    class: 'overspeed'
+                                });
+                                isSpeeding = false;
+                                currentEvent = null;
+                            }
+                        }
+                    }
+                });
+
+                if (isSpeeding && currentEvent) {// ?²æ­¢è¡Œç?çµæ??‚é??¨è???
+                    const lastPoint = ridePoints[ridePoints.length - 1];
+                    events.push({
+                        time: currentEvent.time,
+                        endtime: lastPoint.time,
+                        duration: (lastPoint.rawTime - currentEvent.rawTime) / 1000,
+                        maxspeed: Math.round(currentEvent.maxSpeed),
+                        lowspeed: Math.round(currentEvent.lowSpeed),
+                        limit: currentEvent.limit,
+                        overspeed: Math.round(currentEvent.maxSpeed - currentEvent.limit),
+                        class: 'overspeed'
+                    });
+                }
+
+                return {
+                    count: count,
+                    events: events
+                };
+            };
+
+            // ?¤æ–·?‰å¹¾æ¬¡å±?ªå‚¾è§’ä?ä»?
+            const analyzeTilt = (ridePoints) => {
+                if (!ridePoints || ridePoints.length === 0) {
+                    return { count: 0, events: [], class: 'normal' };
+                }
+
+                let count = 0;
+                let isTilting = false; // ç´€?„ã€Œç¾?¨ã€æ˜¯?¦æ­£?•æ–¼?±éšª?¾è??€??
+                let currentEvent = null; // ç´€?„ç•¶ä¸‹ä?ä»¶ç´°ç¯€
+                let events = []; // ç¸½ç?äº‹ä»¶?„ç´°ç¯€
+
+                ridePoints.forEach((point) => {
+                    // ?¤å??€æª»ï??¾è? >= 40 åº¦ï?è«–æ?å®šç¾©?±éšªå£“å?è¨ˆæ¬¡?€??(30Â° ~ 45Â°)ï¼Œç‚º?¿å??æ–¼?æ?ï¼Œé€™è£¡è¨­å???40Â° ä»¥ä??ç?ä¸€æ¬¡ä?ä»¶é?å§?
+                    if (point.tilt >= 40) {
+                        if (!isTilting) {
+                            // ?²å…¥?±éšª?¾è?
+                            isTilting = true;
+                            count++;
+                            currentEvent = {
+                                time: point.time,       // ?‹å??¾æ??‚é?(å­—ä¸²)
+                                rawTime: point.rawTime,       // ?‹å??¾æ??‚é?(?¸å?)
+                                maxTilt: point.tilt,    // ?å??¾è?
+                                maxSpeed: point.speed,  // ?²å…¥?‚ç??‚é€?
+                                lowSpeed: point.speed,  // ?å??–æ?ä½é€?
+                                class: 'tilt'
+                            };
+                        } else { // ?ç??¾æ?ä¸­ï??´æ–°?€å¤§å‚¾è§’è??Ÿåº¦
+                            if (point.tilt > currentEvent.maxTilt) {
+                                currentEvent.maxTilt = point.tilt;
+                            }
+                            if (point.speed > currentEvent.maxSpeed) {
+                                currentEvent.maxSpeed = point.speed;
+                            }
+                            if (point.speed < currentEvent.lowSpeed) {
+                                currentEvent.lowSpeed = point.speed;
+                            }
+                        }
+                    } else {
+                        if (isTilting && currentEvent) { // ?¾è??¢å¾©
+                            const eventSeconds = (point.rawTime - currentEvent.rawTime) / 1000;
+                            events.push({
+                                time: currentEvent.time,        // èµ·å??‚é?
+                                endtime: point.time,             // çµæ??‚é?
+                                duration: eventSeconds, // ?¾æ??ç?å¹¾ç?
+                                maxspeed: Math.round(currentEvent.maxSpeed),
+                                lowspeed: Math.round(currentEvent.lowSpeed),
+                                tilt: Math.round(currentEvent.maxTilt), // è¨˜é??™æ®µ?€?“æ?å¤§ç??¾è?
+                                class: 'tilt'
+                            });
+                            isTilting = false;
+                            currentEvent = null;
+                        }
+                    }
+                });
+
+                if (isTilting && currentEvent) {// ?²æ­¢è¡Œç?çµæ??‚å?å¥½é??¨å‚¾??
+                    const lastPoint = ridePoints[ridePoints.length - 1];
+                    events.push({
+                        time: currentEvent.time,
+                        endtime: lastPoint.time,
+                        duration: (lastPoint.rawTime - currentEvent.rawTime) / 1000,
+                        maxspeed: Math.round(currentEvent.maxSpeed),
+                        lowspeed: Math.round(currentEvent.lowSpeed),
+                        tilt: Math.round(currentEvent.maxTilt),
+                        class: 'tilt'
+                    });
+                }
+
+                return {
+                    count: count,
+                    events: events
+                };
+            };
+
+            //?¤æ–·?‰å¹¾æ¬¡æ€¥ç?äº‹ä»¶
+            const analyzeBraking = (ridePoints) => {
+                // æª¢æŸ¥è³‡æ?ï¼Œè‡³å°‘é?è¦å…©?‹é??èƒ½è¨ˆç??Ÿåº¦è®Šå?
+                if (!ridePoints || ridePoints.length < 2) {
+                    return { count: 0, events: [], class: 'normal' };
+                }
+
+                let count = 0;
+                let isBraking = false;
+                let currentEvent = null; // ç´€?„ç•¶ä¸‹ä?ä»¶ç´°ç¯€
+                let events = []; // ç¸½ç?äº‹ä»¶?„ç´°ç¯€
+
+                // ?é?æª¢æŸ¥ (å¾ç¬¬äºŒå€‹é??‹å?ï¼Œè??ä??‹é?æ¯”è?)
+                for (let i = 1; i < ridePoints.length; i++) {
+                    const currentPoint = ridePoints[i];
+                    const prevPoint = ridePoints[i - 1];
+
+                    // è¨ˆç??©é?ä¹‹é?å¯¦é??ä?å¹¾ç? (æ¯«ç? / 1000)
+                    const timeDiff = (currentPoint.rawTime - prevPoint.rawTime) / 1000;
+                    if (timeDiff <= 0) continue; // ?¿å??†æ???0 ?„æ¥µç«¯æ?æ³?
+
+                    // è¨ˆç?æ¸›é€Ÿåº¦ (æ­?€¼ä»£è¡¨æ???
+                    const deceleration = (prevPoint.speed - currentPoint.speed) / timeDiff;
+
+                    // ?¤å??€æª»ï?æ¸›é€?>= 10 km/hr/s
+                    if (deceleration >= 10) {
+                        if (!isBraking) {// ?¥ç??‹å?
+                            isBraking = true;
+                            count++;
+                            currentEvent = {
+                                time: prevPoint.time,    // ?è??‹å??„æ???
+                                maxSpeed: prevPoint.speed, // ?è??ç??å??‚é€?
+                                lowSpeed: currentPoint.speed, // ?¶ä??„æ?ä½é€?
+                                maxBraking: deceleration, // ?å?æ¸›é€Ÿåº¦
+                                class: 'braking'
+                            };
+                        } else { // ?ç??¥ç?ä¸­ï??´æ–°?€ä½é€Ÿã€æ?å¼·ç??è??›é?
+                            if (currentPoint.speed < currentEvent.lowSpeed) {
+                                currentEvent.lowSpeed = currentPoint.speed;
+                            }
+                            if (deceleration > currentEvent.maxBraking) {
+                                currentEvent.maxBraking = deceleration;
+                            }
+                        }
+                    } else { // ?¥ç?çµæ?
+                        if (isBraking && currentEvent) {
+                            events.push({
+                                time: currentEvent.time,        // ?‹å??¥ç??‚é?
+                                endtime: currentPoint.time,      // çµæ??¥ç??‚é?
+                                maxspeed: Math.round(currentEvent.maxSpeed), // ?è??ç??€é«˜é€?
+                                lowspeed: Math.round(currentEvent.lowSpeed), // ?è?å¾Œç??€ä½é€?
+                                braking: Math.round(currentEvent.maxBraking),  // ?™æ®µ?Ÿé??€å¼·ç??è??›é?
+                                class: 'braking'
+                            });
+                            isBraking = false;
+                            currentEvent = null;
+                        }
+                    }
+                }
+
+                if (isBraking && currentEvent) { // ?²æ­¢è¡Œç?çµæ??‚å?å¥½åœ¨?¥ç?
+                    const lastPoint = ridePoints[ridePoints.length - 1];
+                    events.push({
+                        time: currentEvent.time,
+                        endtime: lastPoint.time,
+                        maxspeed: Math.round(currentEvent.maxSpeed),
+                        lowspeed: Math.round(currentEvent.lowSpeed),
+                        braking: Math.round(currentEvent.maxBraking),
+                        class: 'braking'
+                    });
+                }
+
+                return {
+                    count: count,
+                    events: events
+                };
+            };
+
+            //=============================================================
+            //                 äº‹ä»¶?¤æ–·?€ çµæ?
+            //=============================================================
+
+            // çµç?é¨ä?è¡¨ç¾?„é?è¼?
+            const finalizeRide = async (camera = null) => {
+                // 1. å¾?Ref ?“å??¶å??™è??„æ??‰é?ä½?
+                const dataToAnalyze = currentRideDataRef.current;
+                logToScreen("=== ?‹å??†æ?çµç? ===");
+                logToScreen(`ç¸½å…±?¶é?é»æ•¸:${dataToAnalyze.length}`);
+
+                if (dataToAnalyze.length === 0) {
+                    logToScreen("æ²’æ??¶é??°æ•¸?šï??–æ?çµç?");
+                    return;
+                }
+
+                // 2. ?²è??¸æ??†æ?(?å‚³?„æ˜¯?©ä»¶ { count, overspeed/braking, class })
+                const overspeedRes = analyzeOverspeed(dataToAnalyze);
+                const brakingRes = analyzeBraking(dataToAnalyze);
+                const tiltRes = analyzeTilt(dataToAnalyze);
+
+                // è¨ˆç??†æ•¸
+                let overspeedPenalty = 0;
+                let tiltPenalty = 0;
+
+                // è¶…é€Ÿæ‰£?†é?è¼?
+                overspeedRes.events.forEach(ev => {
+                    // n ä»?¡¨?ä?å¹¾å€?5 ç§?(0s=0, 5s=1, 10s=2)
+                    const n = Math.floor(ev.duration / 5);
+                    // ?¬å?ï¼? ??(n+1) æ¬¡æ–¹
+                    // 0~4.9s  => 2^1 = 2??
+                    // 5~9.9s  => 2^2 = 4??
+                    // 10~14.9s => 2^3 = 8??
+                    overspeedPenalty += Math.pow(2, n + 1);
+                });
+
+                // ?±éšª?¾è?????è¼¯
+                tiltRes.events.forEach(ev => {
+                    const n = Math.floor(ev.duration / 5);
+                    tiltPenalty += Math.pow(5, n + 1);
+                });
+
+                // ?¥ç?????è¼¯
+                const brakingPenalty = (brakingRes.count || 0) * 3;
+
+                // ç¸½ç??†æ•¸
+                const totalPenalty = overspeedPenalty + tiltPenalty + brakingPenalty;
+                const finalScore = Math.max(0, 100 - totalPenalty);
+
+                logToScreen(`???çµ±è?: è¶…é€?${overspeedPenalty}, ?¾è?-${tiltPenalty}, ?¥ç?-${brakingPenalty}`);
+
+                // ?–å??°é??ç¨±ï¼Œå??œæ??³å…¥å°±é¡¯ç¤?"?ªçŸ¥è·¯æ®µ"
+                const firstPoint = dataToAnalyze[0]; // è¡Œç??‹å?é»?
+                const lastPoint = dataToAnalyze[dataToAnalyze.length - 1]; // ?–å??€å¾Œä??‹é??„ç???
+                // ?ªå??†å?ï¼?
+                // 1. ?³å…¥?„å¯¦é«”ç›¸æ©Ÿåœ°?€ 
+                // 2. ?¸æ?é»å…§??location æ¬„ä? 
+                // 3. ?¬ä??½æ??“åˆ°ï¼Œæ??¯æœª?¥è·¯æ®?
+                const locationName = (camera && camera.address) || (lastPoint && lastPoint.location) || "?ªçŸ¥è·¯æ®µ";
+
+                const rideId = Date.now().toString(); // ?¨ä??¤æ–·?¯å¦?ºå?ä¸€è¶Ÿç”¨
+                let recordsToUpload = []; // æº–å?è¦ä??³ç?è³‡æ????
+
+                // çµ±ä??•ç??½æ•¸ï¼?
+                const processEvents = (res, type) => {
+                    res.events.forEach(ev => {
+                        recordsToUpload.push({
+                            user_id: currentUser.id,
+                            class: ev.class,
+                            count: ev.count || 1,
+                            time: ev.time,
+                            endtime: ev.endtime,
+                            duration: ev.duration || 0,
+                            location: locationName,
+                            limit: lastPoint.limit,
+                            maxspeed: ev.maxspeed,
+                            lowspeed: ev.lowspeed,
+                            overspeed: ev.overspeed || 0,
+                            braking: ev.braking || 0,
+                            tilt: ev.tilt || 0,
+                            score: finalScore,
+                            ride_id: rideId // ?¨ä??¤æ–·?¯å¦?ºå?ä¸€è¶Ÿç”¨
+                        });
+                    });
+                };
+
+                processEvents(overspeedRes, 'overspeed');
+                processEvents(brakingRes, 'braking');
+                processEvents(tiltRes, 'tilt');
+
+                // å¦‚æ?å®Œå…¨æ²’ä?ï¼Œå?ä¸€ç­†æ­£å¸¸ç?ç´€??
+                if (recordsToUpload.length === 0) {
+                    recordsToUpload.push({
+                        user_id: currentUser.id,
+                        class: 'normal',
+                        count: 0,
+                        time: firstPoint.time,
+                        endtime: lastPoint.time,
+                        duration: 0,
+                        location: locationName,
+                        limit: lastPoint.limit,
+                        maxspeed: lastPoint.speed,
+                        lowspeed: lastPoint.speed,
+                        overspeed: 0,
+                        braking: 0,
+                        tilt: 0,
+                        score: 100,
+                        ride_id: rideId
+                    });
+                }
+
+                // 5. ?´æ–°?€?‹è? LocalStorage (?…å« 7 å¤©é?æ¿¾é?è¼?
+                setWeeklyHistory(prev => {
+                    const currentHistory = Array.isArray(prev) ? prev : [];
+                    let updated = [...currentHistory, ...recordsToUpload];
+
+                    // ?·è? 7 å¤©é?æ¿?
+                    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+                    const now = new Date().getTime();
+                    updated = updated.filter(item => !item.timestamp || (now - item.timestamp) < SEVEN_DAYS_MS);
+
+                    localStorage.setItem('ride_history', JSON.stringify(updated));
+                    logToScreen(`æ­·å²ç´€?„å·²?´æ–°ï¼Œç›®?ç¸½ç­†æ•¸:${updated.length}`);
+                    return updated;
+                });
+
+                // 6. ä¸Šå‚³??Supabase
+                try {
+                    const { error } = await _supabase.from('ride_history').insert(recordsToUpload);
+                    if (error) throw error;
+                    logToScreen("???å??Œæ­¥?³é›²ç«¯è??™åº«");
+                } catch (error) {
+                    logToScreen(`???²ç«¯?Œæ­¥å¤±æ?:${error.message}`);
+                }
+
+                // æ¸¬è©¦?¨ç? alert
+                if (isSimulatingRef.current) {
+                    alert(`??æ¨¡æ“¬çµæ?ï¼šå·²?šé? ${locationName} ä¸¦ç?è¡?100mï¼Œæœ¬æ¬¡è??Ÿï?${overspeedRes.count} æ¬¡ï??¥ç?ï¼?{brakingRes.count} æ¬¡ï??±éšª?¾è?ï¼?{tiltRes.count} æ¬¡ï??€çµ‚å??†ï?${finalScore} ?†`);
+                }
+
+                // 7. ?ç½®?¨æ??¸æ?
+                currentRideDataRef.current = [];
+            };
+

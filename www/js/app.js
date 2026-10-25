@@ -130,7 +130,9 @@ const App = () => {
     const [activeTab, setActiveTab] = useState('login');
     const [edgeWarning, setEdgeWarning] = useState(null);
     const [notifications, setNotifications] = useState([]);
+    const [pi5Logs, setPi5Logs] = useState([{type:'system', msg:'APP 已啟動，等待 Pi5 連線...', ts: new Date().toLocaleTimeString('zh-TW',{hour12:false})}]);
     const socketRef = useRef(null);
+    const logEndRef = useRef(null);
     const isSimulatingRef = useRef(false);
 
     // WebSocket Connection Logic
@@ -147,6 +149,7 @@ const App = () => {
         socket.onopen = () => {
             setIsConnected(true);
             setSystemStatus(prev => ({ ...prev, pi5: true }));
+            setPi5Logs(prev => [...prev.slice(-99), {type:'system', msg:'✅ WebSocket 已連線至 Pi5', ts: new Date().toLocaleTimeString('zh-TW',{hour12:false})}]);
         };
 
         socket.onmessage = (event) => {
@@ -165,8 +168,18 @@ const App = () => {
                 setTiltAngle(Math.round(data.tilt || 0));
                 if (data.warning && data.warning.level === 'danger') {
                     setEdgeWarning(data.warning.direction);
-                    setTimeout(() => setEdgeWarning(null), 1000);
-                    playWarningSound('danger');
+                    setTimeout(() => setEdgeWarning(null), 1500);
+                    playWarningSound('danger', 2);
+                } else if (data.warning && data.warning.level === 'warning') {
+                    setEdgeWarning(data.warning.direction);
+                    setTimeout(() => setEdgeWarning(null), 800);
+                    playWarningSound('warning');
+                }
+                // Pi5 Log 接收
+                if (data.pi5_log && data.pi5_log.length > 0) {
+                    const ts = new Date().toLocaleTimeString('zh-TW',{hour12:false});
+                    const newEntries = data.pi5_log.map(l => ({...l, ts}));
+                    setPi5Logs(prev => [...prev.slice(-99), ...newEntries]);
                 }
             } catch (e) { console.error("Parse error", e); }
         };
@@ -174,6 +187,7 @@ const App = () => {
         socket.onclose = () => {
             setIsConnected(false);
             setSystemStatus(prev => ({ ...prev, pi5: false, piZero: false }));
+            setPi5Logs(prev => [...prev.slice(-99), {type:'danger', msg:'❌ 與 Pi5 的連線已中斷', ts: new Date().toLocaleTimeString('zh-TW',{hour12:false})}]);
         };
 
         return () => socket.close();
@@ -235,6 +249,33 @@ const App = () => {
                             <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
                                 <div className="text-slate-500 text-[10px] mb-1">MEMORY</div>
                                 <div className="text-xl font-mono text-white">{systemStatus.mem}%</div>
+                            </div>
+                        </div>
+
+                        {/* Pi5 即時日誌 */}
+                        <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+                            <div className="px-4 py-3 border-b border-slate-800 flex justify-between items-center">
+                                <div className="flex items-center gap-2">
+                                    <Icon name="terminal" size={14} className="text-cyan-400" />
+                                    <span className="text-[11px] font-bold text-slate-400 tracking-wider">Pi5 SYSTEM LOG</span>
+                                </div>
+                                <button onClick={() => setPi5Logs([])} className="text-[9px] text-slate-600 hover:text-slate-400 font-mono">CLEAR</button>
+                            </div>
+                            <div className="h-48 overflow-y-auto p-3 font-mono text-[10px] space-y-0.5 scroll-smooth" ref={el => { if(el) el.scrollTop = el.scrollHeight; }}>
+                                {pi5Logs.length === 0 ? (
+                                    <div className="text-slate-600 text-center py-4">等待日誌...</div>
+                                ) : pi5Logs.map((log, i) => (
+                                    <div key={i} className="flex gap-2 leading-relaxed">
+                                        <span className="text-slate-600 shrink-0">{log.ts}</span>
+                                        <span className={`shrink-0 ${
+                                            log.type === 'danger' ? 'text-red-400' :
+                                            log.type === 'warning' ? 'text-yellow-400' :
+                                            log.type === 'ai' ? 'text-cyan-400' :
+                                            'text-green-400'
+                                        }`}>[{log.type === 'ai' ? 'AI' : log.type === 'danger' ? '!!!' : log.type === 'warning' ? 'WRN' : 'SYS'}]</span>
+                                        <span className="text-slate-300">{log.msg}</span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
